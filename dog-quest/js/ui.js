@@ -360,7 +360,7 @@ const UI = {
     const k = b.t / b.life;
     const a = k < 0.12 ? k / 0.12 : k > 0.8 ? (1 - k) / 0.2 : 1;
     ctx.globalAlpha = clamp(a, 0, 1);
-    const y = 150;
+    const y = 212;
     const g = ctx.createLinearGradient(VIEW_W / 2 - 300, 0, VIEW_W / 2 + 300, 0);
     g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(0,0,0,0.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g; ctx.fillRect(VIEW_W / 2 - 300, y - 44, 600, b.sub ? 76 : 58);
@@ -389,7 +389,7 @@ const UI = {
 
   drawToasts(ctx) {
     let y = 72;
-    for (const t of Game.toasts) {
+    for (const t of Game.toasts.slice(-3)) {
       const k = t.t / t.life;
       const a = k < 0.08 ? k / 0.08 : k > 0.85 ? (1 - k) / 0.15 : 1;
       ctx.globalAlpha = clamp(a, 0, 1);

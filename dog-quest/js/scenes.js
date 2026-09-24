@@ -238,8 +238,8 @@ class SelectScene {
     const t = this.t;
     drawMeadowBackdrop(ctx, t * 0.5, { sky1: '#3a5aa0', sky2: '#8ab0e0', h1: '#4a7a6a', h2: '#3e6a4a', h3: '#2f5a3a' });
     ctx.fillStyle = 'rgba(10,12,24,0.35)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    uiText(ctx, 'Choose Your Hero', VIEW_W / 2, 52, 38, '#ffd23f', 'center', 800);
-    const cw = 212, chh = 330, gap = 14, x0 = (VIEW_W - (cw * 4 + gap * 3)) / 2, y0 = 80;
+    uiText(ctx, 'Choose Your Hero', VIEW_W / 2, 42, 34, '#ffd23f', 'center', 800);
+    const cw = 212, chh = 326, gap = 14, x0 = (VIEW_W - (cw * 4 + gap * 3)) / 2, y0 = 96;
     BREED_ORDER.forEach((id, i) => {
       const b = BREEDS[id];
       const x = x0 + i * (cw + gap), y = y0;
@@ -398,8 +398,8 @@ class StoryScene {
       case 'lionfall': {
         const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, '#2a1a3a'); g.addColorStop(1, '#6a4a5a');
         ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-        drawCat(ctx, { x: 480, y: 400, facing: 1, t, def: Object.assign({}, ENEMIES.lioness, BOSSES.king_leo, { lion: true }), scale: 3.5, dead: 1 });
-        for (let i = 0; i < 3; i++) { const a = t * 3 + i * TAU / 3; drawStar(ctx, '#ffe84a', 500 + Math.cos(a) * 60, 250 + Math.sin(a) * 15, 10); }
+        drawCat(ctx, { x: 480, y: 300, facing: 1, t, def: Object.assign({}, ENEMIES.lioness, BOSSES.king_leo, { lion: true }), scale: 3.2, dead: 1 });
+        for (let i = 0; i < 3; i++) { const a = t * 3 + i * TAU / 3; drawStar(ctx, '#ffe84a', 470 + Math.cos(a) * 60, 330 + Math.sin(a) * 15, 10); }
         break;
       }
       case 'king': {
@@ -465,7 +465,7 @@ class GameOverScene {
     const t = this.t;
     const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, '#1a0a14'); g.addColorStop(1, '#3a1a2a');
     ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    Game.players.forEach((p, i) => drawDog(ctx, { x: 420 + i * 120, y: 330, facing: 1, t, look: p.look, dead: 1, scale: 2.4 }));
+    Game.players.forEach((p, i) => drawDog(ctx, { x: (Game.players.length > 1 ? 420 : 480) + i * 120, y: 290, facing: 1, t, look: p.look, dead: 1, scale: 2.4 }));
     for (let i = 0; i < 3; i++) drawCat(ctx, { x: 250 + i * 230, y: 420, facing: i % 2 ? -1 : 1, t: t + i, phase: t * 10, move: Math.sin(t * 4 + i) > 0 ? 0.5 : 0, def: ENEMIES[['tabby', 'witch', 'siamese'][i]], scale: 1.6 });
     uiText(ctx, 'THE PARTY HAS FAINTED', VIEW_W / 2, 150, 44, '#ff6a5a', 'center', 800);
     uiText(ctx, 'The cats are doing a victory dance...', VIEW_W / 2, 185, 16, '#e0c0d0', 'center', 600);
