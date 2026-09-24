@@ -88,7 +88,12 @@ function serve() {
         if (p.rollCd <= 0 && p.state !== 'roll') inp.roll = true;
         return inp;
       }
-      const e = Game.nearestEnemy(p.x, p.y, 1000);
+      const lead = Game.players[0];
+      if (p.pid === 1 && dist(p.x, p.y, lead.x, lead.y) > 230) {
+        const a = angleTo(p.x, p.y, lead.x, lead.y); inp.mx = Math.cos(a); inp.my = Math.sin(a); return inp;
+      }
+      let e = Game.nearestEnemy(lead.x, lead.y, p.pid === 1 ? 420 : 1000);
+      if (e && p.pid === 1 && dist(e.x, e.y, lead.x, lead.y) > 420) e = null;
       if (!e) {
         const o = Game.players[1 - p.pid];
         if (o && dist(p.x, p.y, o.x, o.y) > 90) { const a = angleTo(p.x, p.y, o.x, o.y); inp.mx = Math.cos(a) * 0.7; inp.my = Math.sin(a) * 0.7; }
@@ -101,8 +106,8 @@ function serve() {
       else if (mage && d < 100) { inp.mx = -Math.cos(a); inp.my = -Math.sin(a); }
       else { inp.attack = !mage && Math.random() < 0.55; inp.mx = Math.cos(a) * 0.01; inp.my = Math.sin(a) * 0.01; }
       if (d < 420 && Math.random() < (mage ? 0.06 : 0.02)) {
-        const s = Math.floor(Math.random() * 4);
-        if (p.spells[s] !== 'heal' || p.hp < p.stats.maxHp * 0.7) inp.spell[s] = true;
+        const s = Math.floor(Math.random() * 4), id = p.spells[s];
+        if (id && SPELLS[id].cost <= p.mp && (p.spellCd[id] || 0) <= 0 && (id !== 'heal' || p.hp < p.stats.maxHp * 0.7)) inp.spell[s] = true;
       }
       return inp;
     };
@@ -249,19 +254,22 @@ function serve() {
       }
       const b = Game.boss;
       if (b && !b.dead) {
-        if (!b.tuned) { b.tuned = true; b.maxHp = Math.round(b.maxHp * 1.6); b.hp = b.maxHp; }
+        if (!b.tuned) { b.tuned = true; b.maxHp = Math.round(b.maxHp * 2.8); b.hp = b.maxHp; }
         if (t > 30 && b.hp > b.maxHp * 0.49) b.hp = b.maxHp * 0.49;
         if (t > 52 && b.hp > b.maxHp * 0.04) b.hp = b.maxHp * 0.04;
       }
     } });
-    S.push({ dur: 29, update(t) {
-      if (Game.scene === 'story') { if (!this.st0) this.st0 = t; const k = t - this.st0; for (const s of [3.4, 6.8, 10.2, 13.6]) if (R.at(k, s)) R.tap('Enter'); }
-    } });
+    S.push({ dur: 24 });
     R.S = S; R.cur = 0; R.segT = 0;
     R.total = Math.round(S.reduce((a, s) => a + s.dur, 0) * FPS);
 
     R.frameStep = () => {
       window.__vt = R.frame / FPS;
+      if (Game.scene === 'story' && Game.sceneObj.kind === 'ending') {
+        const so = Game.sceneObj;
+        so.recT = (so.recT || 0) + 1 / FPS;
+        if (so.recT > 3.6 && so.chars >= so.slides[so.i].text.length) { so.recT = 0; R.tap('Enter'); }
+      }
       const seg = R.S[R.cur];
       if (seg) {
         if (!seg.started) { seg.started = true; if (seg.start) seg.start(); }
