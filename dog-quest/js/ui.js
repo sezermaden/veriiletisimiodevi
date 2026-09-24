@@ -242,9 +242,16 @@ const UI = {
 
   drawQuestTracker(ctx) {
     const G = Game;
-    const id = G.trackedQuest();
-    if (!id) return;
-    const q = QUESTS[id];
+    if (G.boss && !G.boss.dead) return;
+    let id = G.trackedQuest();
+    let q = id && QUESTS[id];
+    if (G.dungeon) {
+      const dg = G.dungeon, def = dg.def;
+      const cleared = G.state.cleared[def.id];
+      q = { main: !!def.main, name: def.name, desc: cleared ? 'Dungeon cleared! Open the chests and use the golden portal to leave.' : `Find and defeat ${BOSSES[def.boss].name} in the deepest chamber.` };
+      id = null;
+    }
+    if (!q) return;
     const x = 10, w = 300;
     ctx.font = uiFont(12, 500);
     const lines = wrapText(ctx, q.desc, w - 24).slice(0, 3);
@@ -253,11 +260,11 @@ const UI = {
     ctx.fillStyle = 'rgba(15,18,30,0.72)'; roundRect(ctx, x, y, w, h, 12); ctx.fill();
     ctx.strokeStyle = q.main ? 'rgba(255,210,63,0.7)' : 'rgba(159,224,255,0.7)'; ctx.lineWidth = 1.5; roundRect(ctx, x, y, w, h, 12); ctx.stroke();
     drawStar(ctx, q.main ? '#ffd23f' : '#9fe0ff', x + 16, y + 17, 7);
-    const prog = G.questProgressText(id);
+    const prog = id ? G.questProgressText(id) : '';
     uiText(ctx, q.name + (prog ? `  (${prog})` : ''), x + 28, y + 22, 14, q.main ? '#ffd23f' : '#9fe0ff', 'left', 700);
     lines.forEach((l, i) => uiText(ctx, l, x + 12, y + 40 + i * 15, 12, '#e0e0e0', 'left', 500, false));
     // compass
-    if (G.dungeon) return;
+    if (G.dungeon || !id) return;
     const tg = G.questTarget(id);
     if (!tg) return;
     const cam = G.cam, z = cam.zoom;
@@ -314,8 +321,14 @@ const UI = {
         }
         dg.mini = c;
       }
-      const s = Math.min((W - 8) / dg.w, (H - 8) / dg.h);
-      const ox = x + (W - dg.w * s) / 2, oy = y + (H - dg.h * s) / 2;
+      if (!dg.miniBox) {
+        let x0 = dg.w, y0 = dg.h, x1 = 0, y1 = 0;
+        for (const r of dg.rooms) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
+        dg.miniBox = { x0: x0 - 2, y0: y0 - 2, w: x1 - x0 + 4, h: y1 - y0 + 4 };
+      }
+      const mb = dg.miniBox;
+      const s = Math.min((W - 8) / mb.w, (H - 8) / mb.h);
+      const ox = x + (W - mb.w * s) / 2 - mb.x0 * s, oy = y + (H - mb.h * s) / 2 - mb.y0 * s;
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(dg.mini, ox, oy, dg.w * s, dg.h * s);
       ctx.imageSmoothingEnabled = true;
@@ -559,7 +572,7 @@ class PauseOverlay {
     }
   }
   systemRows() {
-    return ['Resume', 'Save Game', `Music Volume: ${Math.round(Sound.settings.music * 10)}`, `Sound Volume: ${Math.round(Sound.settings.sfx * 10)}`, `Screen Shake: ${Game.settings.shake ? 'On' : 'Off'}`, 'Toggle Fullscreen', 'Quit to Title'];
+    return ['Resume', 'Save Game', `Music Volume: ${Math.round(Sound.settings.music * 10)}`, `Sound Volume: ${Math.round(Sound.settings.sfx * 10)}`, `Screen Shake: ${Game.settings.shake ? 'On' : 'Off'}`, 'Toggle Fullscreen', Game.players.length > 1 ? 'Co-op: Remove Player 2' : 'Co-op: Add Player 2', 'Quit to Title'];
   }
   updateSystem(m) {
     const row = this.sel;
@@ -575,7 +588,12 @@ class PauseOverlay {
       case 3: Sound.settings.sfx = Sound.settings.sfx >= 1 ? 0 : Math.round((Sound.settings.sfx + 0.1) * 10) / 10; Sound.saveSettings(); break;
       case 4: Game.settings.shake = !Game.settings.shake; try { const s = JSON.parse(localStorage.getItem('dogquest_settings') || '{}'); s.shake = Game.settings.shake; localStorage.setItem('dogquest_settings', JSON.stringify(Object.assign(s, Sound.settings))); } catch (e) { /* */ } break;
       case 5: toggleFullscreen(); break;
-      case 6: UI.dialog([{ name: 'Quit', text: 'Return to the title screen? Progress since your last save will be lost.', choices: ['Save & Quit', 'Quit without saving', 'Cancel'] }], c => {
+      case 6:
+        if (Game.players.length > 1) {
+          UI.dialog([{ name: 'Co-op', text: `Remove ${BREEDS[Game.players[1].breed].name} (Player 2) from the party? Their gear is kept for next time.`, choices: ['Remove', 'Cancel'] }], c => { if (c === 0) { Game.removePlayer2(); UI.close(this); } });
+        } else UI.open(new CoopOverlay(this));
+        break;
+      case 7: UI.dialog([{ name: 'Quit', text: 'Return to the title screen? Progress since your last save will be lost.', choices: ['Save & Quit', 'Quit without saving', 'Cancel'] }], c => {
         if (c === 0) Game.save(true);
         if (c === 0 || c === 1) { Game.overlays = []; Game.setScene(new TitleScene()); }
       }); break;
@@ -650,8 +668,8 @@ class PauseOverlay {
     if (this.sub && this.sub.kind === 'equip') prevEq = { slot: this.sub.slot, id: this.sub.items[this.subSel] };
     const eq = { weapon: ITEMS[p.equip.weapon], helmet: p.equip.helmet ? ITEMS[p.equip.helmet] : null, armor: p.equip.armor ? ITEMS[p.equip.armor] : null };
     if (prevEq) eq[prevEq.slot] = prevEq.id ? ITEMS[prevEq.id] : null;
-    drawDog(ctx, { x: px + 110, y: py + 170, facing: 1, t: Game.time, look: p.look, equip: eq, scale: 3.2, move: 0 });
-    this.drawStats(ctx, px + 230, py + 40, p, prevEq);
+    drawDog(ctx, { x: px + 80, y: py + 180, facing: 1, t: Game.time, look: p.look, equip: eq, scale: 2.7, move: 0 });
+    this.drawStats(ctx, px + 225, py + 40, p, prevEq);
     uiText(ctx, `Level ${Game.state.level}   XP ${fmt(Game.state.xp)} / ${fmt(xpForLevel(Game.state.level))}`, px + 20, py + h - 30, 14, '#b48cff', 'left', 700, false);
     if (this.sub) this.drawSubList(ctx, x + 20, y + 40, 400, h - 50);
   }
@@ -902,12 +920,12 @@ class ShopOverlay {
     uiPanel(ctx, x, y, w, h, { border: this.kind === 'mage' ? '#b48cff' : '#e8c878' });
     const st = Game.state;
     const title = this.kind === 'mage' ? `${TOWNS[this.town].name} Mage Tower` : `${TOWNS[this.town].name} Blacksmith`;
-    uiText(ctx, title, x + 24, y + 38, 24, this.kind === 'mage' ? '#c8a8ff' : '#e8c878', 'left', 800);
+    uiText(ctx, title, x + 24, y + 38, 20, this.kind === 'mage' ? '#c8a8ff' : '#e8c878', 'left', 800);
     drawCoin(ctx, x + w - 150, y + 30, Game.time * 0.3, 9);
     uiText(ctx, fmt(st.gold), x + w - 134, y + 37, 18, '#ffd23f', 'left', 700);
     if (this.kind === 'smith') {
       ['Buy', 'Upgrade'].forEach((t, i) => {
-        const tx = x + 330 + i * 120;
+        const tx = x + 400 + i * 120;
         if (i === this.tab) { ctx.fillStyle = '#e8c878'; roundRect(ctx, tx, y + 16, 110, 30, 10); ctx.fill(); }
         uiText(ctx, t, tx + 55, y + 37, 16, i === this.tab ? '#2a1e00' : '#d8d8e8', 'center', 700, false);
       });
@@ -1012,5 +1030,67 @@ class BoardOverlay {
     if (it.kind === 'active' && prog) uiText(ctx, `Progress: ${prog}`, px + 20, y + 300, 14, '#2a6aa5', 'left', 700, false);
     const label = it.kind === 'new' ? `${Input.menuLabel('confirm')}: Accept quest` : it.kind === 'active' ? 'In progress...' : 'Completed!';
     uiText(ctx, label, px + pw / 2, y + h - 56, 17, it.kind === 'new' ? '#c05a1a' : it.kind === 'active' ? '#2a6aa5' : '#2a8a3a', 'center', 800, false);
+  }
+}
+
+// ============================================================
+// Co-op join overlay (add Player 2 during the game)
+// ============================================================
+class CoopOverlay {
+  constructor(parent) { this.parent = parent; this.step = 0; this.d1 = null; this.d2 = null; this.cursor = 0; this.t = 0; }
+  update(dt, m) {
+    this.t += dt;
+    if (this.t < 0.2) { Nav.endFrame(); return; }
+    if (this.step < 2 && Input.kp(['Escape'])) { UI.close(this); Sound.sfx('back'); return; }
+    if (this.step === 0) {
+      const j = Input.joinPresses();
+      if (j.length) { this.d1 = j[0]; this.step = 1; Sound.sfx('select'); }
+    } else if (this.step === 1) {
+      const j = Input.joinPresses().filter(d => d !== this.d1);
+      if (j.length) {
+        this.d2 = j[0]; this.step = 2; Sound.sfx('bark', { pitch: 1.3 });
+        const used = Game.players[0].breed;
+        this.cursor = (BREED_ORDER.indexOf(used) + 1) % 4;
+      }
+    } else {
+      const n = Nav.get(this.d2);
+      if (n.left) { this.cursor = (this.cursor + 3) % 4; Sound.sfx('menu'); }
+      if (n.right) { this.cursor = (this.cursor + 1) % 4; Sound.sfx('menu'); }
+      if (n.back) { UI.close(this); Sound.sfx('back'); Nav.endFrame(); return; }
+      if (n.confirm) {
+        if (BREED_ORDER[this.cursor] === Game.players[0].breed) { Sound.sfx('error'); Game.toast('That hero is already taken!', '#ff9a8a', 1.5); }
+        else {
+          Game.addPlayer2(BREED_ORDER[this.cursor], this.d1, this.d2);
+          UI.close(this);
+          if (this.parent) UI.close(this.parent);
+        }
+      }
+    }
+    Nav.endFrame();
+  }
+  draw(ctx) {
+    ctx.fillStyle = 'rgba(5,6,12,0.7)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    uiPanel(ctx, 140, 80, VIEW_W - 280, VIEW_H - 160);
+    uiText(ctx, 'Add Player 2', VIEW_W / 2, 124, 28, '#ffd23f', 'center', 800);
+    if (this.step === 0) {
+      uiText(ctx, 'Player 1: press your attack button', VIEW_W / 2, 200, 20, PCOLORS[0], 'center', 700);
+      uiText(ctx, '(SPACE for WASD side, ENTER for arrow side, or A on your gamepad)', VIEW_W / 2, 230, 14, '#c8c8d8', 'center', 600, false);
+    } else if (this.step === 1) {
+      uiText(ctx, `Player 1 uses ${devFamilyName(this.d1)}`, VIEW_W / 2, 190, 16, PCOLORS[0], 'center', 700);
+      uiText(ctx, 'Player 2: press your attack button', VIEW_W / 2, 230, 20, PCOLORS[1], 'center', 700);
+      uiText(ctx, '(use the other half of the keyboard, or another gamepad)', VIEW_W / 2, 258, 14, '#c8c8d8', 'center', 600, false);
+    } else {
+      uiText(ctx, 'Player 2: choose your hero', VIEW_W / 2, 170, 18, PCOLORS[1], 'center', 700);
+      BREED_ORDER.forEach((b, i) => {
+        const x = 250 + i * 150, y = 320;
+        const taken = b === Game.players[0].breed;
+        if (i === this.cursor) { ctx.fillStyle = rgba(PCOLORS[1], 0.25); roundRect(ctx, x - 60, y - 110, 120, 150, 12); ctx.fill(); ctx.strokeStyle = PCOLORS[1]; ctx.lineWidth = 2; roundRect(ctx, x - 60, y - 110, 120, 150, 12); ctx.stroke(); }
+        ctx.globalAlpha = taken ? 0.35 : 1;
+        drawDog(ctx, { x: x - 6, y, facing: 1, t: Game.time + i, look: BREEDS[b], scale: 2, equip: { weapon: ITEMS[BREEDS[b].start.weapon] } });
+        ctx.globalAlpha = 1;
+        uiText(ctx, BREEDS[b].name, x, y + 28, 16, taken ? '#888' : '#ffffff', 'center', 700);
+      });
+      uiText(ctx, 'Left/Right: choose   Confirm: join   Back: cancel', VIEW_W / 2, VIEW_H - 100, 13, '#9aa0b8', 'center', 600, false);
+    }
   }
 }

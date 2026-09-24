@@ -127,8 +127,9 @@ function drawHeadgear(ctx, style, look, hx, hy, r, t) {
       break;
     }
     case 'knight':
-      F(ctx, c1); ctx.beginPath(); ctx.ellipse(hx, hy - r * 0.1, r * 1.1, r * 1.05, 0, Math.PI * 0.9, TAU + 0.1); ctx.fill();
-      F(ctx, shade(c1, -0.3)); ctx.fillRect(hx + r * 0.1, hy - r * 0.3, r * 0.9, r * 0.16);
+      F(ctx, c1); ctx.beginPath(); ctx.ellipse(hx, hy - r * 0.38, r * 1.1, r * 0.95, 0, Math.PI, TAU); ctx.fill();
+      F(ctx, shade(c1, -0.3)); ctx.fillRect(hx - r * 1.1, hy - r * 0.5, r * 2.2, r * 0.16);
+      F(ctx, c1); ctx.beginPath(); ctx.moveTo(hx - r * 1.05, hy - r * 0.4); ctx.lineTo(hx - r * 1.1, hy + r * 0.35); ctx.lineTo(hx - r * 0.6, hy + r * 0.2); ctx.lineTo(hx - r * 0.55, hy - r * 0.4); ctx.fill();
       fillEll(ctx, shade(c1, 0.45), hx - r * 0.3, hy - r * 0.75, r * 0.3, r * 0.2, -0.4);
       // plume
       F(ctx, c2); ctx.beginPath(); ctx.moveTo(hx - r * 0.2, hy - r * 1.05);
@@ -350,20 +351,6 @@ function drawDog(ctx, o) {
   if (look.beard) {
     F(ctx, '#f4f0ea'); ctx.beginPath(); ctx.moveTo(sx - 4, sy + 3); ctx.quadraticCurveTo(sx, sy + 13, sx + 3, sy + 3); ctx.fill();
   }
-  // eye
-  const blink = (Math.sin(t * 0.9 + (o.seed || 0)) > 0.985) || o.dead > 0;
-  const ex = hx + 4, ey = hy - 2;
-  if (blink) {
-    if (o.dead > 0) { line(ctx, '#2a1a12', 1.2, ex - 2, ey - 2, ex + 2, ey + 2); line(ctx, '#2a1a12', 1.2, ex - 2, ey + 2, ex + 2, ey - 2); }
-    else line(ctx, '#2a1a12', 1.3, ex - 2.2, ey, ex + 2.2, ey);
-  } else {
-    fillEll(ctx, '#ffffff', ex, ey, 2.8, 3.2);
-    fillEll(ctx, look.eye || '#2a1a12', ex + 0.6, ey + 0.2, 2.1, 2.6);
-    fillCirc(ctx, '#1a0e08', ex + 0.8, ey + 0.4, 1.2);
-    fillCirc(ctx, '#ffffff', ex + 1.4, ey - 0.9, 0.9);
-  }
-  // brow
-  line(ctx, shade(fur, -0.4), 1.1, ex - 2.5, ey - 4.6, ex + 2, ey - 4.2);
   // blush
   fillEll(ctx, 'rgba(255,120,140,0.35)', hx + 2, hy + 4, 2.4, 1.4);
   // near ear
@@ -380,6 +367,20 @@ function drawDog(ctx, o) {
   if (helm) drawHeadgear(ctx, helm.style, helm.look, hx, hy, r, t);
   else if (look.hat && look.hat !== 'none') drawHeadgear(ctx, look.hat, { c1: look.hatColor || '#c0303a', c2: '#ffd23f' }, hx, hy, r, t);
   if (look.bow) drawHeadgear(ctx, 'bow', { c1: look.bow }, hx - 3, hy + 1, r, t);
+  // eye
+  const blink = (Math.sin(t * 0.9 + (o.seed || 0)) > 0.985) || o.dead > 0;
+  const ex = hx + 4, ey = hy - 2;
+  if (blink) {
+    if (o.dead > 0) { line(ctx, '#2a1a12', 1.2, ex - 2, ey - 2, ex + 2, ey + 2); line(ctx, '#2a1a12', 1.2, ex - 2, ey + 2, ex + 2, ey - 2); }
+    else line(ctx, '#2a1a12', 1.3, ex - 2.2, ey, ex + 2.2, ey);
+  } else {
+    fillEll(ctx, '#ffffff', ex, ey, 2.8, 3.2);
+    fillEll(ctx, look.eye || '#2a1a12', ex + 0.6, ey + 0.2, 2.1, 2.6);
+    fillCirc(ctx, '#1a0e08', ex + 0.8, ey + 0.4, 1.2);
+    fillCirc(ctx, '#ffffff', ex + 1.4, ey - 0.9, 0.9);
+  }
+  // brow
+  line(ctx, shade(fur, -0.4), 1.1, ex - 2.5, ey - 4.6, ex + 2, ey - 4.2);
 
   // --- weapon ---
   const w = o.equip && o.equip.weapon;

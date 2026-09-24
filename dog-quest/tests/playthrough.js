@@ -313,6 +313,30 @@ function serve() {
   console.log('save/load:', JSON.stringify(saveRes));
   check(saveRes.ok && saveRes.main === 'm14', 'save/load');
 
+  // ---------- co-op add/remove, game over + respawn ----------
+  const coop = await ev(() => {
+    const out = {};
+    Game.removePlayer2(); out.after_remove = Game.players.length;
+    const ov = new CoopOverlay(null); UI.open(ov);
+    Game.step(20, 1 / 60, true);
+    Input.pressed.add('Space'); Game.step(1, 1 / 60, true);
+    Input.pressed.add('Enter'); Game.step(1, 1 / 60, true);
+    Input.pressed.add('ArrowRight'); Game.step(1, 1 / 60, true);
+    Input.pressed.add('Enter'); Game.step(2, 1 / 60, true);
+    out.after_add = Game.players.length; out.devices = Game.players.map(p => p.device).join(',');
+    Game.overlays = [];
+    // game over
+    Game.godMode = false; Game.players.forEach(p => { p.invuln = 0; p.state = 'idle'; p.shield = null; Game.damagePlayer(p, 1e9, {}); });
+    let g = 0; while (Game.scene !== 'gameover' && g++ < 400) Game.step(1);
+    out.gameover = Game.scene;
+    const s = Game.sceneObj; s.t = 2; Input.pressed.add('Enter'); Game.step(2);
+    g = 0; while (Game.scene !== 'play' && g++ < 300) Game.step(1);
+    out.respawned = Game.scene === 'play' && Game.players.every(p => !p.down && p.hp === p.stats.maxHp);
+    return out;
+  });
+  console.log('coop/gameover:', JSON.stringify(coop));
+  check(coop.after_remove === 1 && coop.after_add === 2 && coop.gameover === 'gameover' && coop.respawned, 'coop/gameover');
+
   // ---------- final boss & ending (2 players) ----------
   const fin = await ev(() => QA.clearDungeon('lions_keep', { fight: 1400, stay: true }));
   console.log('final:', JSON.stringify(fin));

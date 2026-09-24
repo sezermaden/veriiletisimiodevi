@@ -183,6 +183,42 @@ const Game = {
     }
   },
 
+  addPlayer2(breed, d1, d2) {
+    const st = this.state;
+    let devs = [d1, d2];
+    const kbCount = devs.filter(d => d.startsWith('kb')).length;
+    if (kbCount === 1) devs = devs.map(d => d.startsWith('kb') ? 'kb' : d);
+    const p1 = this.players[0];
+    p1.device = devs[0];
+    const p = new Player(1, breed, devs[1]);
+    let slot = st.party[1];
+    if (!slot) slot = st.party[1] = { breed, equip: Object.assign({}, BREEDS[breed].start), spells: ['flame', null, null, null] };
+    slot.breed = breed;
+    p.equip = Object.assign({}, slot.equip);
+    for (const k of ['weapon', 'helmet', 'armor']) if (p.equip[k] && !st.inv[p.equip[k]]) st.inv[p.equip[k]] = 1;
+    p.spells = slot.spells.map(id => id && st.spells[id] ? id : null);
+    if (!p.spells.some(Boolean)) p.spells[0] = 'flame';
+    p.refresh(false);
+    p.x = p1.x + 24; p.y = p1.y;
+    if (this.collides(p.x, p.y, 8)) p.x = p1.x;
+    p.invuln = 1.5;
+    this.players.push(p);
+    this.poof(p.x, p.y - 14, '#ffffff');
+    Sound.sfx('bark', { pitch: BREEDS[breed].bark });
+    this.toast(`${BREEDS[breed].name} joined the party!`, PCOLORS[1]);
+    this.save(true);
+  },
+  removePlayer2() {
+    if (this.players.length < 2) return;
+    const p = this.players[1];
+    this.state.party[1] = { breed: p.breed, equip: Object.assign({}, p.equip), spells: p.spells.slice() };
+    this.poof(p.x, p.y - 14, '#ffffff');
+    this.players.length = 1;
+    this.players[0].device = 'any';
+    this.toast(`${BREEDS[p.breed].name} left the party.`, '#c8c8d8');
+    this.save(true);
+  },
+
   placePlayers(x, y) {
     this.players.forEach((p, i) => {
       p.x = x + (i ? 26 : 0); p.y = y;
@@ -1130,7 +1166,7 @@ class PlayScene {
         case 'leaf': w.x += 30 * w.s * dt; w.y += 25 * w.s * dt; break;
       }
     }
-    this.weather = W.filter(w => w.t < w.life && (!kind || w.kind === kind));
+    this.weather = W.filter(w => w.t < w.life && w.kind === kind);
   }
 
   // ---------------------------------------------------------

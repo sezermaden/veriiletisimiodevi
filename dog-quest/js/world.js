@@ -120,7 +120,7 @@ class World {
       if (lake < 0.28 && edge > 12) {
         t = reg === 4 ? T.LAVA : reg === 2 ? T.ICE : T.WATER;
         if (reg === 1 && lake > 0.24) t = T.WATER;
-      } else if (mount > 0.93 && edge > 10) t = T.MOUNTAIN;
+      } else if (mount > 0.94 && edge > 10 && fbm(x / 7, y / 7, seed + 91, 2) > 0.45 && !this.nearTown(x, y, 15)) t = T.MOUNTAIN;
       else if (reg === 0 && forest > 0.64) t = T.FOREST;
       else if (reg === 3 && forest > 0.55) t = T.FOREST;
       else if (reg === 2 && forest > 0.68) t = T.FOREST;
@@ -230,6 +230,10 @@ class World {
     this.placeChests(rng);
   }
 
+  nearTown(x, y, r) {
+    for (const id of TOWN_ORDER) { const t = TOWNS[id]; if (dist2(x, y, t.tx, t.ty) < r * r) return true; }
+    return false;
+  }
   blockTile(x, y) { if (this.inb(x, y)) { this.blocked[this.idx(x, y)] = 1; this.noBuild[this.idx(x, y)] = 1; } }
 
   carveRoad(x0, y0, x1, y1) {
