@@ -177,6 +177,7 @@ const Game = {
     if (!loaded) {
       this.startQuest('m1', true);
       this.save(true);
+      UI.open(new TutorialOverlay());
     } else {
       this.ensureMainQuest();
       this.toast('Welcome back, heroes!', '#ffd23f');

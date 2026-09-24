@@ -136,6 +136,7 @@ class TitleScene {
     ctx.font = uiFont(24, 700); ctx.lineWidth = 6; ctx.strokeText('Heroes of Pawtopia', 0, 40); ctx.fillStyle = '#ffffff'; ctx.fillText('Heroes of Pawtopia', 0, 40);
     drawPaw(ctx, -265, -30, 22, '#ffd23f'); drawPaw(ctx, 265, -30, 22, '#ffd23f');
     ctx.restore();
+    if (Sound.ctx && Sound.ctx.state !== 'running' || (!Sound.ctx && this.stage === 1)) uiText(ctx, 'Click or press a key to enable sound', VIEW_W / 2, VIEW_H - 32, 13, '#1e3a1e', 'center', 700, false);
     if (this.stage === 0) {
       if (Math.floor(t * 2) % 2 === 0) uiText(ctx, 'Press any key or button', VIEW_W / 2, 330, 24, '#ffffff', 'center', 700);
       uiText(ctx, 'Keyboard & Gamepad supported  ·  1-2 Players', VIEW_W / 2, 360, 14, '#2a3a2a', 'center', 600, false);

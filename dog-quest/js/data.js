@@ -161,7 +161,7 @@ for (const id in ENEMIES) ENEMIES[id].id = id;
 // Boss definitions: based on a cat type, scaled up with attack patterns.
 const BOSSES = {
   big_tom: { name: 'Big Tom', base: 'tabby', scale: 2.0, hp: 9, atk: 1.2, moves: ['swipe', 'slam', 'summon'], acc: 'crown', accColor: '#ffd23f', fur: '#b8763a' },
-  clawdia: { name: 'Captain Clawdia', base: 'siamese', scale: 1.9, hp: 9, atk: 1.2, moves: ['volley', 'dash', 'swipe', 'summon'], acc: 'pirate', accColor: '#2a2a2a' },
+  clawdia: { name: 'Captain Clawdia', base: 'siamese', scale: 1.9, hp: 7.5, atk: 1.2, moves: ['volley', 'dash', 'swipe', 'summon'], acc: 'pirate', accColor: '#2a2a2a' },
   foreman: { name: 'Foreman Furball', base: 'mainecoon', scale: 1.7, hp: 10, atk: 1.2, moves: ['slam', 'quake', 'swipe'], acc: 'hardhat', accColor: '#ffd23f' },
   nip_lord: { name: 'The Nip Lord', base: 'witch', scale: 1.9, hp: 9, atk: 1.25, moves: ['orbs', 'circles', 'summon', 'teleport'], acc: 'witchhat', accColor: '#2f7a4a', fur: '#3a2a4a' },
   mangy_max: { name: 'Mangy Max', base: 'tabby', scale: 2.0, hp: 10, atk: 1.25, moves: ['swipe', 'dash', 'slam', 'summon'], acc: 'eyepatch', fur: '#8a8078', stripe: '#4a4038' },

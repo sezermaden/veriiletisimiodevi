@@ -1094,3 +1094,39 @@ class CoopOverlay {
     }
   }
 }
+
+// ============================================================
+// Controls card shown at the start of a new game
+// ============================================================
+class TutorialOverlay {
+  constructor() { this.t = 0; }
+  update(dt, m) {
+    this.t += dt;
+    let go = m.confirm || m.back;
+    for (const p of Game.players) { const s = Input.state(p.device); if (s.attack || s.interact) go = true; }
+    if (go && this.t > 0.6) { UI.close(this); Sound.sfx('select'); }
+  }
+  draw(ctx) {
+    ctx.fillStyle = 'rgba(5,6,12,0.65)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    const n = Game.players.length;
+    const w = n > 1 ? 820 : 520, h = 380, x = (VIEW_W - w) / 2, y = 70;
+    uiPanel(ctx, x, y, w, h);
+    uiText(ctx, 'How to Play', VIEW_W / 2, y + 42, 28, '#ffd23f', 'center', 800);
+    const acts = [['Move', null], ['Attack (combo x3)', 'attack'], ['Dodge roll', 'roll'], ['Talk / Open / Enter', 'interact'], ['Spells', 'spells'], ['Menu', 'pause'], ['Map', 'map']];
+    Game.players.forEach((p, i) => {
+      const cx = n > 1 ? x + 30 + i * (w / 2) : x + 40;
+      uiText(ctx, n > 1 ? `Player ${i + 1} - ${BREEDS[p.breed].name}` : BREEDS[p.breed].name, cx, y + 84, 17, PCOLORS[i], 'left', 800);
+      acts.forEach(([label, a], k) => {
+        const ry = y + 120 + k * 30;
+        uiText(ctx, label, cx, ry, 15, '#e0e0f0', 'left', 600, false);
+        let key;
+        if (!a) key = p.device === 'kbA' ? 'W A S D' : p.device === 'kbB' ? 'ARROWS' : p.device.startsWith('pad') ? 'L-STICK' : Input.lastType === 'pad' ? 'L-STICK' : 'WASD / ARROWS';
+        else if (a === 'spells') key = [0, 1, 2, 3].map(q => Input.label(p.device, 'spell' + q)).join(' ');
+        else key = Input.label(p.device, a);
+        uiKey(ctx, key, cx + 190, ry + 1, '#ffd23f');
+      });
+    });
+    uiText(ctx, 'Watch the red zones on the ground and roll out of them! Hitting cats refills your mana.', VIEW_W / 2, y + h - 40, 14, '#9fe0ff', 'center', 600, false);
+    if (Math.floor(this.t * 2) % 2 === 0 && this.t > 0.6) uiText(ctx, 'Press attack to begin your adventure', VIEW_W / 2, y + h - 14, 14, '#ffffff', 'center', 700, false);
+  }
+}
