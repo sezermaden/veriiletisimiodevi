@@ -937,7 +937,7 @@ function drawBuilding(ctx, b, t) {
   // signs
   if (b.kind === 'smith') {
     F(ctx, '#5a5a62'); ctx.fillRect(22, -H - 50, 12, 24); // chimney
-    for (let i = 0; i < 4; i++) { const p = (t * 0.5 + i / 4) % 1; ctx.globalAlpha = (1 - p) * 0.5; fillCirc(ctx, '#9a9aa4', 28 + Math.sin(p * 6 + i) * 4, -H - 54 - p * 40, 4 + p * 8); ctx.globalAlpha = 1; }
+    const ga0 = ctx.globalAlpha; for (let i = 0; i < 4; i++) { const p = (t * 0.5 + i / 4) % 1; ctx.globalAlpha = ga0 * (1 - p) * 0.5; fillCirc(ctx, '#9a9aa4', 28 + Math.sin(p * 6 + i) * 4, -H - 54 - p * 40, 4 + p * 8); } ctx.globalAlpha = ga0;
     // anvil sign
     F(ctx, '#6b4520'); ctx.fillRect(-W / 2 - 18, -48, 20, 3);
     F(ctx, '#e0d8c8'); roundRect(ctx, -W / 2 - 22, -44, 22, 16, 3); ctx.fill();
@@ -974,7 +974,7 @@ function drawEntrance(ctx, x, y, theme, cleared, t, sealed) {
       break;
     case 'lava':
       fillPoly(ctx, '#2e1e1e', [-48, 0, -30, -36, -10, -44, 14, -42, 32, -34, 48, 0]);
-      F(ctx, '#ff6a2a'); ctx.globalAlpha = 0.6 + Math.sin(t * 3) * 0.3; ctx.beginPath(); ctx.ellipse(0, -2, 18, 24, 0, Math.PI, TAU); ctx.fill(); ctx.globalAlpha = 1;
+      { const ga0 = ctx.globalAlpha; F(ctx, '#ff6a2a'); ctx.globalAlpha = ga0 * (0.6 + Math.sin(t * 3) * 0.3); ctx.beginPath(); ctx.ellipse(0, -2, 18, 24, 0, Math.PI, TAU); ctx.fill(); ctx.globalAlpha = ga0; }
       F(ctx, '#1a0a0a'); ctx.beginPath(); ctx.ellipse(0, 0, 13, 20, 0, Math.PI, TAU); ctx.fill();
       break;
     case 'castle':
@@ -1007,9 +1007,10 @@ function drawEntrance(ctx, x, y, theme, cleared, t, sealed) {
       F(ctx, '#140c06'); ctx.beginPath(); ctx.ellipse(0, 0, 17, 28, 0, Math.PI, TAU); ctx.fill();
   }
   if (sealed) {
-    ctx.globalAlpha = 0.5 + Math.sin(t * 3) * 0.2;
+    const ga0 = ctx.globalAlpha;
+    ctx.globalAlpha = ga0 * (0.5 + Math.sin(t * 3) * 0.2);
     F(ctx, '#ff4aff'); ctx.beginPath(); ctx.ellipse(0, -20, 34, 40, 0, 0, TAU); ctx.fill();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = ga0;
   }
   if (cleared) { // victory banner
     line(ctx, '#5a3a1a', 2, 30, 0, 30, -44);

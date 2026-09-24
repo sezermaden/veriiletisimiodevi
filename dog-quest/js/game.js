@@ -1171,8 +1171,9 @@ class PlayScene {
     // clamp to map bounds
     const m = G.map, mw = m.w * TS, mh = m.h * TS;
     const hw = VIEW_W / 2 / cam.zoom, hh = VIEW_H / 2 / cam.zoom;
-    cam.x = mw > hw * 2 ? clamp(cam.x, hw, mw - hw) : mw / 2;
-    cam.y = mh > hh * 2 ? clamp(cam.y, hh, mh - hh) : mh / 2;
+    const mg = G.dungeon ? 220 : 0; // dungeons may show a little of the surrounding darkness
+    cam.x = mw + mg * 2 > hw * 2 ? clamp(cam.x, hw - mg, mw - hw + mg) : mw / 2;
+    cam.y = mh + mg * 2 > hh * 2 ? clamp(cam.y, hh - mg, mh - hh + mg) : mh / 2;
     if (cam.shake > 0) cam.shake = Math.max(0, cam.shake - dt * 30);
   }
 
@@ -1250,7 +1251,14 @@ class PlayScene {
     for (const p of G.players) draws.push({ type: 'ent', ent: p, x: p.x, y: p.y });
     draws.sort((a, b) => a.y - b.y);
     const st = G.state;
+    // objects standing in front of a hero become see-through so nobody gets lost behind them
+    const occ = (d, w, h) => { for (const p of G.players) if (p.y < d.y - 2 && p.y > d.y - h && Math.abs(p.x - d.x) < w) return true; return false; };
     for (const d of draws) {
+      let fadeA = 0;
+      if (d.type === 'tree' && occ(d, 30, 78)) fadeA = 0.4;
+      else if (d.type === 'building' && d.b.kind !== 'board' && d.b.kind !== 'fountain' && occ(d, 58, 120)) fadeA = 0.45;
+      else if (d.type === 'entrance' && occ(d, 52, 90)) fadeA = 0.5;
+      if (fadeA) ctx.globalAlpha = fadeA;
       switch (d.type) {
         case 'tree': drawTree(ctx, d.x, d.y, d.kind, d.seed, G.time); break;
         case 'rock': drawRock(ctx, d.x, d.y, d.kind, d.seed); break;
@@ -1266,6 +1274,7 @@ class PlayScene {
         }
         case 'ent': d.ent.draw(ctx); break;
       }
+      if (fadeA) ctx.globalAlpha = 1;
     }
     for (const pr of G.projectiles) pr.draw(ctx);
     G.particles.draw(ctx);
