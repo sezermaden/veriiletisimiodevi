@@ -841,8 +841,8 @@ function drawControlsHelp(ctx, x, y, w) {
 
 function toggleFullscreen() {
   try {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else document.exitFullscreen();
+    const r = !document.fullscreenElement ? document.documentElement.requestFullscreen() : document.exitFullscreen();
+    if (r && r.catch) r.catch(() => Game.toast('Fullscreen is not available here', '#c8c8d8', 2));
   } catch (e) { /* ignore */ }
 }
 
