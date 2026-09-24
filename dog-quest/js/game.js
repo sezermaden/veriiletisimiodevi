@@ -17,7 +17,7 @@ const Game = {
   overlays: [], toasts: [], banner: null, itemGet: null,
   fade: null, spawnT: 0, regionId: -1, townId: null, boss: null, bossIntro: 0,
   godMode: false, settings: { shake: true },
-  dungeonCache: {}, autosaveT: 0, timers: [], manual: false,
+  dungeonCache: {}, autosaveT: 0, timers: [], manual: false, bannerQueue: [],
 
   // ---------------------------------------------------------
   init() {
@@ -90,7 +90,8 @@ const Game = {
     }
     for (const t of this.toasts) t.t += dt;
     this.toasts = this.toasts.filter(t => t.t < t.life);
-    if (this.banner) { this.banner.t += dt; if (this.banner.t > this.banner.life) this.banner = null; }
+    if (this.banner) { this.banner.t += dt * (this.bannerQueue.length ? 1.5 : 1); if (this.banner.t > this.banner.life) this.banner = this.bannerQueue.shift() || null; }
+    else if (this.bannerQueue.length) this.banner = this.bannerQueue.shift();
     if (this.itemGet) { this.itemGet.t += dt; if (this.itemGet.t > 2.6) this.itemGet = null; }
     if (this.sceneObj && this.sceneObj.update) this.sceneObj.update(dt);
   },
@@ -116,7 +117,11 @@ const Game = {
     this.toasts.push({ text, color, t: 0, life });
     if (this.toasts.length > 5) this.toasts.shift();
   },
-  showBanner(text, sub = '', color = '#ffffff', life = 3) { this.banner = { text, sub, color, t: 0, life }; },
+  showBanner(text, sub = '', color = '#ffffff', life = 3) {
+    const b = { text, sub, color, t: 0, life };
+    if (this.banner && this.banner.t < this.banner.life * 0.6) { if (this.bannerQueue.length < 4) this.bannerQueue.push(b); }
+    else this.banner = b;
+  },
 
   // ---------------------------------------------------------
   // NEW GAME / SAVE / LOAD
@@ -139,6 +144,7 @@ const Game = {
     const st = this.state;
     st.party = this.players.map(p => ({ breed: p.breed, equip: Object.assign({}, p.equip), spells: p.spells.slice() })).concat(st.party.slice(this.players.length));
     if (!this.dungeon && this.players[0]) st.pos = { x: this.players[0].x, y: this.players[0].y };
+    else if (this.dungeon && this.worldReturn) st.pos = Object.assign({}, this.worldReturn);
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(st)); if (!silent) this.toast('Game saved', '#8fe38f', 2); } catch (e) { this.toast('Could not save!', '#ff6a6a'); }
   },
 
@@ -166,6 +172,7 @@ const Game = {
     // starter gear for every breed goes into the shared bag
     this.enemies = []; this.projectiles = []; this.texts = []; this.loot = []; this.telegraphs = []; this.particles.list = [];
     this.dungeon = null; this.map = this.world; this.boss = null; this.overlays = []; this.timers = [];
+    this.slowmoT = 0; this.hitstop = 0; this.banner = null; this.bannerQueue = []; this.itemGet = null; this.toasts = []; this.worldReturn = null; this.spawnT = 0;
     this.npcs = this.world.npcSpots.map(s => new NPC(s));
     this.regionId = -1; this.townId = null;
     const town = TOWNS[st.lastTown] || TOWNS.pawston;
@@ -184,8 +191,10 @@ const Game = {
     }
   },
 
+  partyDown() { return this.players.some(p => p.down); },
   addPlayer2(breed, d1, d2) {
     const st = this.state;
+    if (this.players.length > 1 || this.partyDown()) return;
     let devs = [d1, d2];
     const kbCount = devs.filter(d => d.startsWith('kb')).length;
     if (kbCount === 1) devs = devs.map(d => d.startsWith('kb') ? 'kb' : d);
@@ -210,7 +219,7 @@ const Game = {
     this.save(true);
   },
   removePlayer2() {
-    if (this.players.length < 2) return;
+    if (this.players.length < 2 || this.partyDown()) return;
     const p = this.players[1];
     this.state.party[1] = { breed: p.breed, equip: Object.assign({}, p.equip), spells: p.spells.slice() };
     this.poof(p.x, p.y - 14, '#ffffff');
@@ -765,7 +774,11 @@ const Game = {
         this.enemies.push(new Enemy(s.type, lvl, s.x, s.y, { dormant: true, room: s.room, region: def.region }));
       }
       dg.rewardChest = null;
-      if (st.cleared[def.id]) { dg.bossPortal = { x: dg.bossSpawn.x, y: dg.bossSpawn.y + 60 }; }
+      if (st.cleared[def.id]) {
+        dg.bossPortal = { x: dg.bossSpawn.x, y: dg.bossSpawn.y + 60 };
+        // a reward chest that was left unopened waits for the heroes
+        if (!def.final && !st.chests[def.id + '_reward']) dg.rewardChest = { id: def.id + '_reward', tier: 0, x: dg.bossSpawn.x, y: dg.bossSpawn.y + 10 };
+      }
       this.placePlayers(dg.start.x, dg.start.y);
       this.cam.x = dg.start.x; this.cam.y = dg.start.y;
       this.boss = null;
@@ -774,6 +787,7 @@ const Game = {
     });
   },
   exitDungeon() {
+    if (this.dungeon && this.dungeon.def.final && this.state.cleared[this.dungeon.def.id] && !this.state.endingSeen) { this.playEnding(); return; }
     this.fadeTo(() => {
       this.dungeon = null; this.map = this.world;
       this.enemies = []; this.projectiles = []; this.loot = []; this.telegraphs = [];
@@ -839,9 +853,13 @@ const Game = {
     this.shake(16);
     for (let i = 0; i < 40; i++) { const a = rand(0, TAU), s = rand(80, 320); this.particles.add({ x: e.x, y: e.y - e.hgt * 0.5, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rand(0.6, 1.2), size: rand(4, 7), color: choose(['#ffd23f', '#ffffff', '#ff9a4a']), type: 'star', drag: 0.1 }); }
     st.cleared[def.id] = true;
-    dg.bossPortal = { x: dg.bossSpawn.x, y: dg.bossSpawn.y + 60 };
-    if (first && !st.rewards[def.id]) {
-      dg.rewardChest = { id: def.id + '_reward', tier: 0, x: dg.bossSpawn.x, y: dg.bossSpawn.y + 10 };
+    if (!def.final) dg.bossPortal = { x: dg.bossSpawn.x, y: dg.bossSpawn.y + 60 };
+    if (first) {
+      const rid = def.id + '_reward';
+      if (def.final) {
+        // the ending follows right away, so the royal reward is granted directly
+        if (!st.chests[rid]) { st.chests[rid] = true; st.chestsOpened++; this.later(1.2, () => this.rollChestLoot(0, true, def.level)); }
+      } else if (!st.chests[rid]) dg.rewardChest = { id: rid, tier: 0, x: dg.bossSpawn.x, y: dg.bossSpawn.y + 10 };
       const rw = def.reward || {};
       if (rw.gold) { st.gold += rw.gold; this.toast(`+${fmt(rw.gold)} gold`, '#ffd23f'); }
       if (rw.key && !st.keys[rw.key]) {
@@ -861,8 +879,16 @@ const Game = {
     if (def.final) {
       st.finished = true;
       this.save(true);
-      this.later(5.2, () => { if (this.dungeon === dg) this.fadeTo(() => this.setScene(new StoryScene(ENDING_SLIDES, 'ending')), 1.2); });
+      this.later(5.2, () => { if (this.dungeon === dg) this.playEnding(); });
     }
+  },
+  playEnding() {
+    const st = this.state;
+    if (!st || st.endingSeen) return;
+    st.endingSeen = true;
+    if (this.dungeon) st.pos = Object.assign({}, this.worldReturn);
+    this.save(true);
+    this.fadeTo(() => this.setScene(new StoryScene(ENDING_SLIDES, 'ending')), 1.2);
   },
 
   // ---------------------------------------------------------
@@ -1070,6 +1096,11 @@ class PlayScene {
         if (!o.down && dist(o.x, o.y, p.x, p.y) < 60) p.reviveT = (p.reviveT || 0) + dt; else p.reviveT = Math.max(0, (p.reviveT || 0) - dt);
         if (p.downT <= 0 || p.reviveT >= 2) {
           p.down = false; p.hp = Math.round(p.stats.maxHp * 0.5); p.invuln = 1.5; p.reviveT = 0;
+          if (!o.down && (Math.abs(o.x - p.x) > VIEW_W * 0.9 || Math.abs(o.y - p.y) > VIEW_H * 0.9 || (G.dungeon && G.dungeon.roomAt(p.x, p.y) !== G.dungeon.roomAt(o.x, o.y)))) {
+            G.poof(p.x, p.y - 14, '#ffffff');
+            p.x = o.x + (G.collides(o.x + 24, o.y, 8) ? 0 : 24); p.y = o.y;
+            G.poof(p.x, p.y - 14, '#ffffff');
+          }
           G.floatText(p.x, p.y - 50, 'Revived!', '#8fe38f', 18); Sound.sfx('heal');
         }
       }

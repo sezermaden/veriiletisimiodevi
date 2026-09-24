@@ -178,7 +178,7 @@ function serve() {
       log.cleared = !!st.cleared[id];
       log.gateOpen = !dg.gateClosed;
       log.reward = !!dg.rewardChest;
-      if (dg.rewardChest) { Game.openChest(dg.rewardChest, true); QA.step(10); }
+      if (dg.rewardChest && !opts.skipReward) { Game.openChest(dg.rewardChest, true); QA.step(10); }
       let opened = 0, locked = 0;
       for (const c of dg.chests) { const before = st.chests[c.id]; Game.openChest(c, true); if (st.chests[c.id] && !before) opened++; else if (!st.chests[c.id]) locked++; }
       log.chestsOpened = opened; log.chestsLocked = locked;
@@ -233,10 +233,24 @@ function serve() {
   // clear all side dungeons and complete side quests
   const sideDungeons = await ev(() => DUNGEONS.filter(d => !d.final && !Game.state.cleared[d.id]).map(d => d.id));
   for (const id of sideDungeons) {
-    const log = await ev((id) => QA.clearDungeon(id, { fight: 600 }), id);
+    const log = await ev((id) => QA.clearDungeon(id, { fight: 600, skipReward: id === 'mousetrap_mine' }), id);
     console.log('  dungeon', JSON.stringify(log));
     check(log.cleared && log.bossSpawned && log.back, 'side dungeon ' + id);
   }
+  // reward chest left behind must still be there on re-entry
+  const reRes = await ev(() => {
+    Game.enterDungeon(DUNGEON_BY_ID.mousetrap_mine); QA.waitFade(); QA.step(10);
+    const had = !!Game.dungeon.rewardChest;
+    if (had) Game.openChest(Game.dungeon.rewardChest, true);
+    const opened = !!Game.state.chests.mousetrap_mine_reward;
+    Game.exitDungeon(); QA.waitFade(); QA.step(10);
+    Game.enterDungeon(DUNGEON_BY_ID.mousetrap_mine); QA.waitFade(); QA.step(10);
+    const gone = !Game.dungeon.rewardChest;
+    Game.exitDungeon(); QA.waitFade(); QA.step(10);
+    return { had, opened, gone };
+  });
+  console.log('reward chest re-entry:', JSON.stringify(reRes));
+  check(reRes.had && reRes.opened && reRes.gone, 'reward chest persistence');
   const sideRes = await ev(() => {
     const res = [];
     for (const id in QUESTS) {
@@ -342,6 +356,7 @@ function serve() {
   console.log('final:', JSON.stringify(fin));
   check(fin.cleared && fin.bossSpawned, 'final boss');
   const endRes = await ev(() => {
+    Game.exitDungeon(); // leaving right after the kill must still show the ending
     let g = 0;
     while (Game.scene === 'play' && g++ < 900) Game.step(1);
     const s1 = Game.scene;

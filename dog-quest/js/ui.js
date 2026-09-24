@@ -124,7 +124,7 @@ const UI = {
   },
 
   drawPlayerTag(ctx, p) {
-    if (Game.players.length < 2 && !p.down) return;
+    if (Game.players.length < 2) return;
     const y = p.y - 58;
     if (p.down) {
       const k = clamp((p.reviveT || 0) / 2, 0, 1);
@@ -589,6 +589,7 @@ class PauseOverlay {
       case 4: Game.settings.shake = !Game.settings.shake; try { const s = JSON.parse(localStorage.getItem('dogquest_settings') || '{}'); s.shake = Game.settings.shake; localStorage.setItem('dogquest_settings', JSON.stringify(Object.assign(s, Sound.settings))); } catch (e) { /* */ } break;
       case 5: toggleFullscreen(); break;
       case 6:
+        if (Game.partyDown()) { Game.toast('Revive your partner first!', '#ff9a8a', 2); Sound.sfx('error'); break; }
         if (Game.players.length > 1) {
           UI.dialog([{ name: 'Co-op', text: `Remove ${BREEDS[Game.players[1].breed].name} (Player 2) from the party? Their gear is kept for next time.`, choices: ['Remove', 'Cancel'] }], c => { if (c === 0) { Game.removePlayer2(); UI.close(this); } });
         } else UI.open(new CoopOverlay(this));
@@ -1041,7 +1042,7 @@ class CoopOverlay {
   update(dt, m) {
     this.t += dt;
     if (this.t < 0.2) { Nav.endFrame(); return; }
-    if (this.step < 2 && Input.kp(['Escape'])) { UI.close(this); Sound.sfx('back'); return; }
+    if (this.step < 2 && (m.back || Input.kp(['Escape']))) { UI.close(this); Sound.sfx('back'); Nav.endFrame(); return; }
     if (this.step === 0) {
       const j = Input.joinPresses();
       if (j.length) { this.d1 = j[0]; this.step = 1; Sound.sfx('select'); }

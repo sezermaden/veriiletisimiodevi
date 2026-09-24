@@ -219,7 +219,7 @@ const Input = {
     const L = {
       kb: { attack: 'J', roll: 'K', interact: 'E', spell0: '1', spell1: '2', spell2: '3', spell3: '4', pause: 'ESC', map: 'M' },
       kbA: { attack: 'SPACE', roll: 'SHIFT', interact: 'E', spell0: '1', spell1: '2', spell2: '3', spell3: '4', pause: 'ESC', map: 'M' },
-      kbB: { attack: 'J', roll: 'K', interact: 'L', spell0: 'U', spell1: 'I', spell2: 'O', spell3: 'P', pause: 'ESC', map: 'NUM+' },
+      kbB: { attack: 'J', roll: 'K', interact: 'L', spell0: 'U', spell1: 'I', spell2: 'O', spell3: 'P', pause: 'BKSP', map: 'NUM+' },
     };
     return (L[type] || L.kb)[action] || '?';
   },

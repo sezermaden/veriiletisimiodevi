@@ -43,7 +43,10 @@ const Sound = {
     this.sfxBus.gain.value = this.settings.sfx;
   },
   saveSettings() {
-    try { localStorage.setItem('dogquest_settings', JSON.stringify(this.settings)); } catch (e) { /* ignore */ }
+    try {
+      const cur = JSON.parse(localStorage.getItem('dogquest_settings') || '{}');
+      localStorage.setItem('dogquest_settings', JSON.stringify(Object.assign(cur, this.settings)));
+    } catch (e) { /* ignore */ }
     this.applyVolumes();
   },
 

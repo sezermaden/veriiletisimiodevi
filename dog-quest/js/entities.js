@@ -666,8 +666,10 @@ Enemy.MOVES = {
     Game.poof(this.x, this.y - 12, this.def.fur);
     const a = rand(0, TAU), d = this.boss ? 150 : 130;
     let nx = tgt.x + Math.cos(a) * d, ny = tgt.y + Math.sin(a) * d;
-    if (Game.map.isSolid(nx, ny) || Game.map.isSolid(nx, ny - 10)) { nx = tgt.x - Math.cos(a) * d; ny = tgt.y - Math.sin(a) * d; }
-    if (!Game.map.isSolid(nx, ny) && !Game.map.isSolid(nx, ny - 10)) { this.x = nx; this.y = ny; }
+    const ok = (x, y) => !Game.map.isSolid(x, y) && !Game.map.isSolid(x, y - 10) && (!this.boss || !Game.dungeon || Game.dungeon.insideBossRoom(x, y, 1));
+    if (!ok(nx, ny)) { nx = tgt.x - Math.cos(a) * d; ny = tgt.y - Math.sin(a) * d; }
+    if (!ok(nx, ny)) { nx = tgt.x + Math.cos(a) * d * 0.5; ny = tgt.y + Math.sin(a) * d * 0.5; }
+    if (ok(nx, ny)) { this.x = nx; this.y = ny; }
     Game.poof(this.x, this.y - 12, this.def.fur);
     Sound.sfx('portal');
     this.facing = tgt.x > this.x ? 1 : -1;
@@ -689,7 +691,8 @@ Enemy.MOVES = {
       for (let i = 0; i < n; i++) {
         const a = rand(0, TAU);
         let x = this.x + Math.cos(a) * 90, y = this.y + Math.sin(a) * 90;
-        if (Game.map.isSolid(x, y)) { x = this.x; y = this.y + 30; }
+        const inRoom = !Game.dungeon || !this.boss || Game.dungeon.insideBossRoom(x, y, 1);
+        if (Game.map.isSolid(x, y) || !inRoom) { x = this.x; y = this.y + 30; }
         const e = new Enemy(choose(pool), Math.max(1, this.level - 2), x, y, { region: this.region });
         e.aggro = true; e.xpMul = 0.3;
         Game.enemies.push(e);
