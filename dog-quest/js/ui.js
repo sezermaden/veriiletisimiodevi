@@ -212,7 +212,7 @@ const UI = {
     if (p.shield) uiBar(ctx, bx, y + 22, bw * clamp(p.shield.hp / 150, 0.1, 1), 4, 1, '#f4f0e6');
     // spell slots
     for (let s = 0; s < 4; s++) {
-      const sx = right ? x + W - 88 - 38 - s * 36 + 0 : bx + s * 36, sy = y + 56;
+      const sx = bx + s * 36, sy = y + 56;
       const id = p.spells[s];
       ctx.fillStyle = 'rgba(0,0,0,0.5)'; roundRect(ctx, sx, sy, 30, 30, 7); ctx.fill();
       if (id) {
