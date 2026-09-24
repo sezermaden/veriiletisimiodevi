@@ -253,7 +253,8 @@ function drawDog(ctx, o) {
   let lunge = 0;
   if (o.attack >= 0) lunge = Math.sin(o.attack * Math.PI) * 4;
   if (o.dead > 0) {
-    ctx.translate(0, -12); ctx.rotate(-Math.PI / 2 * Math.min(1, o.dead * 2)); ctx.translate(0, 12);
+    const k = easeOutBack(Math.min(1, o.dead * 2));
+    ctx.translate(0, -18); ctx.rotate(Math.PI * k); ctx.translate(0, 18);
     bob = 0;
   }
   if (o.roll >= 0) {
@@ -298,7 +299,7 @@ function drawDog(ctx, o) {
   ctx.restore();
 
   // --- legs ---
-  const legSwing = (i) => (o.dead > 0 ? 0 : Math.sin(ph + i) * 0.55 * Math.min(1, move * 1.5));
+  const legSwing = (i) => (o.dead > 0 ? Math.sin(t * 10 + i) * 0.15 : Math.sin(ph + i) * 0.55 * Math.min(1, move * 1.5));
   const drawLeg = (x, i, col, pawCol) => {
     ctx.save(); ctx.translate(x, -9); ctx.rotate(legSwing(i));
     F(ctx, col); roundRect(ctx, -2.4, 0, 4.8, 9, 2.2); ctx.fill();
@@ -423,7 +424,7 @@ function drawCat(ctx, o) {
   const move = o.move || 0, ph = o.phase || 0;
   let bob = move > 0.05 ? -Math.abs(Math.sin(ph)) * 2.2 : Math.sin(t * 2.5) * 0.6;
   if (o.attack >= 0) ctx.translate(Math.sin(o.attack * Math.PI) * 6, 0);
-  if (o.dead > 0) { ctx.translate(0, -10); ctx.rotate(-Math.PI / 2 * Math.min(1, o.dead * 2.5)); ctx.translate(0, 10); bob = 0; }
+  if (o.dead > 0) { const k = easeOutBack(Math.min(1, o.dead * 2.5)); ctx.translate(0, -17); ctx.rotate(Math.PI * k); ctx.translate(0, 17 - k * 3); bob = 0; }
   ctx.translate(0, bob);
   const fluffy = pat === 'fluffy';
   const lion = d.lion;
