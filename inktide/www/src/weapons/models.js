@@ -58,9 +58,10 @@ function marker(parent, name, x, y, z) {
   parent.add(o);
   return o;
 }
-function handHeld(inner) {
+function handHeld(inner, scale = 1) {
   const g = new THREE.Group();
   g.add(inner);
+  inner.scale.setScalar(scale);
   g.rotation.set(Math.PI / 2, 0, 0);
   g.userData.inner = inner;
   return g;
@@ -192,7 +193,7 @@ export function makeBlasterModel(color, bodyColor = '#ffcc33') {
   const grip = mesh(rbox(0.055, 0.12, 0.06, 0.015), dark, 0, -0.06, 0.0);
   grip.rotation.x = 0.25;
   w.add(grip);
-  const g = handHeld(w);
+  const g = handHeld(w, 1.22);
   g.userData.muzzle = marker(w, 'muzzle', 0, 0.04, 0.36);
   g.userData.foregrip = marker(w, 'foregrip', 0, -0.02, 0.17);
   return g;
@@ -205,9 +206,10 @@ export function makeSlosherModel(color) {
   const band = charMat('#3f6df0', { roughness: 0.55 });
   const dark = charMat(DARK, { roughness: 0.5 });
   const inkM = inkMat(color);
+  const hang = new THREE.Group();        // pivots at the grip so the bucket swings from the hand
+  w.add(hang);
   const bucket = new THREE.Group();
-  bucket.position.set(0, -0.19, 0.06);
-  w.add(bucket);
+  hang.add(bucket);
   bucket.add(mesh(new THREE.CylinderGeometry(0.14, 0.105, 0.22, 22, 1, true), metal));
   bucket.add(mesh(new THREE.CircleGeometry(0.105, 22).rotateX(Math.PI / 2), metal, 0, -0.11, 0));
   bucket.add(mesh(new THREE.TorusGeometry(0.14, 0.013, 6, 24).rotateX(Math.PI / 2), dark, 0, 0.11, 0));
@@ -223,11 +225,11 @@ export function makeSlosherModel(color) {
   const arc = mesh(new THREE.TorusGeometry(0.14, 0.012, 6, 20, Math.PI), dark, 0, 0.11, 0);
   bucket.add(arc);
   bucket.add(mesh(cylX(0.022, 0.1, 10), charMat('#ffd23f', { roughness: 0.6 }), 0, 0.25, 0));
-  const g = handHeld(w);
+  const g = handHeld(w, 1.4);
   // hold at the handle: the arc top sits at the grip (origin)
-  bucket.position.y = -0.25;
+  bucket.position.set(0, -0.25, 0);
   g.userData.muzzle = marker(bucket, 'muzzle', 0, 0.12, 0);
-  g.userData.bucket = bucket;
+  g.userData.bucket = hang;
   g.userData.surface = surface;
   return g;
 }
@@ -236,35 +238,39 @@ export function makeSlosherModel(color) {
  *  the hip grip, +Z forward. userData: spin, muzzle. */
 export function makeSplatlingModel(color) {
   const g = new THREE.Group();
+  const k = new THREE.Group();
+  const S = 1.22;
+  k.scale.setScalar(S);
+  g.add(k);
   const gun = charMat('#5b6477', { roughness: 0.4, metalness: 0.2 });
   const dark = charMat(DARK, { roughness: 0.5 });
   const accent = charMat('#ffd23f', { roughness: 0.5 });
   const inkM = inkMat(color);
-  g.add(mesh(rbox(0.17, 0.17, 0.34, 0.04), gun, 0, 0.02, 0.1));                         // housing
-  g.add(mesh(rbox(0.18, 0.04, 0.2, 0.01), accent, 0, 0.1, 0.12));                        // stripe
-  g.add(mesh(cylZ(0.085, 0.085, 0.05, 20), dark, 0, 0.02, 0.29));                         // front collar
+  k.add(mesh(rbox(0.18, 0.18, 0.36, 0.045), gun, 0, 0.02, 0.1));                         // housing
+  k.add(mesh(rbox(0.19, 0.045, 0.22, 0.012), accent, 0, 0.1, 0.12));                     // stripe
+  k.add(mesh(cylZ(0.09, 0.09, 0.05, 20), dark, 0, 0.02, 0.3));                            // front collar
   const spin = new THREE.Group();
-  spin.position.set(0, 0.02, 0.31);
-  g.add(spin);
+  spin.position.set(0, 0.02, 0.32);
+  k.add(spin);
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2;
-    spin.add(mesh(cylZ(0.019, 0.019, 0.44, 8), dark, Math.cos(a) * 0.048, Math.sin(a) * 0.048, 0.22));
+    spin.add(mesh(cylZ(0.02, 0.02, 0.44, 8), dark, Math.cos(a) * 0.05, Math.sin(a) * 0.05, 0.22));
   }
-  spin.add(mesh(cylZ(0.07, 0.07, 0.03, 18), gun, 0, 0, 0.12));
-  spin.add(mesh(cylZ(0.072, 0.072, 0.03, 18), gun, 0, 0, 0.42));
-  spin.add(ink(mesh(new THREE.TorusGeometry(0.06, 0.012, 6, 18), inkM, 0, 0, 0.44)));
-  // ink drum on top-back
-  const drum = ink(mesh(cylX(0.095, 0.2, 20), inkM, 0, 0.19, -0.02));
-  g.add(drum);
-  g.add(mesh(cylX(0.1, 0.03, 20), dark, 0.11, 0.19, -0.02), mesh(cylX(0.1, 0.03, 20), dark, -0.11, 0.19, -0.02));
+  spin.add(mesh(cylZ(0.075, 0.075, 0.03, 18), gun, 0, 0, 0.12));
+  spin.add(mesh(cylZ(0.077, 0.077, 0.035, 18), gun, 0, 0, 0.42));
+  spin.add(ink(mesh(new THREE.TorusGeometry(0.064, 0.013, 6, 18), inkM, 0, 0, 0.445)));
+  // ink drum on top-back with dark caps
+  k.add(ink(mesh(cylX(0.11, 0.22, 22), inkM, 0, 0.2, -0.03)));
+  k.add(mesh(cylX(0.115, 0.03, 22), dark, 0.12, 0.2, -0.03), mesh(cylX(0.115, 0.03, 22), dark, -0.12, 0.2, -0.03));
+  k.add(mesh(cylX(0.03, 0.3, 10), dark, 0, 0.2, -0.03));
   // carry handle + rear grip
-  g.add(mesh(new THREE.TorusGeometry(0.07, 0.014, 6, 16, Math.PI).rotateY(Math.PI / 2), dark, 0, 0.11, 0.2));
+  k.add(mesh(new THREE.TorusGeometry(0.07, 0.015, 6, 16, Math.PI).rotateY(Math.PI / 2), dark, 0, 0.11, 0.2));
   const grip = mesh(rbox(0.05, 0.14, 0.06, 0.015), dark, -0.02, -0.1, -0.04);
   grip.rotation.x = 0.3;
-  g.add(grip);
+  k.add(grip);
   g.userData.spin = spin;
-  g.userData.muzzle = marker(g, 'muzzle', 0, 0.02, 0.78);
-  g.userData.grips = [new THREE.Vector3(-0.02, -0.08, -0.03), new THREE.Vector3(0, 0.14, 0.2)];
+  g.userData.muzzle = marker(k, 'muzzle', 0, 0.02, 0.78);
+  g.userData.grips = [new THREE.Vector3(-0.02, -0.08, -0.03).multiplyScalar(S), new THREE.Vector3(0, 0.15, 0.2).multiplyScalar(S)];
   return g;
 }
 
@@ -284,28 +290,31 @@ export function makeBrushModel(color) {
   const head = new THREE.Group();
   head.position.z = L;
   g.add(head);
-  head.add(mesh(rbox(0.22, 0.08, 0.1, 0.02), metal, 0, 0, 0.04));
-  head.add(mesh(rbox(0.23, 0.02, 0.02, 0.005), charMat('#e8484f', { roughness: 0.6 }), 0, 0, 0.0));
-  // bristle body: tapered box
-  const bGeo = new THREE.BoxGeometry(0.24, 0.085, 0.16, 3, 1, 3);
+  // ferrule: flattened metal collar + red band
+  head.add(mesh(rbox(0.36, 0.1, 0.13, 0.03), metal, 0, 0, 0.05));
+  head.add(mesh(rbox(0.37, 0.105, 0.03, 0.01), charMat('#e8484f', { roughness: 0.6 }), 0, 0, -0.005));
+  // bristle body: wide tapered block that flares out
+  const bGeo = new THREE.BoxGeometry(0.36, 0.1, 0.22, 4, 1, 4);
   const p = bGeo.attributes.position;
   for (let i = 0; i < p.count; i++) {
     const z = p.getZ(i);
-    const k = 1 + (z + 0.08) * 0.6;
+    const k = 1 + (z + 0.11) * 0.55;
     p.setX(i, p.getX(i) * k);
-    p.setY(i, p.getY(i) * (1 - (z + 0.08) * 1.6));
+    p.setY(i, p.getY(i) * (1 - (z + 0.11) * 1.2));
   }
   bGeo.computeVertexNormals();
-  head.add(mesh(bGeo, bristle, 0, 0, 0.17));
-  // ink tip: squashed capsules fanned across the width
-  for (let i = 0; i < 5; i++) {
-    const x = (i - 2) * 0.058;
-    const tip = ink(mesh(new THREE.CapsuleGeometry(0.03, 0.07, 4, 8).rotateX(Math.PI / 2), inkM, x, 0, 0.29 + Math.abs(i - 2) * -0.012));
-    tip.scale.set(1.05, 0.65, 1);
+  head.add(mesh(bGeo, bristle, 0, 0, 0.22));
+  // ink-soaked tip: fat squashed capsules fanned across the width, the middle ones longest
+  for (let i = 0; i < 7; i++) {
+    const x = (i - 3) * 0.062;
+    const tip = ink(mesh(new THREE.CapsuleGeometry(0.036, 0.1, 4, 10).rotateX(Math.PI / 2), inkM, x, 0, 0.39 - Math.abs(i - 3) * 0.014));
+    tip.scale.set(1.0, 0.7, 1);
     head.add(tip);
   }
+  // a couple of drips hanging off the tip
+  for (const x of [-0.08, 0.1]) head.add(ink(mesh(new THREE.SphereGeometry(0.026, 8, 6), inkM, x, -0.035, 0.44)));
   g.userData.head = head;
-  g.userData.len = L + 0.3;
+  g.userData.len = L + 0.34;
   g.userData.grips = [new THREE.Vector3(0, 0, 0.08), new THREE.Vector3(0, 0, 0.3)];
   return g;
 }
@@ -325,7 +334,7 @@ export function makeDualieModel(color, mirror = false) {
   const grip = mesh(rbox(0.05, 0.11, 0.055, 0.015), dark, 0, -0.05, 0.0);
   grip.rotation.x = 0.22;
   w.add(grip);
-  const g = handHeld(w);
+  const g = handHeld(w, 1.12);
   g.userData.muzzle = marker(w, 'muzzle', 0, 0.04, 0.28);
   return g;
 }
@@ -356,8 +365,12 @@ export function makeSprinklerModel(color) {
     head.add(tip);
   }
   g.userData.head = head;
+  g.scale.setScalar(1.35);
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-  return g;
+  const outer = new THREE.Group();       // callers scale/pop the outer group freely
+  outer.add(g);
+  outer.userData.head = head;
+  return outer;
 }
 
 /** Ink Mine: low disc with a glowing ring. userData: ring, light. */
@@ -445,8 +458,9 @@ export function makeJetpackModel(color) {
     g.add(ink(mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.05, 16), inkM, x, 0.09, -0.02)));
     g.add(mesh(new THREE.ConeGeometry(0.066, 0.08, 16, 1, true).rotateX(Math.PI), dark, x, -0.16, -0.02));
     g.add(mesh(new THREE.SphereGeometry(0.066, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark, x, 0.16, -0.02));
-    const core = mesh(new THREE.ConeGeometry(0.05, 0.34, 10, 1, true).rotateX(Math.PI), glowMat('#fff3c4', 0.95), x, -0.36, -0.02);
-    const outer = mesh(new THREE.ConeGeometry(0.08, 0.55, 12, 1, true).rotateX(Math.PI), glowMat(color, 0.75), x, -0.46, -0.02);
+    // flame cones hang from the nozzle (geometry pivots at the nozzle so scale.y stretches them down)
+    const core = mesh(new THREE.ConeGeometry(0.06, 0.5, 10, 1, true).rotateX(Math.PI).translate(0, -0.25, 0), glowMat('#fff3c4', 0.95), x, -0.2, -0.02);
+    const outer = mesh(new THREE.ConeGeometry(0.1, 0.85, 12, 1, true).rotateX(Math.PI).translate(0, -0.42, 0), glowMat(color, 0.7), x, -0.2, -0.02);
     outer.userData.inkPart = true;
     core.castShadow = outer.castShadow = false;
     g.add(core, outer);
@@ -461,8 +475,8 @@ export function makeJetpackModel(color) {
 export function makeCloudModel(color) {
   const g = new THREE.Group();
   const c = new THREE.Color(color);
-  const top = new THREE.MeshStandardMaterial({ color: c.clone().lerp(new THREE.Color('#ffffff'), 0.45), roughness: 0.95, emissive: c, emissiveIntensity: 0.18, transparent: true, opacity: 0.96 });
-  const under = new THREE.MeshStandardMaterial({ color: c.clone().multiplyScalar(0.55), roughness: 0.9, emissive: c, emissiveIntensity: 0.25, transparent: true, opacity: 0.96 });
+  const top = new THREE.MeshStandardMaterial({ color: c.clone().lerp(new THREE.Color('#ffffff'), 0.3), roughness: 0.95, emissive: c, emissiveIntensity: 0.22, transparent: true, opacity: 0.97 });
+  const under = new THREE.MeshStandardMaterial({ color: c.clone().multiplyScalar(0.5), roughness: 0.9, emissive: c, emissiveIntensity: 0.3, transparent: true, opacity: 0.97 });
   top.userData.inkTint = 0.45; under.userData.inkTint = -0.45;
   const geo = new THREE.IcosahedronGeometry(1, 2);
   const puffs = [];
@@ -610,6 +624,23 @@ export function reachArm(A, target, minBend = 0.12) {
   }
   sh.rotateX(alpha);
   A.elbow.rotation.set(-e, 0, 0);
+}
+
+const _mC = new THREE.Matrix4();
+const _g1 = new THREE.Vector3();
+const _g2 = new THREE.Vector3();
+/**
+ * Two-handed hold: `local` is the weapon's root-space matrix, `grips` two points in weapon space
+ * (gun hand, off hand). Arms reach first, then the weapon is anchored (its socket moved with the
+ * gun arm, so the order matters).
+ */
+export function holdTwoHanded(obj, m, local, grips, bend = 0.3) {
+  m.root.updateMatrixWorld(true);
+  _mC.multiplyMatrices(m.root.matrixWorld, local);
+  const off = m.arms[m.arms[0] === m.gunArm ? 1 : 0];
+  reachArm(m.gunArm, _g1.copy(grips[0]).applyMatrix4(_mC), bend);
+  reachArm(off, _g2.copy(grips[1]).applyMatrix4(_mC), bend);
+  anchorToRoot(obj, m, local);
 }
 
 const _e = new THREE.Euler(0, 0, 0, 'YXZ');

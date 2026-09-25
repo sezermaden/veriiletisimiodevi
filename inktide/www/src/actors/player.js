@@ -176,8 +176,8 @@ export class Player {
   }
 
   damage(amount, info = {}) {
-    if (!this.alive || this.invulnerable > 0 || this.frozen) return;
-    if (this.session.godMode) return;
+    if (!this.alive || this.invulnerable > 0 || this.frozen) return false;
+    if (this.session.godMode && this.isPlayer) return false;
     this.hp -= amount;
     this.sinceDamage = 0;
     this.lastAttacker = info.source || null;
@@ -188,6 +188,7 @@ export class Player {
     }
     this.onDamaged?.(amount, info);
     if (this.hp <= 0) this.splat(info);
+    return true;
   }
 
   splat(info = {}) {

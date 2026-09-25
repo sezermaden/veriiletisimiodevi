@@ -66,7 +66,7 @@ const THEME_OVERRIDE = {
 /** Camera shots: where to orbit, how far, and where the subject sits horizontally (0..1). */
 const SHOTS = {
   title: { center: [0, 0.6, -6], radius: 19, height: 8.2, sweep: 0.75, speed: 0.07, base: 0, lookY: 0.4, fov: 46, frame: 0.5 },
-  menu: { center: [0, 0.95, 3], radius: 4.7, height: 1.35, sweep: 0.55, speed: 0.11, base: 0, lookY: 0, fov: 40, frame: 0.64 },
+  menu: { center: [0, 0.9, 3], radius: 3.9, height: 1.1, sweep: 0.5, speed: 0.11, base: 0, lookY: 0, fov: 40, frame: 0.52 },
   wide: { center: [0, 0.8, -5], radius: 14, height: 4.6, sweep: 0.5, speed: 0.06, base: 0.35, lookY: 0.2, fov: 44, frame: 0.6 },
   map: { center: [0, 0.6, -6], radius: 24, height: 13, sweep: 0.3, speed: 0.04, base: -0.3, lookY: 0, fov: 42, frame: 0.5 },
 };
@@ -142,8 +142,9 @@ class Kid {
       // a splat up on the back wall
       this.target.set(-10 + Math.random() * 18, 0.8 + Math.random() * 3.2, -20);
     } else if (this.hero) {
-      // reclaim ground the rivals just inked, a few metres out in front of the wall
-      this.target.set(-7 + Math.random() * 14, 0, -3 - Math.random() * 10);
+      // reclaim ground off to one side so the hero turns into profile, not away from the camera
+      const side = Math.random() < 0.5 ? -1 : 1;
+      this.target.set(side * (3.5 + Math.random() * 4), 0, 0.5 + Math.random() * 5);
     } else {
       const f = _v.set(Math.sin(this.yaw), 0, Math.cos(this.yaw));
       this.target.copy(this.pos).addScaledVector(f, 4 + Math.random() * 5);
@@ -168,19 +169,21 @@ class Kid {
       if (this.state === 'pose') {
         // face the camera, loosely
         const cam = ms.camera.position;
-        const want = Math.atan2(cam.x - this.pos.x, cam.z - this.pos.z) * 0.55;
-        this.yaw += (want - this.yaw) * Math.min(1, dt * 3);
+        const want = Math.atan2(cam.x - this.pos.x, cam.z - this.pos.z) + Math.sin(this.t * 0.5) * 0.25;
+        let dy = ((want - this.yaw + Math.PI) % (Math.PI * 2)) - Math.PI;
+        if (dy < -Math.PI) dy += Math.PI * 2;
+        this.yaw += dy * Math.min(1, dt * 3);
         if (this.timer <= 0) {
           const r = Math.random();
-          if (r < 0.62) { this.state = 'shoot'; this.timer = 1.3 + Math.random() * 0.8; this.pickTarget(); }
-          else { this.model.emote(r < 0.85 ? 'cheer' : 'wave', 1.6); this.timer = 2.2; }
+          if (r < 0.5) { this.state = 'shoot'; this.timer = 1.2 + Math.random() * 0.8; this.pickTarget(); }
+          else { this.model.emote(r < 0.8 ? 'cheer' : 'wave', 1.8); this.timer = 3 + Math.random() * 2; }
         }
       } else if (this.state === 'shoot') {
         const off = this.faceToward(this.target, dt, 12);
         aiming = true;
         if (off < 0.25) this._fire(dt, 7.5);
         this.target.x += Math.sin(this.t * 2.3) * dt * 2.5;         // sweep the stream a little
-        if (this.timer <= 0) { this.state = 'pose'; this.timer = 3.5 + Math.random() * 3; }
+        if (this.timer <= 0) { this.state = 'pose'; this.timer = 4.5 + Math.random() * 3; }
       }
     } else if (this.state === 'run' || this.state === 'squid') {
       const sp = this.state === 'squid' ? 7.4 : 4.6;
@@ -402,7 +405,6 @@ export class MenuScene {
       b.mesh.quaternion.setFromUnitVectors(_w.set(0, 0, 1), _v.copy(b.vel).divideScalar(sp || 1));
       const s = b.bomb ? 0.2 : 0.085;
       b.mesh.scale.set(s, s, s * (1 + Math.min(1.6, sp * 0.05)));
-      if (b.bomb) b.mesh.rotation.z += dt * 6;
     }
   }
 
@@ -443,8 +445,14 @@ export class MenuScene {
     if (g) { g.uniforms.damage.value = 0; g.uniforms.flash.value = 0; }
   }
 
+  /** An opaque screen (the story map) hides the diorama: skip drawing and animating it. */
+  setCovered(v) {
+    this.covered = !!v;
+    this.scene.visible = !v;
+  }
+
   update(dt) {
-    if (!this.active) return;
+    if (!this.active || this.covered) return;
     dt = Math.min(dt, 0.05);
     this.time += dt;
     for (const k of this.kids) k.update(dt);
@@ -459,6 +467,7 @@ export class MenuScene {
 
   show() {
     this.active = true;
+    this.setCovered(false);
     this._applyLook();
     this.app.renderer.setScene(this.scene, this.camera);
   }

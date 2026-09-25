@@ -175,7 +175,7 @@ export class Environment {
     nt.wrapS = nt.wrapT = THREE.RepeatWrapping;
     nt.magFilter = THREE.LinearFilter; nt.minFilter = THREE.LinearMipmapLinearFilter; nt.generateMipmaps = true;
     nt.needsUpdate = true;
-    const mat = new THREE.MeshStandardMaterial({ color: T.water, roughness: 0.08, metalness: 0.05, normalMap: nt, normalScale: new THREE.Vector2(0.55, 0.55), envMapIntensity: 1.2 });
+    const mat = new THREE.MeshStandardMaterial({ color: T.water, roughness: 0.16, metalness: 0.0, normalMap: nt, normalScale: new THREE.Vector2(0.28, 0.28), envMapIntensity: 0.75 });
     this.waterUniforms = { wTime: { value: 0 }, wDeep: { value: new THREE.Color(T.waterDeep) } };
     mat.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, this.waterUniforms);
@@ -191,7 +191,11 @@ export class Environment {
           normal = normalize(tbn * mapN);`)
         .replace('#include <color_fragment>', `#include <color_fragment>
           float wd = clamp(length(vWPos.xz - cameraPosition.xz) / 260.0, 0.0, 1.0);
-          diffuseColor.rgb = mix(diffuseColor.rgb, wDeep, 0.35 + wd * 0.4);`);
+          diffuseColor.rgb = mix(diffuseColor.rgb, wDeep, 0.45 + wd * 0.35);`)
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          // soft sparkle + shallow tint near the camera
+          float spark = pow(max(0.0, texture2D(normalMap, vWPos.xz * 0.21 + wTime * 0.03).b - 0.55) * 2.2, 6.0);
+          totalEmissiveRadiance += vec3(spark * 0.35);`);
     };
     const g = new THREE.PlaneGeometry(2400, 2400, 1, 1);
     g.rotateX(-Math.PI / 2);
@@ -216,23 +220,38 @@ export class Environment {
     const mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, metalness: 0.0, map: winTex.map, emissiveMap: winTex.emissive, emissive: new THREE.Color(T.backdrop === 'city' ? '#ffe1a8' : '#ffb0f0'), emissiveIntensity: T.stars > 0.3 ? 1.2 : 0.25, fog: true });
     const box = new THREE.BoxGeometry(1, 1, 1);
     box.translate(0, 0.5, 0);
+    // buildings are 1-3 stacked tiers (setbacks) in a pastel palette around the theme tint
     const count = 90;
-    const inst = new THREE.InstancedMesh(box, mat, count);
-    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
+    const PASTELS = ['#f4a6a6', '#f7d08a', '#a8d8b9', '#9ec5f0', '#c7b3f0', '#f5c1dd', '#b8e0e8', '#eeeeee'];
+    const tiers = [];
     for (let i = 0; i < count; i++) {
       const a = (i / count) * Math.PI * 2 + rnd() * 0.05;
       const r = R + rnd() * 90;
       const w = 12 + rnd() * 22, d = 12 + rnd() * 22;
       let h = 14 + rnd() * (T.backdrop === 'industrial' ? 30 : 55) + (rnd() < 0.12 ? 35 : 0);
       if (T.backdrop === 'storm') h *= 0.7;
-      p.set(center.x + Math.cos(a) * r, -3, center.z + Math.sin(a) * r);
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -a + rnd() * 0.3);
-      s.set(w, h, d);
+      const base = tint.clone().lerp(new THREE.Color(PASTELS[Math.floor(rnd() * PASTELS.length)]), T.stars > 0.5 ? 0.15 : 0.45)
+        .offsetHSL((rnd() - 0.5) * 0.04, 0, (rnd() - 0.5) * 0.12);
+      const x = center.x + Math.cos(a) * r, z = center.z + Math.sin(a) * r, yaw = -a + rnd() * 0.3;
+      const n = h > 40 ? 3 : h > 24 ? 2 : 1;
+      let y = -3, tw = w, td = d;
+      for (let k = 0; k < n; k++) {
+        const th = k === n - 1 ? h - (y + 3) : h * (0.5 + rnd() * 0.15) / (k + 1);
+        tiers.push({ x, y, z, w: tw, h: Math.max(4, th), d: td, yaw, c: base.clone().offsetHSL(0, 0, k * 0.04) });
+        y += Math.max(4, th); tw *= 0.62 + rnd() * 0.15; td *= 0.62 + rnd() * 0.15;
+      }
+      if (rnd() < 0.35) tiers.push({ x, y, z, w: 0.6, h: 6 + rnd() * 10, d: 0.6, yaw, c: new THREE.Color('#d8d8d8') });   // antenna
+      else if (rnd() < 0.3) tiers.push({ x: x + tw * 0.2, y, z, w: 3, h: 3.5, d: 3, yaw, c: new THREE.Color('#8a6a52') });   // water tank
+    }
+    const inst = new THREE.InstancedMesh(box, mat, tiers.length);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
+    const Y = new THREE.Vector3(0, 1, 0);
+    tiers.forEach((t, i) => {
+      p.set(t.x, t.y, t.z); q.setFromAxisAngle(Y, t.yaw); s.set(t.w, t.h, t.d);
       m.compose(p, q, s);
       inst.setMatrixAt(i, m);
-      const c = tint.clone().offsetHSL((rnd() - 0.5) * 0.08, -0.15 + rnd() * 0.1, (rnd() - 0.5) * 0.18);
-      inst.setColorAt(i, c);
-    }
+      inst.setColorAt(i, t.c);
+    });
     inst.castShadow = false; inst.receiveShadow = false;
     this.group.add(inst);
     this.backdrop = inst;

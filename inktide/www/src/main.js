@@ -3,6 +3,14 @@ import './weapons/index.js';
 import './entities/index.js';
 import { App } from './game/app.js';
 
+// Host detection: the UWP shell injects window.GAME_HOST before any script runs. On Xbox the UI
+// switches to the 10-foot layout (body.tv) and Quit is hidden (the guide button owns app exit).
+const host = window.GAME_HOST || {};
+export const IS_XBOX = host.deviceFamily === 'Windows.Xbox';
+export const IN_SHELL = host.shell === 'uwp';
+export const CAN_QUIT = IN_SHELL && !IS_XBOX;
+if (IS_XBOX) document.body.classList.add('tv');
+
 const bootFill = document.getElementById('boot-fill');
 const bootEl = document.getElementById('boot');
 const tips = [
@@ -28,6 +36,7 @@ async function boot() {
   // test/dev: force a quality preset without saving it (?q=low)
   if (params0.get('q')) { const { settings } = await import('./engine/settings.js'); settings.data.video.quality = params0.get('q'); }
   const app = new App();
+  app.host = { IS_XBOX, IN_SHELL, CAN_QUIT };
   progress(0.6);
   const params = new URLSearchParams(location.search);
   let ui = null;

@@ -1,5 +1,6 @@
 // Collectibles: pearls (currency, instanced per session), pearl trails and the hidden Lost Postcard.
-//   { type: 'pearl', pos, vel?:[x,y,z] }                 pos = ground point, the pearl hovers above it
+//   { type: 'pearl', pos, vel?:[x,y,z], drop? }          pos = ground point, the pearl hovers above it;
+//                                                        vel / drop:true → pops out and settles (loot)
 //   { type: 'pearl-trail', pos, to:[x,y,z], count?, arc? }
 //   { type: 'postcard', pos, id, title, text }
 import * as THREE from 'three';
@@ -7,7 +8,7 @@ import { Entity, registerEntity, spawnEntity } from '../base.js';
 import { save } from '../../engine/save.js';
 import {
   geo, mat, rimMat, glowTexture, canvasTex, makeGlowSprite, drawSquidEmblem, roundRect,
-  UP, DOWN, clamp, hash01,
+  UP, clamp, hash01,
 } from './common.js';
 
 const HOVER = 0.55;
@@ -134,9 +135,12 @@ class Pearl extends Entity {
     this.speed = 0;
     this.scale = 1;
     this.delay = 0;
-    if (def.vel) {
+    if (def.vel || def.drop) {
+      // loot: pops up, bounces and settles HOVER above whatever it lands on (enemy drops pass
+      // `drop: true` with a point slightly above the ground)
       this.state = 'drop';
-      this.vel.fromArray(def.vel);
+      if (def.vel) this.vel.fromArray(def.vel);
+      else { const a = hash01(this.position.x, this.position.z, 3) * Math.PI * 2; this.vel.set(Math.cos(a) * 1.2, 5 + hash01(this.position.z, 7) * 1.5, Math.sin(a) * 1.2); }
       this.delay = 0.35;
       this.scale = 0.2;
     } else {
@@ -336,12 +340,12 @@ class Postcard extends Entity {
     const front = this.own(rimMat('#ffffff', { map: postcardFront(seed, def.title || ''), roughness: 0.55, rim: 0.35, emissive: '#ffffff', emissiveIntensity: 0.12, transparent: this.already, opacity: this.already ? 0.45 : 1 }));
     const back = this.own(rimMat('#ffffff', { map: postcardBack(seed, def.text || ''), roughness: 0.7, rim: 0.3, transparent: this.already, opacity: this.already ? 0.45 : 1 }));
     front.emissiveMap = front.map;
-    this.card = new THREE.Mesh(geo('postcard', () => new THREE.BoxGeometry(0.96, 0.64, 0.025)), [edge, edge, edge, edge, front, back]);
+    this.card = new THREE.Mesh(geo('postcard', () => new THREE.BoxGeometry(1.26, 0.84, 0.03)), [edge, edge, edge, edge, front, back]);
     this.card.castShadow = true;
     this.holder = new THREE.Group();
     this.holder.position.y = 1.2;
     this.holder.add(this.card);
-    this.glow = makeGlowSprite('#ffe9a8', 2.0, 0.5);
+    this.glow = makeGlowSprite('#ffc94a', 2.6, 0.7);
     this.own(this.glow.material);
     this.holder.add(this.glow);
     this.group.add(this.holder);
@@ -400,7 +404,7 @@ class Postcard extends Entity {
     this.holder.position.y = 1.2 + Math.sin(t * 1.8) * 0.12;
     this.card.rotation.y = t * 1.3;
     this.card.rotation.z = Math.sin(t * 1.1) * 0.12;
-    this.glow.material.opacity = 0.35 + Math.sin(t * 3.1) * 0.12;
+    this.glow.material.opacity = 0.55 + Math.sin(t * 3.1) * 0.15;
     this.marker.scale.setScalar(1 + Math.sin(t * 2.4) * 0.12);
     this._sp = (this._sp || 0) - dt;
     if (this._sp <= 0) {

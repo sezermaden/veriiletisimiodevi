@@ -6,9 +6,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Entity, registerEntity } from '../base.js';
 import { surfaceTextures } from '../../world/textures.js';
-import { TEAM_HERO, TEAM_MURK, UP, clamp, INVISIBLE } from './common.js';
+import { TEAM_HERO, TEAM_MURK, clamp, INVISIBLE, splatTouches } from './common.js';
 
-const _v = new THREE.Vector3();
 const YELLOW = new THREE.Color('#ffe25a');
 
 /** Rounded box with UVs projected per dominant axis in metres (so pores keep their size). */
@@ -72,14 +71,16 @@ class Sponge extends Entity {
     for (let i = 0; i < arr.length; i += 3) { arr[i] = b[i] * sx; arr[i + 1] = b[i + 1] * sy; arr[i + 2] = b[i + 2] * sz; }
     a.needsUpdate = true;
     this.colMesh.geometry.computeBoundingBox();
+    this.colMesh.geometry.computeBoundingSphere();     // the level's splat notifier culls by sphere
     if (refit && this.dyn) this.dyn.bvh.refit();
     this.colScale = s;
   }
 
-  /** Projectiles that hit the collider land here. */
+  /** Shots and splats (projectiles, bombs, rollers, brushes) that reach the collider land here. */
   onInkHit(p, hit) {
     const r = p.paint?.radius ?? 0.45;
     const S = this.session;
+    if (!splatTouches(hit, r)) return;             // floor painting beside the sponge doesn't soak it
     const amt = 0.07 + r * 0.14;
     if (p.team === TEAM_HERO) {
       const before = this.fill;
@@ -121,7 +122,7 @@ class Sponge extends Entity {
     // soaked tint: yellow → lightly hero-coloured; murk hits flash violet then fade
     this.tint += (Math.min(this.fill, 1) * 0.55 - this.tint) * Math.min(1, dt * 1.5);
     const tint = this.tint;
-    if (tint >= 0) this.mat.color.copy(YELLOW).lerp(this.heroCol, tint * 0.5);
+    if (tint >= 0) this.mat.color.copy(YELLOW).lerp(this.heroCol, tint * 0.28);
     else this.mat.color.copy(YELLOW).lerp(this.murkCol, -tint * 0.6);
     this.mat.emissive.copy(this.heroCol).multiplyScalar(Math.max(0, tint) * 0.08);
   }
@@ -133,4 +134,3 @@ class Sponge extends Entity {
 }
 
 registerEntity('sponge', (s, d) => new Sponge(s, d));
-void _v; void UP;

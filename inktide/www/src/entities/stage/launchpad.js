@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Entity, registerEntity } from '../base.js';
 import {
-  geo, mat, rimMat, glowMat, canvasTex, makeGlowSprite, TEAM_HERO, UP, DOWN, clamp, lerp, smooth, playerOffset,
+  geo, mat, rimMat, glowMat, canvasTex, makeGlowSprite, TEAM_HERO, UP, DOWN, clamp, lerp, playerOffset,
 } from './common.js';
 
 const PAD_R = 1.3, PAD_TOP = 0.17, DOTS = 22;
@@ -107,7 +107,7 @@ class Launchpad extends Entity {
 
     // arc hologram (world space; parented to the scene through a helper group)
     this.dotMat = this.own(glowMat(this.heroCol, 2.0, { transparent: true, opacity: 0.85 }));
-    this.dots = new THREE.InstancedMesh(geo('pad-dot', () => new THREE.SphereGeometry(0.075, 8, 6)), this.dotMat, DOTS);
+    this.dots = new THREE.InstancedMesh(geo('pad-dot', () => new THREE.SphereGeometry(0.1, 10, 8)), this.dotMat, DOTS);
     this.dots.frustumCulled = false;
     this.dots.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.own({ dispose: () => this.dots.dispose() });
@@ -204,11 +204,9 @@ class Launchpad extends Entity {
     this._arcPoint(arc, s, p.position);
     // velocity = d(position)/dt (for animation, camera FOV and landing)
     const vy = (arc.a + 2 * arc.b * s) / arc.T;
-    const vh = this.hdist / arc.T;
     p.velocity.set((arc.end.x - arc.start.x) / arc.T, vy, (arc.end.z - arc.start.z) / arc.T);
     p.yaw = this.flightYaw;
     p.grounded = false;
-    void vh;
     if (s >= 1) {
       this.flight = null;
       if (f.frozeIt) p.frozen = false;
@@ -277,4 +275,3 @@ class Launchpad extends Entity {
 }
 
 registerEntity('launchpad', (s, d) => new Launchpad(s, d));
-void smooth;

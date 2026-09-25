@@ -57,6 +57,18 @@ export class AimCamera {
       this.trauma = Math.max(0, this.trauma - dt * 1.5);
       return;
     }
+    // splat cam: drift above the splat point and look toward whoever did it
+    if (!player.alive) {
+      if (!this._deathPos) { this._deathPos = player.position.clone(); this._deathLook = this.camera.position.clone().add(this.forward.clone().multiplyScalar(5)); }
+      const src = player.lastAttacker?.position;
+      const look = src ? _hc.copy(src).setY(src.y + 0.8) : this._deathLook;
+      _want.copy(this._deathPos).add(_to.set(0, 3.2, 0)).addScaledVector(_f.subVectors(this._deathPos, look).setY(0).normalize(), 4.5);
+      this.camera.position.lerp(_want, 1 - Math.exp(-3 * dt));
+      this.camera.lookAt(look);
+      this.trauma = Math.max(0, this.trauma - dt * 1.6);
+      return;
+    }
+    this._deathPos = null;
     // look
     let lx = input.look.x, ly = input.look.y;
     if (input.lastDevice === 'gamepad' && settings.get('controls.aimAssist') && this.aimTarget) { lx *= 0.55; ly *= 0.55; }

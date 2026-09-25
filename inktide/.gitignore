@@ -1,3 +1,5 @@
 node_modules/
 *.log
 test-results/
+uwp/INKTIDE/
+uwp/*.sln

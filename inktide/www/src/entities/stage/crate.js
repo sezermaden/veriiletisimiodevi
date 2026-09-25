@@ -58,6 +58,7 @@ class Crate extends PropActor {
     const sz = typeof def.size === 'number' ? [def.size, def.size, def.size] : (def.size || [1.2, 1.2, 1.2]);
     super(session, def, { hp: def.hits ?? 3, hitRadius: Math.max(sz[0], sz[2]) * 0.55, hitHeight: sz[1] });
     this.sz = sz;
+    this.solid = false;           // the box collider blocks the player (the hit circle would not fit a long crate)
     this.t = 0;
     this.wob = 0;
     this.blobs = 0;
@@ -101,9 +102,9 @@ class Crate extends PropActor {
   }
 
   damage(amount, info = {}) {
-    if (!this.alive) return;
+    if (!this.alive) return false;
     const k = info.kind === 'explosion' ? 99 : info.kind === 'splash' ? 2 : 1;
-    super.damage(k, info);
+    return super.damage(k, info);
   }
 
   onDamaged(amount, info) {
@@ -141,8 +142,8 @@ class Crate extends PropActor {
     const [w, h, d] = this.sz;
     this.breakT = 0;
     this.body.visible = false;
-    S.level.removeDynamic(this.dyn);
-    this.dyn = null;
+    // disable now, remove in dispose(): we may be inside the level's splat-notify loop over its colliders
+    this.dyn.enabled = false;
     const c = this.hitCenter(_v).clone();
     this.planks.visible = true;
     for (let i = 0; i < PLANKS; i++) {
@@ -202,4 +203,3 @@ class Crate extends PropActor {
 }
 
 registerEntity('crate', (s, d) => new Crate(s, d));
-void mat;

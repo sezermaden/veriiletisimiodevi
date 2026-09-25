@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Entity, registerEntity } from '../base.js';
-import { geo, mat, hash01, INVISIBLE, TEAM_HERO, TEAM_MURK } from './common.js';
+import { geo, mat, hash01, INVISIBLE } from './common.js';
 import { crateTexture } from './crate.js';
 import { billboardTexture, graffitiTexture, neonTexture, vendingTexture, chainTexture, brickTexture, BRANDS } from './decor-art.js';
 
@@ -96,7 +96,7 @@ const MAT_DEFS = {
   glass: { roughness: 0.05, metalness: 0.4, rim: 0.55, env: 1.7 },
   crate: { roughness: 0.78, rim: 0.14, map: () => crateTexture() },
   brick: { roughness: 0.88, rim: 0.1, map: () => brickTexture() },
-  chain: { roughness: 0.4, metalness: 0.6, rim: 0.1, map: () => { const t = chainTexture().clone(); t.repeat.set(12, 9); return t; }, alphaTest: 0.45, side: THREE.DoubleSide, noShadow: true },
+  chain: { roughness: 0.4, metalness: 0.6, rim: 0.1, map: () => { const t = chainTexture().clone(); t.repeat.set(12, 9); return t; }, transparent: true, alphaTest: 0.02, depthWrite: false, side: THREE.DoubleSide, noShadow: true },
   glow: { basic: true },
   screen: { basic: true, map: () => vendingTexture() },
   beam: { basic: true, additive: true, opacity: 0.09, depthWrite: false, side: THREE.DoubleSide },
@@ -183,6 +183,7 @@ function propMaterial(key, anim) {
       m = new THREE.MeshStandardMaterial({
         color: 0xffffff, map, roughness: d.roughness ?? 0.5, metalness: d.metalness ?? 0, side: d.side ?? THREE.FrontSide,
         alphaTest: d.alphaTest ?? 0, envMapIntensity: d.env ?? 0.9,
+        transparent: !!d.transparent, depthWrite: d.depthWrite ?? true,
       });
     }
     const rim = d.basic ? null : { value: d.rim ?? 0.2 };
@@ -207,6 +208,22 @@ function propMaterial(key, anim) {
       }
     };
     m.customProgramCacheKey = () => `decor|${d.basic ? 'b' : 's'}|${anim || ''}`;
+    return m;
+  });
+}
+
+/** Shadow-pass material for animated buckets: the same vertex motion, so shadows sway too. */
+function propDepthMaterial(anim) {
+  return mat('decor-depth@' + anim, () => {
+    const m = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    m.defines = { ['ANIM_' + anim.toUpperCase()]: '' };
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.propTime = PROP_TIME;
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\n' + ANIM_COMMON)
+        .replace('#include <project_vertex>', ANIM_PROJECT);
+    };
+    m.customProgramCacheKey = () => 'decor-depth|' + anim;
     return m;
   });
 }
@@ -275,6 +292,7 @@ class DecorBatch {
       const d = MAT_DEFS[m] || {};
       mesh.castShadow = !d.basic && !d.noShadow;
       mesh.receiveShadow = !d.basic;
+      if (anim && mesh.castShadow) mesh.customDepthMaterial = propDepthMaterial(anim);
       mesh.renderOrder = d.additive ? 3 : 0;
       mesh.userData.owned = owned;
       mesh.name = 'decor:' + g + ':' + m;
@@ -547,7 +565,7 @@ const KINDS = {
     b.collide(0.5, 5.6, 0.5, 2.2, 0, -0.35);
   },
 
-  graffiti(b, d, e) {
+  graffiti(b, d) {
     const sz = Array.isArray(d.size) ? d.size : [d.size ?? 3, (d.size ?? 3) * 0.5];
     const [w, h] = sz;
     const y = d.height ?? (h / 2 + 0.25);
@@ -562,7 +580,6 @@ const KINDS = {
     plane.receiveShadow = true;
     plane.renderOrder = 1;
     b.unique.push(plane);
-    void e;
   },
 
   crane(b, d) {
@@ -952,4 +969,3 @@ class Decor extends Entity {
 }
 
 registerEntity('decor', (s, d) => new Decor(s, d));
-void TEAM_HERO; void TEAM_MURK;

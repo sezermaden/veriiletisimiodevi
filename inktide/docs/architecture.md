@@ -102,8 +102,13 @@ with `blocksGame: true` pauses the running session. `app.onPause` must push the 
 ## Audio (`engine/audio.js`)
 
 `audio.sfx(name, {pos, volume, pitch})` — synth recipes registered with `registerSfx(name, fn)`.
+`audio.ambience(theme|null)` — looping procedural ambience per theme. `audio.setMusicIntensity(0..1)`
+adds/removes music layers (Turf Clash last minute). `audio.music.current` is the requested track id.
 `audio.blip(voice)` for dialogue gibberish. `audio.playMusic(id)` / `stopMusic()` are served by
 `audio/music.js` (`export class MusicPlayer { constructor(audio); play(id, opts); stop(fade) }`).
+Music ids: title, menu, map, docks, heights, refinery, tower, boss, final-boss, turf, turf-final,
+story, results, credits, victory/defeat (one-shots); aliases hub, plaza, arena, turf-last, cutscene,
+finale, ending, clear (`audio/tracks.js` ALIASES). Unknown ids play `menu` and warn once.
 
 ## Saves & settings
 

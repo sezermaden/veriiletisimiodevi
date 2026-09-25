@@ -78,7 +78,7 @@ export function billboardTexture(brand) {
       x.restore();
       x.font = '700 32px "Baloo 2", sans-serif'; x.fillStyle = '#ffd23f';
       x.fillText('CHAMPIONSHIP · SEASON 8', w * 0.34, h * 0.8);
-    } else if (key.includes('murk')) {
+    } else if (key.includes('murk industries') || key === 'murk') {
       const g = x.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, '#4b4760'); g.addColorStop(1, '#1d1b29');
       x.fillStyle = g; x.fillRect(0, 0, w, h);
@@ -114,6 +114,26 @@ export function billboardTexture(brand) {
       outlined(x, 'KRUNCH', w * 0.34, h * 0.6, '#ffe14a', '#1d5a2a', 16);
       x.font = '700 36px "Baloo 2", sans-serif'; x.fillStyle = '#1d3a22';
       x.fillText('Part of a balanced breakfast reef!', w * 0.34, h * 0.84);
+    } else if (!key.includes('pix')) {
+      // any other text: a headline poster (Murk propaganda for gray/murk slogans)
+      const murky = /gr[ae]y|murk|graytide/.test(key);
+      const seed = [...key].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+      const hue = murky ? 260 : (seed * 47) % 360;
+      const g = x.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, murky ? '#56526a' : `hsl(${hue}, 80%, 58%)`);
+      g.addColorStop(1, murky ? '#1f1c2b' : `hsl(${(hue + 50) % 360}, 75%, 42%)`);
+      x.fillStyle = g; x.fillRect(0, 0, w, h);
+      x.fillStyle = 'rgba(255,255,255,0.07)';
+      for (let i = 0; i < 14; i++) { x.beginPath(); x.arc(hash01(seed, i) * w, hash01(seed, i + 30) * h, 40 + hash01(seed, i + 60) * 120, 0, Math.PI * 2); x.fill(); }
+      if (murky) drawMurkEmblem(x, w * 0.14, h * 0.5, 96, '#c9b8ff', '#2a2640');
+      else drawSquidEmblem(x, w * 0.14, h * 0.5, 92, '#ffffff', `hsl(${hue}, 70%, 30%)`);
+      const words = String(name).toUpperCase();
+      const size = fitFont(x, words, 'Bungee, Impact, sans-serif', w * 0.68, 130);
+      x.font = `${size}px Bungee, Impact, sans-serif`;
+      outlined(x, words, w * 0.6, h * 0.46, murky ? '#e9e4ff' : '#ffffff', murky ? '#0f0d18' : 'rgba(20,16,50,0.85)', Math.max(8, size * 0.12));
+      x.font = '600 34px "Baloo 2", sans-serif';
+      x.fillStyle = murky ? '#bfb6dd' : '#fff6d6';
+      x.fillText(murky ? '— A message from Murk Industries' : 'Tidehaven · Est. by the tide', w * 0.6, h * 0.72);
     } else {
       // Pix FM
       const g = x.createLinearGradient(0, 0, 0, h);
@@ -276,7 +296,7 @@ export function vendingTexture() {
 export function chainTexture() {
   return canvasTex('chainlink', 128, 128, (x, w, h) => {
     x.clearRect(0, 0, w, h);
-    x.strokeStyle = '#c9d0d8'; x.lineWidth = 5;
+    x.strokeStyle = '#d5dbe2'; x.lineWidth = 9;
     for (let i = -1; i <= 4; i++) {
       x.beginPath(); x.moveTo(i * 32, 0); x.lineTo(i * 32 + 64, h); x.stroke();
       x.beginPath(); x.moveTo(i * 32 + 64, 0); x.lineTo(i * 32, h); x.stroke();

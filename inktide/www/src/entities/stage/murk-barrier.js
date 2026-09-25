@@ -4,7 +4,7 @@
 //   { type: 'murk-barrier', pos, yaw?, size:[w,h,d], group?, openOn?: 'event:<name>'|'group:<g>' }
 import * as THREE from 'three';
 import { Entity, registerEntity } from '../base.js';
-import { geo, mat, rimMat, glowMat, boxCollider, onSpec, onGroupCleared, groupAlive, TEAM_MURK, UP, clamp } from './common.js';
+import { geo, mat, rimMat, glowMat, boxCollider, onSpec, onGroupCleared, groupAlive, splatTouches, TEAM_MURK, UP, clamp } from './common.js';
 
 const _v = new THREE.Vector3();
 const _l = new THREE.Vector3();
@@ -162,7 +162,7 @@ class MurkBarrier extends Entity {
   }
 
   onInkHit(p, hit) {
-    if (this.state !== 'up') return;
+    if (this.state !== 'up' || !splatTouches(hit, p.paint?.radius ?? 0.4, 0.35)) return;
     _l.copy(hit.point);
     this.field.worldToLocal(_l);
     const r = this.uni.ripples.value[this.ripple++ % 4];

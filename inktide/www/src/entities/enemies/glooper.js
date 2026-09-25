@@ -151,8 +151,8 @@ export class ShieldGlooper extends Glooper {
   }
 
   damage(amount, info = {}) {
-    if (this.alive && this.invulnerable <= 0 && this.blocks(info)) { this.onBlocked(info); return; }
-    super.damage(amount, info);
+    if (this.alive && this.invulnerable <= 0 && this.blocks(info)) { this.onBlocked(info); return false; }
+    return super.damage(amount, info);
   }
 
   onBlocked(info) {
@@ -165,11 +165,7 @@ export class ShieldGlooper extends Glooper {
     S.fx.burst(_p, _f, '#fff3c0', 8, 7.5, { size: 0.028, gravity: 14, life: 0.3, spread: 1.1 });
     S.fx.burst(_p, _f, S.ink.color(info.team ?? TEAM_HERO), 4, 3, { size: 0.05 });
     S.audio?.sfx('shield_clank', { pos: _p, volume: 0.75, pitch: 0.9 + Math.random() * 0.2, throttle: 0.05 });
-    const src = info.source;
-    if (src && src.position && src.team !== this.team) {
-      this.lastSeen.copy(src.position);
-      if (!this.aware) { this.target = src; this.becomeAlert(true); }
-    }
+    this.provoked(info.source);
   }
 
   animate(dt) {

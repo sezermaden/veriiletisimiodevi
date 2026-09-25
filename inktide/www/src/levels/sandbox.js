@@ -41,5 +41,7 @@ export default {
     block(0, 21, 8, 2, 0, 1.2, { mat: 'asphalt' }),
   ],
   preInk: [murk(6, 0, -6, 2.5), murk(-8, 0, 6, 1.8), murk(0, 0, 18, 2)],
+  // validator route: spawn → around the cover → climb the brick wall onto the rear deck
+  route: [[0, 0, 8], [-3, 0, 2], [0, 0, -11.5], [0, 5, -16, 'climb'], [4, 5, -18]],
   entities: [],
 };

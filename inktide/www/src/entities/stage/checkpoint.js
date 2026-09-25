@@ -135,18 +135,20 @@ class Checkpoint extends Entity {
 
   render(dt) {
     const t = this.t;
-    // flag wave
-    const pos = this.flagGeo.attributes.position;
-    const a = pos.array, b = this.flagBase;
-    const amp = this.active ? 0.1 : 0.06;
-    for (let i = 0; i < a.length; i += 3) {
-      const x = -b[i];                       // 0 at the pole → FLAG_W at the tip
-      const k = x / FLAG_W;
-      a[i + 2] = Math.sin(x * 4.4 - t * 6.2) * amp * k + Math.sin(x * 9 - t * 9.1) * 0.015 * k;
-      a[i + 1] = b[i + 1] - k * k * (this.active ? 0.03 : 0.1);
+    // flag wave (CPU; skipped when the flag is too far away to read the motion)
+    if (this.flipT >= 0 || this.session.camera.position.distanceToSquared(this.position) < 50 * 50) {
+      const pos = this.flagGeo.attributes.position;
+      const a = pos.array, b = this.flagBase;
+      const amp = this.active ? 0.1 : 0.06;
+      for (let i = 0; i < a.length; i += 3) {
+        const x = -b[i];                       // 0 at the pole → FLAG_W at the tip
+        const k = x / FLAG_W;
+        a[i + 2] = Math.sin(x * 4.4 - t * 6.2) * amp * k + Math.sin(x * 9 - t * 9.1) * 0.015 * k;
+        a[i + 1] = b[i + 1] - k * k * (this.active ? 0.03 : 0.1);
+      }
+      pos.needsUpdate = true;
+      this.flagGeo.computeVertexNormals();
     }
-    pos.needsUpdate = true;
-    this.flagGeo.computeVertexNormals();
 
     // flip + raise
     if (this.flipT >= 0) {
@@ -168,8 +170,8 @@ class Checkpoint extends Entity {
       this.beamMat.opacity = f < 0.1 ? f * 8 : Math.max(0, 0.8 * (1 - (f - 0.1) / 1.6));
       this.beam.scale.set(1 + f * 0.6, Math.min(1, f * 4), 1 + f * 0.6);
       if (f > 1.8) { this.flipT = -1; this.beam.visible = false; this.flagPivot.scale.x = 1; }
-    } else if (this.flagPivot.scale.x < 0.02) this.flagPivot.scale.x = 0.02;
-    if (this.flagPivot.scale.x < 0.02) this.flagPivot.scale.x = 0.02;
+    }
+    if (this.flagPivot.scale.x < 0.02) this.flagPivot.scale.x = 0.02;   // never a degenerate matrix
 
     // glow pulse
     const pulse = 0.75 + Math.sin(t * (this.active ? 2.2 : 4.5)) * 0.25;

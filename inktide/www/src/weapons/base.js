@@ -207,8 +207,8 @@ export function inkExplosion(session, pos, normal, team, o = {}) {
       const f = d < dmgR * 0.4 ? 1 : 1 - ((d - dmgR * 0.4) / (dmgR * 0.6)) * 0.7;
       if (!session.level.lineOfSight(pos.clone().addScaledVector(n, 0.3), hc)) continue;
       const amount = dmg * Math.max(0.3, f);
-      a.damage(amount, { source: o.owner, team, point: pos.clone(), dir: hc.clone().sub(pos).normalize(), kind: 'explosion' });
-      session.events.emit('hit', { target: a, source: o.owner, damage: amount, point: hc.clone() });
+      const applied = a.damage(amount, { source: o.owner, team, point: pos.clone(), dir: hc.clone().sub(pos).normalize(), kind: 'explosion' });
+      if (applied !== false) session.events.emit('hit', { target: a, source: o.owner, damage: amount, point: hc.clone() });
     }
   }
   session.fx.explosion(pos, n, ink.color(team), r);

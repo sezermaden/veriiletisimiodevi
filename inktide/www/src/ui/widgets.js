@@ -42,6 +42,42 @@ export class UiScreen extends Screen {
       const p = e.target.closest?.('[data-act]');
       if (p && this.el.contains(p)) { e.preventDefault(); this.onPromptClick(p.dataset.act); }
     });
+    this._patchFocusWrap();
+  }
+
+  /**
+   * The stock geometric focus wraps to the far end of the whole screen when nothing lies in the
+   * pressed direction (so "right" on a vertical rail jumped to its last item). Here a wrap only
+   * happens along a line of items that share the column (up/down) or row (left/right).
+   */
+  _patchFocusWrap() {
+    const fm = this.focus;
+    const base = fm.move.bind(fm);
+    const R = (el) => el.getBoundingClientRect();
+    fm.move = (dir) => {
+      if (!fm.items.length || !fm.current) return base(dir);
+      const a = R(fm.current);
+      const acx = (a.left + a.right) / 2, acy = (a.top + a.bottom) / 2;
+      const horiz = dir === 'left' || dir === 'right';
+      const ahead = fm.items.some((el) => {
+        if (el === fm.current) return false;
+        const b = R(el), dx = (b.left + b.right) / 2 - acx, dy = (b.top + b.bottom) / 2 - acy;
+        return dir === 'left' ? dx < -4 : dir === 'right' ? dx > 4 : dir === 'up' ? dy < -4 : dy > 4;
+      });
+      if (ahead) return base(dir);
+      const line = fm.items.filter((el) => {
+        const b = R(el);
+        return horiz ? Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 8 : Math.min(a.right, b.right) - Math.max(a.left, b.left) > 8;
+      });
+      if (line.length < 2) return false;
+      const key = (el) => { const b = R(el); return horiz ? (b.left + b.right) / 2 : (b.top + b.bottom) / 2; };
+      line.sort((p, q) => key(p) - key(q));
+      const target = dir === 'left' || dir === 'up' ? line[line.length - 1] : line[0];
+      if (target === fm.current) return false;
+      fm.focus(target);
+      audio.sfx('ui_move', { volume: 0.5 });
+      return true;
+    };
   }
 
   get input() { return this.app.input; }

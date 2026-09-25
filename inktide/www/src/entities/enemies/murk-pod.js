@@ -84,6 +84,7 @@ export class MurkPod extends MurkEnemy {
     this.beatT = 0;
     this.painted = false;
     this._build();
+    this.solidCollider(0.5, 0.84, 1.48);
   }
 
   get visionCone() { return -1; }
@@ -193,7 +194,7 @@ export class MurkPod extends MurkEnemy {
     const top = _p.copy(this.position).setY(this.position.y + 1.7);
     const e = spawnEntity(S, {
       type: this.spawnType, pos: [top.x + Math.sin(a) * 0.3, top.y, top.z + Math.cos(a) * 0.3], yaw: a,
-      group: this.groupName ?? undefined, alerted: true, launch: [Math.sin(a) * sp, 6.2, Math.cos(a) * sp],
+      group: this.groupName ?? undefined, alerted: true, pearls: [0, 1], launch: [Math.sin(a) * sp, 6.2, Math.cos(a) * sp],
     });
     if (e) this.brood.push(e);
     S.fx.burst(top, UP, this.pal.ink, 18, 6, { size: 0.08 });

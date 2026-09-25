@@ -145,7 +145,7 @@ class InkRail extends Entity {
   }
 
   _onNodeHit(info) {
-    if (info.team !== TEAM_HERO) return;
+    if (info.team !== TEAM_HERO) return false;
     const S = this.session;
     S.audio?.sfx('rail_hit', { pos: this.nodePos, volume: 0.6 });
     S.fx.burst(this.nodePos, UP, this.heroCol, 8, 3.5, { size: 0.05 });

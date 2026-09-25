@@ -93,11 +93,13 @@ export class Bomblob extends MurkEnemy {
     const clasp = mesh(G.rbox(0.03, 0.06, 0.08, 0.01), m.steel, bag);
     clasp.position.set(-0.14, 0.05, 0);
     this.rigid(bag, 'bag');
-    for (const [z, y] of [[-0.1, 0.22], [0.08, 0.24]]) {
-      const b = bombModel(P.ink, 0.1);
+    // spare bombs poking out of the satchel (plain meshes so the bag bakes into few draws)
+    for (const [z, y] of [[-0.1, 0.2], [0.08, 0.22]]) {
+      const b = mesh(G.sphere(0.1, 14, 10), m.inkM, bag);
       b.position.set(0.05, y, z);
-      b.rotation.z = -0.3;
-      bag.add(b);
+      const cap = mesh(G.cyl(0.036, 0.044, 0.035, 10), m.steelDark, bag);
+      cap.position.set(0.02, y + 0.095, z);
+      cap.rotation.z = 0.3;
     }
     // bomb in the throwing hand (shown during the wind-up)
     const held = bombModel(P.ink, 0.14);
@@ -137,7 +139,8 @@ export class Bomblob extends MurkEnemy {
       this.windT += dt;
       // predicted landing spot (partial lead) + a red ring telegraph on the ground
       this.flight = clamp(0.55 + dist * 0.045, 0.8, 1.45);
-      this.landing.copy(this.canSee ? T.position : this.lastSeen).addScaledVector(T.velocity, this.canSee ? this.flight * 0.55 : 0);
+      this.landing.copy(this.canSee ? T.position : this.lastSeen);
+      if (this.canSee) { this.landing.x += T.velocity.x * this.flight * 0.55; this.landing.z += T.velocity.z * this.flight * 0.55; }
       this.markT -= dt;
       if (this.markT <= 0) {
         this.markT = 0.14;

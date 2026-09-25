@@ -153,6 +153,7 @@ export class InkSystem {
     this.hash = new Map();
     this.queue = [];
     this.listeners = new Set();
+    this.splatListeners = new Set();
 
     this.uniforms = {
       inkMap: { value: null },
@@ -293,6 +294,7 @@ export class InkSystem {
    */
   paint(center, radius, team, normal, opts = {}) {
     if (!this.rt || radius <= 0.01) return 0;
+    for (const fn of this.splatListeners) fn(center, radius, team, normal);
     const seed = opts.seed ?? (center.x * 12.9898 + center.z * 78.233 + center.y * 3.1) % 6.2831;
     const n = this._w.copy(normal || THREE.Object3D.DEFAULT_UP);
     if (n.lengthSq() < 1e-6) n.set(0, 1, 0); else n.normalize();
@@ -350,6 +352,9 @@ export class InkSystem {
     if (gained > 0) for (const fn of this.listeners) fn(team, gained, opts.source);
     return gained;
   }
+
+  /** Listen to every splat (before CPU/GPU painting): fn(center, radius, team, normal). */
+  onSplat(fn) { this.splatListeners.add(fn); return () => this.splatListeners.delete(fn); }
 
   /** Listen to newly inked floor area: fn(team, m2, source). */
   onPaint(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }

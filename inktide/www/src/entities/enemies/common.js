@@ -36,6 +36,8 @@ const _r = new THREE.Vector3();
 const _sv = new THREE.Vector3();
 const _gp = new THREE.Vector3();
 const _gn = new THREE.Vector3();
+const _hd = new THREE.Vector3();
+const COLLIDER_MAT = new THREE.MeshBasicMaterial({ visible: false });
 
 // ---------------------------------------------------------------------------------------------
 // Geometry cache (module-level, shared by every enemy, never disposed)
@@ -221,6 +223,14 @@ export function applySpread(v, deg) {
 
 let pearlWarned = false;
 
+/** Numeric difficulty multiplier (0.6..1.6); accepts a number or 'easy' | 'normal' | 'hard'. */
+const DIFF_NAMES = { easy: 0.8, normal: 1, hard: 1.25 };
+function difficultyOf(session) {
+  const d = session.difficulty ?? session.mode?.difficulty;
+  const n = typeof d === 'number' ? d : DIFF_NAMES[d] ?? 1;
+  return Number.isFinite(n) ? clamp(n, 0.6, 1.6) : 1;
+}
+
 // ---------------------------------------------------------------------------------------------
 export class MurkEnemy extends Actor {
   /**
@@ -228,7 +238,7 @@ export class MurkEnemy extends Actor {
    *   turnRate, knockMul, pearls [min,max], deathPaint, popupH, eyeH, loseTime, searchTime
    */
   constructor(session, def, o = {}) {
-    const diff = session.difficulty ?? 1;
+    const diff = difficultyOf(session);
     super(session, def, {
       team: TEAM_MURK,
       hp: Math.round((o.hp ?? 80) * (0.85 + 0.15 * diff)),
@@ -298,7 +308,9 @@ export class MurkEnemy extends Actor {
     this.squashV = 0;
     this.hurtT = 0;
     this.walkPhase = Math.random() * 6;
-    this.pearlRange = o.pearls ?? [1, 2];
+    // level/spawner override: pearls: n | [min, max] (pod spawn drop less so a pod can't be farmed)
+    this.pearlRange = typeof def.pearls === 'number' ? [def.pearls, def.pearls]
+      : Array.isArray(def.pearls) && def.pearls.length === 2 ? def.pearls : (o.pearls ?? [1, 2]);
     this.deathPaint = o.deathPaint ?? 1.8;
     this.popupH = o.popupH ?? (this.hitHeight + 0.6);
     this.dyingT = -1;
@@ -314,8 +326,11 @@ export class MurkEnemy extends Actor {
     this.group.add(this.root);
     this.group.rotation.y = this.turnsGroup ? this.yaw : 0;
 
-    if (def.launch) { this.velocity.fromArray(def.launch); this.grounded = false; }
+    this.groundY = this.position.y;              // last grounded height (air ledge guard)
+    this._launched = false;                      // spat out by a pod: fly free until touchdown
+    if (def.launch) { this.velocity.fromArray(def.launch); this.grounded = false; this._launched = true; }
     this._pendingAlert = !!def.alerted;
+    this.dyn = null;                             // optional solid collider (static enemies)
   }
 
   // ---- materials ----------------------------------------------------------------------------
@@ -417,6 +432,47 @@ export class MurkEnemy extends Actor {
     s.scale.setScalar(size);
     if (parent) parent.add(s);
     return s;
+  }
+
+  /**
+   * Solid, invisible collider (a tapered cylinder) so the player and troops can't walk through a
+   * static enemy. Shots that strike it instead of the hit sphere are forwarded by onInkHit.
+   */
+  solidCollider(rTop, rBottom, height, y0 = 0) {
+    const g = this.own(new THREE.CylinderGeometry(rTop, rBottom, height, 12, 1));
+    g.translate(0, y0 + height / 2, 0);
+    const m = new THREE.Mesh(g, COLLIDER_MAT);
+    m.visible = false;
+    this.group.add(m);
+    this.group.updateMatrixWorld(true);
+    this.dyn = this.session.level.addDynamic(m, { owner: this, tag: 'enemy' });
+    return m;
+  }
+
+  _dropCollider() {
+    if (this.dyn) { this.session.level.removeDynamic(this.dyn); this.dyn = null; }
+  }
+
+  /** A projectile hit our collider (world hit) rather than the hit sphere: count it as a shot. */
+  onInkHit(p, hit) {
+    if (!this.alive || p.team === this.team || p.team === TEAM_NONE) return;
+    const S = this.session;
+    let dmg = S.projectiles._damageFor ? S.projectiles._damageFor(p) : p.damage;
+    // the projectile's splash (applied by the core just before this call) already reached us
+    if (p.splash) {
+      const d = this.hitCenter(_v).distanceTo(hit.point);
+      if (d < p.splash.radius) dmg -= p.splash.damage * (1 - (d / p.splash.radius) * 0.6);
+    }
+    if (!(dmg > 0)) return;
+    _hd.copy(p.vel);
+    if (_hd.lengthSq() > 1e-8) _hd.normalize(); else _hd.set(0, 0, 1);
+    const applied = this.damage(dmg, { source: p.owner, team: p.team, point: hit.point, dir: _hd, kind: 'shot' });
+    if (applied !== false) S.events.emit('hit', { target: this, source: p.owner, damage: dmg, point: hit.point.clone() });
+  }
+
+  dispose() {
+    this._dropCollider();
+    super.dispose();
   }
 
   get aware() { return this.state === 'alert' || this.state === 'attack'; }
@@ -537,7 +593,7 @@ export class MurkEnemy extends Actor {
 
     this.wish.set(0, 0, 0);
     this.behave(dt);
-    if (this.walker) this._physics(dt);
+    if (this.walker) { this._separate(); this._physics(dt); }
     this.yaw = turnToward(this.yaw, this.faceYaw, this.turnRate * dt * (this.hurtT > 0 ? 0.5 : 1));
     if (this.turnsGroup) this.group.rotation.y = this.yaw;
 
@@ -581,7 +637,11 @@ export class MurkEnemy extends Actor {
           this.lookT = 2.2 + Math.random() * 2.8;
           this.faceYaw = this.homeYaw + (Math.random() - 0.5) * 1.5;
         }
-        if (this.walker && this.distXZ(this.home) > 0.8) this.steerTo(this.home, this.speed * 0.5);
+        if (this.walker && this.distXZ(this.home) > 0.8) {
+          this.steerTo(this.home, this.speed * 0.5);
+          // home unreachable (knocked off its deck, walled in): settle where it stands
+          if (this.blockedT > 2.5) { this.home.copy(this.position); this.blockedT = 0; }
+        }
         break;
       }
       case 'patrol': {
@@ -655,13 +715,32 @@ export class MurkEnemy extends Actor {
 
   // ---- physics ------------------------------------------------------------------------------
   _groundAhead(vx, vz, sp) {
-    const look = this.radius + 0.22 + Math.min(0.5, sp * 0.1);
+    // cached for a few steps while heading the same way (the probe looks far enough ahead)
+    const dx = vx / sp, dz = vz / sp;
+    if (this._gaT > 0 && dx * this._gaX + dz * this._gaZ > 0.94) { this._gaT--; return this._gaOk; }
+    this._gaT = 2; this._gaX = dx; this._gaZ = dz;
+    this._gaOk = this._probeAhead(vx, vz, sp);
+    return this._gaOk;
+  }
+
+  _probeAhead(vx, vz, sp) {
+    const look = this.radius + 0.22 + Math.min(0.55, sp * 0.12);
     const p = this.position;
     _c.set(p.x + (vx / sp) * look, p.y + 0.6, p.z + (vz / sp) * look);
     const h = this.session.level.raycast(_c, DOWN, 0.6 + this.maxDrop);
     if (!h) return false;
     if (h.normal.y < -0.3) return true;       // probe started inside a wall: let collision handle it
     return h.normal.y > 0.5;
+  }
+
+  /** Airborne variant: is there floor ahead no lower than the ledge we left (minus maxDrop)? */
+  _airGroundAhead(vx, vz, sp) {
+    const p = this.position, look = this.radius + 0.2;
+    const top = Math.max(p.y, this.groundY) + 0.6;
+    _c.set(p.x + (vx / sp) * look, top, p.z + (vz / sp) * look);
+    const h = this.session.level.raycast(_c, DOWN, top - this.groundY + this.maxDrop + 0.05);
+    if (!h) return false;
+    return h.normal.y > 0.5 || h.normal.y < -0.3;
   }
 
   _physics(dt) {
@@ -684,10 +763,17 @@ export class MurkEnemy extends Actor {
     // never walk (or get pushed) off a ledge
     const hs2 = v.x * v.x + v.z * v.z;
     this.atLedge = false;
-    if (this.grounded && hs2 > 0.01 && !this._groundAhead(v.x, v.z, Math.sqrt(hs2))) {
-      v.x = 0; v.z = 0;
-      this.atLedge = true;
-      this.blockedT += dt;
+    if (hs2 > 0.01) {
+      if (this.grounded) {
+        if (!this._groundAhead(v.x, v.z, Math.sqrt(hs2))) {
+          v.x = 0; v.z = 0;
+          this.atLedge = true;
+          this.blockedT += dt;
+        }
+      } else if (!this._launched && !this._airGroundAhead(v.x, v.z, Math.sqrt(hs2))) {
+        // the alert hop and knockback taken mid-air must not carry a troop off its ledge either
+        v.x = 0; v.z = 0;
+      }
     }
     if (!this.grounded) v.y = Math.max(-30, v.y - GRAVITY * dt);
 
@@ -724,13 +810,26 @@ export class MurkEnemy extends Actor {
     if (v.y <= 0.5) {
       const snap = this.grounded ? 0.4 : 0.06;
       gh = level.raycast(_a.set(p.x, p.y + 0.45, p.z), DOWN, 0.45 + snap);
-      if (gh && gh.normal.y > 0.6) { p.y = gh.point.y; ground = true; } else gh = null;
+      if (gh && gh.normal.y > 0.6) {
+        // on a slope the capsule's bottom sphere rests r·(1/cosθ − 1) above the surface under
+        // its centre; snapping the feet onto the surface sank it into the slope and the push-out
+        // shoved wide troops back downhill every step (rollerbrutes couldn't climb ramps)
+        p.y = gh.point.y + (gh.normal.y < 0.999 ? r * (1 / gh.normal.y - 1) : 0);
+        ground = true;
+      } else gh = null;
     }
     const was = this.grounded;
     if (ground && v.y <= 0.5) {
       this.grounded = true;
+      this.groundY = p.y;
       if (gh) { this.groundFace = gh.faceId; this.groundDyn = gh.dynamic; } else { this.groundFace = this.contacts.groundFace; this.groundDyn = this.contacts.dynamic; }
       if (!was && v.y < -3) this.onLand(-v.y);
+      if (!was && this._launched) {
+        // spat out by a pod: this landing spot is home now (not the pod's centre)
+        this._launched = false;
+        this.home.copy(p);
+        this.homeYaw = this.yaw;
+      }
       if (v.y < 0) v.y = 0;
     } else {
       this.grounded = false;
@@ -752,6 +851,22 @@ export class MurkEnemy extends Actor {
       }
     } else this.blockedT = Math.max(0, this.blockedT - dt * 0.5);
     this.detour = Math.max(0, this.detour - dt);
+  }
+
+  /** Keep squadmates from overlapping (cheap pairwise push on the wish velocity). */
+  _separate() {
+    const p = this.position;
+    for (const e of this.session.entities) {
+      if (e === this || !e.walker || !e.alive || !(e instanceof MurkEnemy)) continue;
+      const dx = p.x - e.position.x, dz = p.z - e.position.z;
+      const min = this.radius + e.radius + 0.15;
+      const d2 = dx * dx + dz * dz;
+      if (d2 >= min * min || Math.abs(p.y - e.position.y) > 1.2) continue;
+      const d = Math.sqrt(d2) || 0.01;
+      const push = (min - d) / min * 3.5;
+      this.wish.x += (dx / d) * push;
+      this.wish.z += (dz / d) * push;
+    }
   }
 
   onLand(speed) {
@@ -814,18 +929,23 @@ export class MurkEnemy extends Actor {
     const n = info.dir ? _gn.copy(info.dir).negate() : UP;
     S.fx.burst(info.point || c, n, this.pal.tarLight, 4, 3.5, { size: 0.05 });
     S.audio?.sfx('murk_hurt', { pos: c, volume: 0.35, pitch: 0.9 + Math.random() * 0.3, throttle: 0.08 });
-    // shot from the dark → turn and fight
-    const src = info.source;
-    if (src && src !== this && src.position && src.team !== this.team) {
-      this.lastSeen.copy(src.position);
-      if (!this.aware) { this.target = src; this.becomeAlert(true); }
-    }
+    this.provoked(info.source);
+  }
+
+  /** Shot from the dark (or at the shield) → turn and fight whoever did it. */
+  provoked(src) {
+    if (!src || src === this || !src.position || src.team === this.team) return;
+    // sources that aren't actors (a bomb, a sprinkler) point the troop at the player instead
+    const T = src.velocity && src.hitCenter ? src : this.session.player;
+    this.lastSeen.copy(src.position);
+    if (!this.aware && T) { this.target = T; this.becomeAlert(true); }
   }
 
   onDeath(info) {
     this.deathInfo = info;
     this.dyingT = 0;
     this.canSee = false;
+    this._dropCollider();
     if (this._popup) this._popup.visible = false;
     if (info.silent) {
       this.session.fx.burst(this.position, UP, this.pal.ink, 12, 5);
@@ -931,6 +1051,11 @@ export class MurkEnemy extends Actor {
       }
     }
     this._renderPopup(dt);
+    // wading through hero ink: sticky drips at the feet
+    if (this.inkSlowed && this.alive && Math.random() < dt * 7 && (this.velocity.x || this.velocity.z)) {
+      _v.copy(this.position).setY(this.position.y + 0.08);
+      this.session.fx.burst(_v, UP, this.session.ink.color(TEAM_HERO), 2, 1.8, { size: 0.045, life: 0.35 });
+    }
     // damage state: dark smoke from badly hurt troops
     if (this.alive && this.hp < this.maxHp * 0.5) {
       this._smokeT -= dt;
@@ -1036,6 +1161,7 @@ export function buildTrooper(e, o = {}) {
   const mouthM = e.mat(P.dark, { roughness: 0.5, rim: 0 });
   const toothM = e.matte('#f3ecdf', { roughness: 0.4, rim: 0.1 });
 
+  const toeM = e.matte(P.steel.clone().lerp(WHITE, 0.15), { roughness: 0.4 });
   const rig = new THREE.Group();
   rig.scale.setScalar(sc);
   e.root.add(rig);
@@ -1051,7 +1177,7 @@ export function buildTrooper(e, o = {}) {
     const boot = mesh(G.sphere(0.125, 16, 10), rubber, hip);
     boot.scale.set(1, 0.6, 1.32);
     boot.position.set(0, -0.215, 0.035);
-    const toe = mesh(G.sphere(0.07, 12, 8), steel, hip);
+    const toe = mesh(G.sphere(0.07, 12, 8), toeM, hip);
     toe.scale.set(1.1, 0.7, 0.9);
     toe.position.set(0, -0.2, 0.13);
     legs.push(hip);

@@ -73,12 +73,14 @@ export class Actor extends Entity {
 
   hitCenter(out) { return out.copy(this.position).setY(this.position.y + this.hitHeight * 0.5); }
 
+  /** Returns false when the hit was refused (dead, invulnerable, shielded) so no hit marker shows. */
   damage(amount, info = {}) {
-    if (!this.alive || this.invulnerable > 0) return;
+    if (!this.alive || this.invulnerable > 0) return false;
     this.hp -= amount;
     this.flashT = 0.12;
     this.onDamaged?.(amount, info);
     if (this.hp <= 0) { this.hp = 0; this.die(info); }
+    return true;
   }
 
   die(info = {}) {

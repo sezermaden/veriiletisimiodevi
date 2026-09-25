@@ -27,7 +27,7 @@ export class MurkTurret extends MurkEnemy {
       hp: 150, hitRadius: 0.72, hitHeight: 1.5, aggro: 18, walker: false, turnRate: 2.3, knockMul: 0,
       pearls: [2, 3], deathPaint: 2.3, popupH: 2.05, eyeH: 1.05, turnsGroup: false, loseTime: 2.2,
     });
-    this.rate = def.rate ?? 1;
+    this.rate = Math.max(0.1, Number(def.rate) || 1);   // bursts per base cooldown (guard 0/NaN)
     this.burst = 0;
     this.shotT = 0;
     this.coolT = 0.8;
@@ -36,6 +36,7 @@ export class MurkTurret extends MurkEnemy {
     this.pitch = 0;
     this.kick = [0, 0];
     this._build();
+    this.solidCollider(0.66, 0.78, 1.38);
   }
 
   get visionCone() { return 0.35; }
@@ -206,7 +207,7 @@ export class MurkTurret extends MurkEnemy {
     this.kick[this.barrel] = 1;
     const m = this.worldOf(this.pitchG, MUZZLES[this.barrel], _m);
     this.barrel = 1 - this.barrel;
-    const o = { speed: 24, damage: 14, gravity: 14, gravityDelay: 0.25, lead: 0.75, spread: 2.6 };
+    const o = { speed: 24, damage: 12, gravity: 14, gravityDelay: 0.25, lead: 0.75, spread: 3 };
     this.aimAt(m, o.speed, o, _d);
     this.shoot(m, _d, { ...o, size: 0.11, paint: 0.5, trailEvery: 1.4, trailRadius: 0.3, falloff: { start: 12, end: 22, min: 0.55 }, sfx: 'turret_shot', volume: 0.55 });
     this.session.fx.puff(m, '#d9d0ec', 0.3, 0.25, _p.copy(_d).multiplyScalar(1.2), 1.6, 0.45);

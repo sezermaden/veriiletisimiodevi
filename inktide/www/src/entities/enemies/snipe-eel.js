@@ -91,7 +91,7 @@ export class SnipeEel extends MurkEnemy {
       const toe = mesh(G.rbox(0.24, 0.05, 0.06, 0.02), hatM, hip);
       toe.position.set(0, -0.95, 0.23);
       this.legs.push(hip);
-      this.rigid(hip, 'hip');
+      this.rigid(hip, s < 0 ? 'hipL' : 'hipR');   // mirrored piston → separate bake per side
     }
     // --- cockpit tub ---
     const tub = new THREE.Group();
@@ -345,7 +345,11 @@ export class SnipeEel extends MurkEnemy {
     this.laserDot.visible = on;
     if (on) {
       const from = this.muzzle(_m);
-      const len = this._traceLaser(from);
+      // the wall/player trace runs at ~30 Hz; direction and origin update every frame
+      this._traceT = (this._traceT || 0) - dt;
+      if (this._traceT <= 0 || this._len == null) { this._traceT = 0.033; this._len = this._traceLaser(from); }
+      const len = this._len;
+      this.laserEnd.copy(from).addScaledVector(this.aimDir, len);
       const fighting = this.state === 'attack' || this.state === 'alert';
       const c = fighting ? this.charge : 0;
       const full = c >= 1;

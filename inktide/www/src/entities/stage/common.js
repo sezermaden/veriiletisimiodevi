@@ -239,13 +239,31 @@ export class PropActor extends Actor {
     super(session, def, { team: TEAM_MURK, ...o });
     this.prop = true;
     this.groupName = def.group || null;
+    this._splatT = -1;
   }
 
+  /**
+   * Ink reached our collider. Two callers: a projectile that struck it (`p.damage` > 0), or a
+   * splat notification from the level / roller / brush (`{ team, paint:{radius}, damage? }`), which
+   * fires for every splat near the collider's bounding sphere. Splats only count when they really
+   * touch the collider, at most one per 80 ms (a roller lane or a bomb's blots are one hit), and
+   * their damage is estimated from the splat size (hero weapons deal ~55 × paint radius).
+   */
   onInkHit(p, hit) {
-    if (!this.alive || p.team === this.team || p.team === TEAM_NONE) return;
-    const dmg = Math.max(1, p.damage || 0);
-    this.damage(dmg, { source: p.owner, team: p.team, point: hit.point, normal: hit.normal, dir: p.vel, kind: 'shot', paint: p.paint?.radius });
-    this.session.events.emit('hit', { target: this, source: p.owner, damage: dmg, point: hit.point.clone() });
+    if (!this.alive || p.team == null || p.team === this.team || p.team === TEAM_NONE) return;
+    const S = this.session;
+    const real = typeof p.damage === 'number' && p.damage > 0;
+    const r = p.paint?.radius ?? 0.4;
+    if (!real) {
+      if (!splatTouches(hit, r)) return;
+      if (S.time - this._splatT < 0.08) return;
+      this._splatT = S.time;
+    }
+    const dmg = real ? p.damage : Math.max(1, 55 * r);
+    // single player: a hero splat with no owner is the player's (restores the hit marker)
+    const source = p.owner ?? (p.team === S.player?.team ? S.player : null);
+    const applied = this.damage(dmg, { source, team: p.team, point: hit.point, normal: hit.normal, dir: p.vel, kind: 'shot', paint: r });
+    if (applied !== false) S.events.emit('hit', { target: this, source, damage: dmg, point: hit.point.clone() });
   }
 
   die(info = {}) {
@@ -266,6 +284,7 @@ export class HitProxy {
     this.team = o.team ?? TEAM_MURK;
     this.alive = true;
     this.prop = true;
+    this.solid = false;           // a part, not a body: session._separate must not push the player
     this.hitRadius = o.radius ?? 0.4;
     this.hitHeight = o.height ?? 0.5;
     this.untargetable = false;
@@ -278,12 +297,30 @@ export class HitProxy {
     session.actors.push(this);
   }
   hitCenter(out) { return out.copy(this.center); }
-  damage(amount, info = {}) { if (this.alive) this.onHit?.(amount, info); }
+  damage(amount, info = {}) {
+    if (!this.alive) return false;
+    return this.onHit?.(amount, info) !== false;
+  }
   dispose() {
     this.alive = false;
     const i = this.session.actors.indexOf(this);
     if (i >= 0) this.session.actors.splice(i, 1);
   }
+}
+
+const _sb = new THREE.Box3();
+/**
+ * Does a splat (centre hit.point, radius r) actually touch the collider it was reported for?
+ * The level notifies owners by bounding sphere, which also catches floor painting next to a prop.
+ * Hits without a collider reference (direct projectile hits) always count.
+ */
+export function splatTouches(hit, r, k = 0.55) {
+  const mesh = hit?.dynamic?.mesh;
+  if (!mesh || !hit.point) return true;
+  const g = mesh.geometry;
+  if (!g.boundingBox) g.computeBoundingBox();
+  _sb.copy(g.boundingBox).applyMatrix4(mesh.matrixWorld);
+  return _sb.distanceToPoint(hit.point) <= r * k + 0.06;
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -149,7 +149,7 @@ export class Projectiles {
         p.pos.copy(worldHit.point);
         if (p.paint && ink) ink.paint(worldHit.point, p.paint.radius, p.team, worldHit.normal, { source: p.owner });
         if (p.splash) this._splash(p, worldHit.point);
-        worldHit.dynamic?.owner?.onInkHit?.(p, worldHit);
+        if (!p.paint) worldHit.dynamic?.owner?.onInkHit?.(p, worldHit);   // painted hits notify via ink.onSplat
         if (p.onHit) p.onHit(p, worldHit);
         this._impactFx(p, worldHit.point, worldHit.normal, false);
         this.kill(p);
@@ -194,8 +194,8 @@ export class Projectiles {
   _hitActor(p, a, point) {
     if (p.hitSet) p.hitSet.add(a);
     const dmg = this._damageFor(p);
-    if (dmg > 0) a.damage(dmg, { source: p.owner, team: p.team, point, dir: p.vel.clone().normalize(), kind: 'shot' });
-    this.session.events.emit('hit', { target: a, source: p.owner, damage: dmg, point: point.clone() });
+    const applied = dmg > 0 ? a.damage(dmg, { source: p.owner, team: p.team, point, dir: p.vel.clone().normalize(), kind: 'shot' }) : false;
+    if (applied !== false && dmg > 0) this.session.events.emit('hit', { target: a, source: p.owner, damage: dmg, point: point.clone() });
     if (p.splash) this._splash(p, point, a);
     if (p.onHit) p.onHit(p, { point: point.clone(), actor: a });
   }
@@ -209,8 +209,8 @@ export class Projectiles {
       const d = _hc.distanceTo(point);
       if (d < p.splash.radius) {
         const dmg = p.splash.damage * (1 - (d / p.splash.radius) * 0.6);
-        a.damage(dmg, { source: p.owner, team: p.team, point, dir: _hc.clone().sub(point).normalize(), kind: 'splash' });
-        S.events.emit('hit', { target: a, source: p.owner, damage: dmg, point: point.clone() });
+        const applied = a.damage(dmg, { source: p.owner, team: p.team, point, dir: _hc.clone().sub(point).normalize(), kind: 'splash' });
+        if (applied !== false) S.events.emit('hit', { target: a, source: p.owner, damage: dmg, point: point.clone() });
       }
     }
   }

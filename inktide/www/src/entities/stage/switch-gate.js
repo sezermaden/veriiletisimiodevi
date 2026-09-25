@@ -6,27 +6,34 @@ import * as THREE from 'three';
 import { Entity, registerEntity } from '../base.js';
 import {
   PropActor, geo, mat, rimMat, glowMat, canvasTex, makeGlowSprite, boxCollider, onSpec, drawMurkEmblem, drawSquidEmblem,
-  TEAM_HERO, TEAM_MURK, UP, clamp, easeOutBack, smooth,
+  TEAM_HERO, TEAM_MURK, UP, clamp, easeOutBack,
 } from './common.js';
 
 const _v = new THREE.Vector3();
 const HEAD_Y = 1.85;
 
-function targetTex(kind) {
-  return canvasTex('switch-face-' + kind, 256, 256, (x, w, h) => {
+/** Target faces drawn in the live palette: front = Murk bullseye, back = hero disc with a check. */
+function targetTex(kind, color) {
+  const c = '#' + color.getHexString();
+  return canvasTex('switch-face-' + kind + c, 256, 256, (x, w, h) => {
     x.translate(w / 2, h / 2);
-    const rings = kind === 'murk' ? ['#ffffff', '#2a2446', '#ffffff', '#2a2446', '#ffffff'] : ['#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'];
-    for (let i = 0; i < rings.length; i++) {
-      x.fillStyle = rings[i];
-      x.beginPath(); x.arc(0, 0, 128 - i * 22, 0, Math.PI * 2); x.fill();
-    }
-    if (kind === 'murk') drawMurkEmblem(x, 0, 0, 30, '#2a2446', '#ffffff');
-    else {
-      x.fillStyle = '#e8e6f2';
-      x.beginPath(); x.arc(0, 0, 118, 0, Math.PI * 2); x.fill();
-      x.fillStyle = '#ffffff';
-      x.beginPath(); x.arc(0, 0, 96, 0, Math.PI * 2); x.fill();
-      drawSquidEmblem(x, 0, 6, 62, '#2a2446', '#ffffff');
+    if (kind === 'murk') {
+      const rings = [c, '#ffffff', c, '#ffffff', c];
+      for (let i = 0; i < rings.length; i++) {
+        x.fillStyle = rings[i];
+        x.beginPath(); x.arc(0, 0, 128 - i * 22, 0, Math.PI * 2); x.fill();
+      }
+      drawMurkEmblem(x, 0, 0, 30, '#ffffff', '#1d1838');
+    } else {
+      x.fillStyle = c; x.beginPath(); x.arc(0, 0, 128, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = '#ffffff'; x.lineWidth = 12;
+      x.beginPath(); x.arc(0, 0, 104, 0, Math.PI * 2); x.stroke();
+      x.lineCap = 'round'; x.lineJoin = 'round';
+      x.strokeStyle = 'rgba(20,16,50,0.35)'; x.lineWidth = 34;
+      x.beginPath(); x.moveTo(-52, 6); x.lineTo(-14, 46); x.lineTo(58, -40); x.stroke();
+      x.strokeStyle = '#ffffff'; x.lineWidth = 26;
+      x.beginPath(); x.moveTo(-54, 0); x.lineTo(-16, 40); x.lineTo(56, -46); x.stroke();
+      drawSquidEmblem(x, 70, 62, 16, '#ffffff', c);
     }
   });
 }
@@ -34,6 +41,7 @@ function targetTex(kind) {
 class Switch extends PropActor {
   constructor(session, def) {
     super(session, def, { hp: 1, hitRadius: 0.5, hitHeight: 0.5 });
+    this.bodyRadius = 0.4;        // session._separate keeps the player just outside the base
     this.on = false;
     this.t = 0;
     this.flipT = -1;
@@ -46,7 +54,8 @@ class Switch extends PropActor {
     const hazard = mat('sw-hazard', () => rimMat('#ffffff', { map: hazardTex(), roughness: 0.5, rim: 0.15 }));
     const add = (m, y) => { m.position.y = y; m.castShadow = true; g.add(m); return m; };
     add(new THREE.Mesh(geo('sw-base', () => new THREE.CylinderGeometry(0.34, 0.42, 0.18, 8)), steel), 0.09);
-    add(new THREE.Mesh(geo('sw-post', () => new THREE.CylinderGeometry(0.06, 0.075, HEAD_Y - 0.2, 10)), white), 0.18 + (HEAD_Y - 0.2) / 2 - 0.1);
+    const postH = HEAD_Y - 0.6 - 0.18;         // ends inside the yoke, below the plate
+    add(new THREE.Mesh(geo('sw-post2', () => new THREE.CylinderGeometry(0.06, 0.075, postH, 10)), white), 0.18 + postH / 2);
     add(new THREE.Mesh(geo('sw-band', () => new THREE.CylinderGeometry(0.085, 0.085, 0.3, 10)), hazard), 0.55);
     // head: ring frame + flip plate (front = Murk bullseye, back = hero squid)
     this.head = new THREE.Group();
@@ -57,14 +66,19 @@ class Switch extends PropActor {
     const yoke = new THREE.Mesh(geo('sw-yoke', () => new THREE.BoxGeometry(0.1, 0.22, 0.1)), steel);
     yoke.position.y = -0.52;
     this.head.add(frame, yoke);
-    this.faceFront = this.own(rimMat('#ffffff', { map: targetTex('murk'), roughness: 0.35, rim: 0.3, emissive: this.murkCol, emissiveIntensity: 0.25 }));
-    this.faceFront.color.copy(this.murkCol).lerp(new THREE.Color('#ffffff'), 0.25);
-    this.faceBack = this.own(rimMat('#ffffff', { map: targetTex('hero'), roughness: 0.35, rim: 0.3, emissive: this.heroCol, emissiveIntensity: 0.2 }));
-    this.faceBack.color.copy(this.heroCol);
-    const plateG = geo('sw-plate', () => new THREE.CylinderGeometry(0.4, 0.4, 0.07, 36).rotateX(Math.PI / 2));
-    // Cylinder groups: 0 side, 1 top (+Y → after rotation faces +Z), 2 bottom (−Z)
-    this.plate = new THREE.Mesh(plateG, [white, this.faceFront, this.faceBack]);
-    this.plate.castShadow = true;
+    this.faceFront = this.own(rimMat('#ffffff', { map: targetTex('murk', this.murkCol), roughness: 0.35, rim: 0.3, emissive: this.murkCol, emissiveIntensity: 0.25 }));
+    this.faceBack = this.own(rimMat('#ffffff', { map: targetTex('hero', this.heroCol), roughness: 0.35, rim: 0.3, emissive: this.heroCol, emissiveIntensity: 0.25 }));
+    // plate = rim + two upright faces (front +Z, back −Z) so the art is never rotated or mirrored
+    this.plate = new THREE.Group();
+    const rimP = new THREE.Mesh(geo('sw-plate-rim', () => new THREE.CylinderGeometry(0.4, 0.4, 0.07, 36, 1, true).rotateX(Math.PI / 2)), white);
+    rimP.castShadow = true;
+    const faceG = geo('sw-face', () => new THREE.CircleGeometry(0.4, 36));
+    const front = new THREE.Mesh(faceG, this.faceFront);
+    front.position.z = 0.035;
+    const back = new THREE.Mesh(faceG, this.faceBack);
+    back.position.z = -0.035;
+    back.rotation.y = Math.PI;
+    this.plate.add(rimP, front, back);
     this.head.add(this.plate);
     this.lampMat = this.own(glowMat(this.murkCol, 2.2));
     this.lamp = new THREE.Mesh(geo('sw-lamp', () => new THREE.SphereGeometry(0.075, 10, 8)), this.lampMat);
@@ -79,20 +93,24 @@ class Switch extends PropActor {
   hitCenter(out) { return out.set(this.position.x, this.position.y + HEAD_Y, this.position.z); }
 
   damage(amount, info = {}) {
-    if (info.team === TEAM_MURK || !this.alive) return;
+    if (info.team === TEAM_MURK || !this.alive) return false;
     this.flashT = 0.12;
     this.wob = 1;
     const S = this.session;
     this.hitCenter(_v);
     S.fx.burst(_v, UP, this.heroCol, 6, 3, { size: 0.05 });
-    if (!this.on) this.activate(info.source);
-    else if (this.def.toggle) this.deactivate();
+    // toggles ignore hits while the plate is still flipping, so an automatic weapon's stream of
+    // shots doesn't flicker the switch (and its gates) on/off every frame
+    const ready = !this.def.toggle || this.t - (this.flipAt ?? -9) > 0.9;   // 0.9 s = one plate flip
+    if (!this.on) { if (ready) this.activate(info.source); } else if (this.def.toggle && ready) this.deactivate();
+    return true;
   }
 
   activate(by) {
     if (this.on) return;
     this.on = true;
     this.flipT = 0;
+    this.flipAt = this.t;
     this.flipFrom = this.plate.rotation.y;
     this.flipTo = Math.PI * 3;
     this.timerT = this.def.timer || 0;
@@ -110,7 +128,7 @@ class Switch extends PropActor {
     for (const t of this.def.targets || []) {
       const e = S.entity(t);
       if (!e) continue;
-      if (this.def.toggle && e.isOpen) e.close?.(); else e.open?.();
+      if (this.def.toggle) e.toggle?.(); else e.open?.();
     }
   }
 
@@ -118,6 +136,7 @@ class Switch extends PropActor {
     if (!this.on) return;
     this.on = false;
     this.flipT = 0;
+    this.flipAt = this.t;
     this.flipFrom = this.plate.rotation.y;
     this.flipTo = this.plate.rotation.y + Math.PI;
     const S = this.session;
@@ -125,7 +144,8 @@ class Switch extends PropActor {
     this.lampMat.color.copy(this.murkCol).multiplyScalar(2.2);
     this.glow.material.color.copy(this.murkCol);
     S.events.emit('switchOff', this.id);
-    for (const t of this.def.targets || []) S.entity(t)?.close?.();
+    // toggle switches flip their targets on every hit; timed switches shut them again
+    for (const t of this.def.targets || []) { const e = S.entity(t); if (this.def.toggle) e?.toggle?.(); else e?.close?.(); }
   }
 
   step(dt) {
@@ -318,6 +338,7 @@ class Gate extends Entity {
     this.openAmt = this.target > this.openAmt ? Math.min(this.target, this.openAmt + sp) : Math.max(this.target, this.openAmt - sp);
     this._layout();
     this.group.updateMatrixWorld(true);
+    if (this.target < this.openAmt || this.target === 0) this._clearDoorway();
     // dust along the bottom edge while it moves
     if (Math.floor(before * 10) !== Math.floor(this.openAmt * 10)) {
       const S = this.session;
@@ -334,13 +355,34 @@ class Gate extends Entity {
     }
   }
 
+  /**
+   * A closing shutter must never pin the player inside its collider (capsule resolution would
+   * squash them into the floor): anyone standing in the doorway is nudged out to the nearer side.
+   */
+  _clearDoorway() {
+    const p = this.session.player;
+    if (!p.alive) return;
+    const a = this.openAmt, h = this.h, r = 0.34;
+    const bottom = this.dir === 'up' ? a * h : -a * (h + 0.1);
+    const top = bottom + h;
+    _v.copy(p.position).sub(this.position).applyAxisAngle(UP, -this.group.rotation.y);
+    const head = _v.y + (p.form === 'squid' ? 0.5 : 1.4);
+    if (Math.abs(_v.x) > this.w / 2 + r || Math.abs(_v.z) > this.d / 2 + r || head < bottom || _v.y > top) return;
+    const side = _v.z >= 0 ? 1 : -1;
+    _v.z = side * (this.d / 2 + r + 0.04);
+    _v.applyAxisAngle(UP, this.group.rotation.y).add(this.position);
+    p.position.x = _v.x; p.position.z = _v.z;
+    _v.set(0, 0, side).applyAxisAngle(UP, this.group.rotation.y);
+    const vn = p.velocity.dot(_v);
+    if (vn < 0) p.velocity.addScaledVector(_v, -vn);
+  }
+
   render(dt) {
     const t = this.t;
     const on = this.moving;
     const k = on ? (Math.sin(t * 14) > 0 ? 3.2 : 0.5) : (this.isOpen ? 0.35 : 0.9);
     this.beaconMat.color.set(this.isOpen && !on ? '#4dff9a' : '#ffae1f').multiplyScalar(k);
     for (const b of this.beacons) b.rotation.y += dt * (on ? 10 : 1);
-    void smooth;
   }
 
   dispose() {

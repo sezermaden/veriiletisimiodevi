@@ -78,7 +78,7 @@ const KIT_ART = {
   blaster: '<rect class="i-body" x="16" y="16" width="44" height="22" rx="9"/><path class="i-ink" d="M58 21 82 9v36L58 33z"/><path class="i-dark" d="M26 36h15l-4 16H24z"/><circle class="i-ink" cx="30" cy="12" r="8"/><circle class="i-hl" cx="27" cy="9" r="2.5"/>',
   slosher: '<path class="i-body" d="M24 18h42l-7 33H31z"/><rect class="i-ink" x="22" y="13" width="46" height="9" rx="4.5"/><path class="i-line" d="M27 17Q45-6 63 17" fill="none" stroke-width="4"/><path class="i-ink" d="M69 14q11-10 21 1-7 2-9 9-4-7-12-10z"/><circle class="i-ink" cx="86" cy="30" r="3.5"/><circle class="i-ink" cx="78" cy="36" r="2.5"/>',
   splatling: '<rect class="i-body" x="10" y="14" width="38" height="28" rx="11"/><rect class="i-dark" x="46" y="17" width="42" height="6" rx="3"/><rect class="i-dark" x="46" y="25" width="42" height="6" rx="3"/><rect class="i-dark" x="46" y="33" width="42" height="6" rx="3"/><circle class="i-ink" cx="29" cy="28" r="8"/><rect class="i-ink" x="86" y="14" width="7" height="28" rx="3"/><path class="i-dark" d="M18 40h12l-2 12h-11z"/>',
-  brush: '<rect class="i-dark" x="2" y="26" width="56" height="8" rx="4" transform="rotate(-16 30 30)"/><rect class="i-body" x="50" y="14" width="15" height="28" rx="3"/><path class="i-ink" d="M64 8q24 4 28 20-4 16-28 20z"/><path class="i-hl" d="M68 14q12 3 15 10" fill="none" stroke-width="3"/>',
+  brush: '<rect class="i-dark" x="2" y="26" width="56" height="8" rx="4" transform="rotate(-16 30 30)"/><rect class="i-body" x="50" y="14" width="15" height="28" rx="3"/><path class="i-ink" d="M64 8q24 4 28 20-4 16-28 20z"/><path class="i-hls" d="M68 14q12 3 15 10" stroke-width="3"/>',
   dualies: `<g transform="translate(-6 -4)">${PISTOL}</g><g transform="translate(22 16)">${PISTOL}</g>`,
 };
 

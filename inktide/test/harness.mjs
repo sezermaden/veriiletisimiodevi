@@ -43,7 +43,7 @@ export async function launch({ width = 640, height = 360 } = {}) {
     page, errors, base,
     async open(url, frames = 5) {
       await page.goto(base + url);
-      await page.waitForFunction((n) => window.__game && window.__game.frames > n && (!new URLSearchParams(location.search).get('stage') || window.__game.session?.started), frames, { timeout: 180000 });
+      await page.waitForFunction((n) => window.__game && window.__game.frames > n && (!new URLSearchParams(location.search).get('stage') || window.__game.session?.started), frames, { timeout: 180000, polling: 250 });
     },
     async close() { await browser.close(); server.close(); },
   };

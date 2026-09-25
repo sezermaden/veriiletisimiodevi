@@ -44,6 +44,7 @@ function balloonTexture(color) {
 class Balloon extends PropActor {
   constructor(session, def) {
     super(session, def, { hp: 1, hitRadius: 0.55, hitHeight: 0.4 });
+    this.solid = false;           // floats: never push the player around underneath it
     this.t = hash01(this.position.x, this.position.z) * 20;
     this.base = this.position.clone();
     this.cur = this.position.clone();
@@ -87,8 +88,8 @@ class Balloon extends PropActor {
   hitCenter(out) { return out.copy(this.cur); }
 
   damage(amount, info = {}) {
-    if (!this.alive || info.team === TEAM_MURK) return;
-    super.damage(1, info);
+    if (!this.alive || info.team === TEAM_MURK) return false;
+    return super.damage(1, info);
   }
 
   onDeath() {

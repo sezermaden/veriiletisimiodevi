@@ -20,7 +20,7 @@ export class Buzzdrone extends MurkEnemy {
       hp: 60, hitRadius: 0.6, hitHeight: 0.5, aggro: 18, walker: false, turnRate: 3.2, knockMul: 0,
       pearls: [1, 2], deathPaint: 1.7, popupH: 0.95, eyeH: 0, loseTime: 3.2,
     });
-    this.alt = def.alt ?? 4;
+    this.alt = Math.max(1.5, Number(def.alt) || 4);
     this.position.y += this.alt;
     this.home.copy(this.position);
     if (this.patrol) for (const p of this.patrol) p.y += this.alt;
@@ -228,7 +228,10 @@ export class Buzzdrone extends MurkEnemy {
         this.markT -= dt;
         if (this.markT <= 0) {
           this.markT = 0.12;
-          const g = S.level.raycast(_a.copy(this.position), DOWN, this.alt + 12, { staticOnly: true });
+          const h = Math.max(0.5, this.position.y - 0.62 - this.floorY);
+          const tf = (-1.5 + Math.sqrt(2.25 + 40 * h)) / 20;       // bomb fall time (vy0 -1.5, g 20); it keeps 60% of our drift
+          _a.copy(this.position).addScaledVector(_t.set(this.velocity.x, 0, this.velocity.z), Math.max(0, this.armT) + 0.6 * tf);
+          const g = S.level.raycast(_a, DOWN, this.alt + 12, { staticOnly: true });
           if (g) S.fx.ring(g.point, g.normal, RING_RED, 2.2, 0.3);
         }
         if (this.armT < 0) this._dropBomb();

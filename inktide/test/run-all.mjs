@@ -8,11 +8,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const suites = [
   ['input contract (16 assertions)', 'input.mjs'],
   ['feel contract + negative controls', 'feel.mjs'],
+  ['core ink mechanics', 'mechanics.mjs'],
   ['memory (5 sessions)', 'memory.mjs'],
   ['layout sweep (5 shapes)', 'layout.mjs'],
   ['gamepad reachability graph', 'gamepad.mjs'],
   ['scripted playtest (smoke)', 'smoke.mjs'],
   ['story stages load', 'stages.mjs'],
+  ['audio: tracks, sfx, ambience, ids', 'audio.mjs'],
 ].filter(([, f]) => fs.existsSync(path.join(here, f)));
 
 let failed = 0;

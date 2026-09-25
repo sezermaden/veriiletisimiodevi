@@ -21,6 +21,7 @@ const _ls = new THREE.Vector3();
 const _le = new THREE.Vector3();
 const _gN = new THREE.Vector3();
 const _wN = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);
 
 export class Level {
   constructor(session, def) {
@@ -34,6 +35,21 @@ export class Level {
     this.dynamic = [];          // { mesh, bvh, enabled, tag, owner }
     this.killY = def.killY ?? -6;
     this.bounds = new THREE.Box3();
+    // any splat (projectile, bomb, roller, brush, storm) near a moving/toggle collider notifies its owner
+    this._offSplat = this.ink.onSplat((c, r, team, n) => this._notifyDynamic(c, r, team, n));
+    this._sph = new THREE.Sphere();
+  }
+
+  _notifyDynamic(c, r, team, n) {
+    for (const d of this.dynamic) {
+      const owner = d.owner;
+      if (!d.enabled || !owner?.onInkHit) continue;
+      const g = d.mesh.geometry;
+      if (!g.boundingSphere) g.computeBoundingSphere();
+      this._sph.copy(g.boundingSphere).applyMatrix4(d.mesh.matrixWorld);
+      if (this._sph.center.distanceTo(c) > this._sph.radius + r) continue;
+      owner.onInkHit({ team, paint: { radius: r } }, { point: c.clone(), normal: (n || _up).clone(), dynamic: d });
+    }
   }
 
   _material(key) {
@@ -276,6 +292,7 @@ export class Level {
   }
 
   dispose() {
+    this._offSplat?.();
     this.group.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
     for (const m of this.materials.values()) m.dispose();
     this.collisionGeometry?.dispose();

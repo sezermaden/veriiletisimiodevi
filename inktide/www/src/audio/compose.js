@@ -212,6 +212,8 @@ export function compileSection(song, name, sec, warn) {
 
   // ---- melodic lines ----
   const melodic = ['bassLine', 'lead', 'chop', 'bell', 'counter', 'pluck'];
+  const SYL = song.syllables || ['ya', 'oh', 'ee', 'wa', 'la', 'yo', 'ay', 'oo'];
+  let sylK = 0;
   const addLine = (key, str, layer) => {
     const chName = key === 'bassLine' ? 'bass' : key;
     if (mute.has(chName)) return;
@@ -226,7 +228,8 @@ export function compileSection(song, name, sec, warn) {
         if (at >= N) break;
         if (m.n == null) { prev = null; continue; }
         const d = Math.min(m.d, N - at);
-        const ev = { c: chName, n: m.n, d, v: hv(m.acc ? 1 : 0.8), gate: m.stac ? 0.45 : 0.92, slide: m.slide && prev != null ? prev : null, syl: m.syl };
+        const syl = m.syl || (chName === 'chop' ? SYL[(sylK++) % SYL.length] : null);
+        const ev = { c: chName, n: m.n, d, v: hv(m.acc ? 1 : 0.8), gate: m.stac ? 0.45 : 0.92, slide: m.slide && prev != null ? prev : null, syl };
         if (layer) ev.L = layer;
         push(at, ev);
         prev = m.n;
@@ -261,12 +264,15 @@ export function compileSection(song, name, sec, warn) {
     for (let i = 0; i < N; i++) {
       // L1: 16th shaker drive + lead doubled an octave up
       push(i, { c: 'shaker', v: hv(i % 4 === 0 ? 0.75 : i % 2 === 0 ? 0.5 : 0.32), L: 1 });
+      if (i % 16 === 4 || i % 16 === 12) push(i, { c: 'perc', k: 't', v: hv(0.8), L: 1 });
+      // L2: driving 16th hats
+      push(i, { c: 'hat', v: hv(i % 2 === 0 ? 0.5 : 0.3), L: 2 });
       // L2: snare roll into every 4-bar phrase, crash on phrase starts
       if (i % 64 === 0 && i > 0) push(i, { c: 'crash', v: 0.75, L: 2 });
       if (i % 64 >= 60) push(i, { c: 'snare', v: 0.45 + (i % 64 - 60) * 0.12, L: 2 });
     }
     const src = sec.lead ? 'lead' : sec.chop ? 'chop' : null;
-    if (src) for (const evs of steps) if (evs) for (const e of evs.slice()) if (e.c === src && !e.L) evs.push({ ...e, c: 'lead2', n: e.n + 12, v: e.v * 0.55, slide: e.slide != null ? e.slide + 12 : null, L: 1 });
+    if (src) for (const evs of steps) if (evs) for (const e of evs.slice()) if (e.c === src && !e.L) evs.push({ ...e, c: 'lead2', t: 'lead', n: e.n + 12, v: e.v * 0.55, slide: e.slide != null ? e.slide + 12 : null, L: 1 });
     if (!sec.arp) compileArp({ p: 'updown', r: 1, o: 2, g: 0.5, v: 0.5, oct: 12 }, 'arp2', 2, N, chords, voiceAt, push, R, hv, inst.arp);
   }
 

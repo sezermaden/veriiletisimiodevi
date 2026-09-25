@@ -110,6 +110,10 @@ export class Session {
   respawnPlayer() {
     const sp = this.mode?.respawnPoint?.(this) || this.spawnPoint;
     this.player.spawn(sp.pos, sp.yaw);
+    // super-jump style arrival: drop in from above (clear of ceilings)
+    const up = this.level.raycast(sp.pos.clone().setY(sp.pos.y + 1), new THREE.Vector3(0, 1, 0), 12);
+    const h = Math.max(0, Math.min(9, (up ? up.distance : 12) - 2.5));
+    if (h > 1) { this.player.position.y += h; this.player.velocity.set(0, -16, 0); this.player.invulnerable = 2; }
     this.camRig.snap(this.player);
     this.fx.explosion(sp.pos, new THREE.Vector3(0, 1, 0), this.ink.color(this.player.team), 1.4);
     this.ink.paint(sp.pos, 1.6, this.player.team, new THREE.Vector3(0, 1, 0));
@@ -172,6 +176,7 @@ export class Session {
     this.mode?.step?.(this, dt);
     this.player.step(dt, this.input, this.camRig.yaw);
     for (const e of this.entities) if (!e.dead) e.step(dt);
+    this._separate();
     this.projectiles.step(dt);
     // remove dead entities
     let w = 0;
@@ -180,6 +185,26 @@ export class Session {
       if (e.dead) e.dispose(); else this.entities[w++] = e;
     }
     this.entities.length = w;
+  }
+
+  /** Keep the player out of solid actors (enemies, bots): horizontal circle separation. */
+  _separate() {
+    const p = this.player;
+    if (!p.alive || p.submerged) return;
+    const pr = p.form === 'squid' ? 0.3 : 0.34;
+    for (const a of this.actors) {
+      if (a === p || !a.alive || a.solid === false || a.flying) continue;
+      const ap = a.position;
+      const dy = p.position.y - ap.y;
+      if (dy > (a.hitHeight ?? 1.2) - 0.1 || dy < -1.3) continue;
+      const dx = p.position.x - ap.x, dz = p.position.z - ap.z;
+      const r = pr + Math.min(1.2, (a.bodyRadius ?? a.hitRadius ?? 0.5) * 0.8);
+      const d2 = dx * dx + dz * dz;
+      if (d2 >= r * r || d2 < 1e-8) continue;
+      const d = Math.sqrt(d2), push = r - d;
+      p.position.x += (dx / d) * push;
+      p.position.z += (dz / d) * push;
+    }
   }
 
   flash(color = '#ffffff', amount = 0.8) {

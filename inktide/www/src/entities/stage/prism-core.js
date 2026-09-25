@@ -92,6 +92,7 @@ function crystalGeometry() {
 class PrismCore extends PropActor {
   constructor(session, def) {
     super(session, def, { hp: def.hp ?? 60, hitRadius: 0.9, hitHeight: 2.0 });
+    this.solid = false;           // the pedestal/capsule colliders already block the player
     this.state = 'sealed';
     this.t = 0;
     this.stateT = 0;
@@ -173,7 +174,8 @@ class PrismCore extends PropActor {
     this.topSpin = new THREE.Vector3();
 
     // ---- the crystal ----
-    this.crystalMat = mat('core-crystal', () => rimMat('#ffffff', {
+    // per entity: the shatter ramps its emissive (a shared material would stay bright next stage)
+    this.crystalMat = this.own(rimMat('#ffffff', {
       vertexColors: true, flat: true, roughness: 0.12, metalness: 0.25, emissive: '#ffffff', emissiveIntensity: 0.55,
       emissiveFromVertex: true, rim: 0.9, rimColor: '#ffffff', env: 1.6,
     }));
@@ -220,9 +222,9 @@ class PrismCore extends PropActor {
   hitCenter(out) { return out.set(this.position.x, this.position.y + CAP_Y, this.position.z); }
 
   damage(amount, info = {}) {
-    if (this.state !== 'sealed') return;
+    if (this.state !== 'sealed') return false;
     // armoured glass: every hit chips a bit, big hits are capped so it always takes a few shots
-    super.damage(clamp(amount * 0.35, 4, 18), info);
+    return super.damage(clamp(amount * 0.35, 4, 18), info);
   }
 
   onDamaged(amount, info) {
@@ -314,7 +316,6 @@ class PrismCore extends PropActor {
 
   render(dt) {
     const t = this.t;
-    const g = this.group;
     // crack reveal eases toward the damage level
     if (this.crackTarget > this.crack) this.crack = Math.min(this.crackTarget, this.crack + dt * 3);
     if (this.state === 'sealed') {
@@ -360,10 +361,26 @@ class PrismCore extends PropActor {
       if (st > life) this.shards.visible = false;
     }
     if (this.top.visible) {
+      const lid = this.top, rot = lid.rotation;
       this.topVel.y -= 18 * dt;
-      this.top.position.addScaledVector(this.topVel, dt);
-      this.top.rotation.x += this.topSpin.x * dt; this.top.rotation.z += this.topSpin.z * dt;
-      if (this.top.position.y < 0.3) { this.top.position.y = 0.3; this.topVel.set(this.topVel.x * 0.5, Math.abs(this.topVel.y) * 0.3, this.topVel.z * 0.5); this.topSpin.multiplyScalar(0.5); }
+      lid.position.addScaledVector(this.topVel, dt);
+      rot.x += this.topSpin.x * dt; rot.z += this.topSpin.z * dt;
+      if (this.lidLanded) {
+        // settle flat (either face down) instead of resting half-buried on its rim
+        const k = Math.min(1, dt * 7);
+        rot.x += (Math.round(rot.x / Math.PI) * Math.PI - rot.x) * k;
+        rot.z += (Math.round(rot.z / Math.PI) * Math.PI - rot.z) * k;
+      }
+      // the lid is a 0.84 m-radius drum: its lowest point depends on how far it is tipped
+      // (upside down it rests on its dome and antenna)
+      const upright = Math.cos(rot.x) * Math.cos(rot.z) >= 0;
+      const floor = (upright ? 0.2 : 0.47) + 0.64 * Math.max(Math.abs(Math.sin(rot.x)), Math.abs(Math.sin(rot.z)));
+      if (lid.position.y < floor) {
+        lid.position.y = floor;
+        this.topVel.set(this.topVel.x * 0.5, Math.abs(this.topVel.y) * 0.3, this.topVel.z * 0.5);
+        this.topSpin.multiplyScalar(0.3);
+        this.lidLanded = true;
+      }
       if (st > 2.2) this.top.scale.setScalar(Math.max(0.001, 1 - (st - 2.2) * 2));
       if (st > 2.7) this.top.visible = false;
     }
@@ -393,7 +410,6 @@ class PrismCore extends PropActor {
       _w.set(0, 3 + Math.random() * 3, 0);
       this.session.fx.spray(_v, _w, Math.random() < 0.5 ? '#ffffff' : this.heroCol, 1, 0.8, { size: 0.05, life: 0.9, gravity: -2 });
     }
-    void g;
   }
 
   dispose() {

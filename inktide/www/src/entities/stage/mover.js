@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { Entity, registerEntity } from '../base.js';
 import { surfaceTextures } from '../../world/textures.js';
-import { geo, mat, rimMat, glowMat, canvasTex, boxCollider, TEAM_HERO, UP, clamp } from './common.js';
+import { geo, mat, rimMat, glowMat, canvasTex, boxCollider, TEAM_HERO, UP, clamp, splatTouches } from './common.js';
 
 const _v = new THREE.Vector3();
 const _a = new THREE.Vector3();
@@ -66,7 +66,7 @@ class Mover extends Entity {
     this._pathAt(this.s, this.position);
 
     // ---- model ----
-    const look = LOOKS[def.mat] || LOOKS.metal;
+    const look = LOOKS[def.mat] || (def.mat ? { top: def.mat, side: '#565d78', topTint: '#ffffff', trim: true } : LOOKS.metal);
     const tex = surfaceTextures(look.top);
     const topMat = this.own(new THREE.MeshStandardMaterial({ map: tex.map, normalMap: tex.normalMap, color: look.topTint, roughness: 0.6, metalness: look.top === 'metal' ? 0.45 : 0.05 }));
     const sideMat = mat('mover-side-' + (def.mat || 'metal'), () => rimMat(look.side, { roughness: 0.45, metalness: 0.4, rim: 0.2 }));
@@ -143,8 +143,8 @@ class Mover extends Entity {
     return out.lerpVectors(this.path[i - 1], this.path[i], clamp(k, 0, 1));
   }
 
-  onInkHit(p) {
-    if (p.team === TEAM_HERO && this.inkMode) {
+  onInkHit(p, hit) {
+    if (p.team === TEAM_HERO && this.inkMode && splatTouches(hit, p.paint?.radius ?? 0.4)) {
       if (this.inkT <= 0) this.session.audio?.sfx('sponge_grow', { pos: this.position, volume: 0.35, pitch: 1.4 });
       this.inkT = 1.4;
     }
@@ -188,6 +188,26 @@ class Mover extends Entity {
     this.lastDelta.subVectors(this.position, _v);
     this.running = running && this.lastDelta.lengthSq() > 1e-10;
     this.group.updateMatrixWorld(true);
+    if (this.lastDelta.y < -1e-5) this._guardBelow();
+  }
+
+  /**
+   * A descending platform must not squash the player into the floor (the capsule would be pushed
+   * down through it): anyone underneath whose head reaches the slab is nudged out sideways.
+   */
+  _guardBelow() {
+    const p = this.session.player;
+    if (!p.alive) return;
+    const r = 0.34, bottom = this.position.y - this.h;
+    const head = p.position.y + (p.form === 'squid' ? 0.55 : 1.4);
+    if (p.position.y > bottom - 0.05 || head < bottom - 0.05) return;
+    _a.copy(p.position).sub(this.position).applyAxisAngle(UP, -this.group.rotation.y);
+    const ox = this.w / 2 + r - Math.abs(_a.x), oz = this.d / 2 + r - Math.abs(_a.z);
+    if (ox <= 0 || oz <= 0) return;
+    if (ox < oz) _a.x = Math.sign(_a.x || 1) * (this.w / 2 + r + 0.04);
+    else _a.z = Math.sign(_a.z || 1) * (this.d / 2 + r + 0.04);
+    _a.applyAxisAngle(UP, this.group.rotation.y).add(this.position);
+    p.position.x = _a.x; p.position.z = _a.z;
   }
 
   render(dt) {
@@ -211,4 +231,3 @@ class Mover extends Entity {
 }
 
 registerEntity('mover', (s, d) => new Mover(s, d));
-void UP;

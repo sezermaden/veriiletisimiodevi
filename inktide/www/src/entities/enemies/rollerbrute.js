@@ -4,9 +4,13 @@
 import * as THREE from 'three';
 import { registerEntity } from '../base.js';
 import { TEAM_MURK } from '../../ink/ink-system.js';
-import { MurkEnemy, buildTrooper, animateTrooper, angleDiff, clamp, G, mesh, UP } from './common.js';
+import { makeContacts } from '../../world/level.js';
+import { MurkEnemy, buildTrooper, animateTrooper, angleDiff, clamp, G, mesh, UP, DOWN } from './common.js';
 
 const _d = new THREE.Vector3();
+const _ra = new THREE.Vector3();
+const _rb = new THREE.Vector3();
+const _pa = new THREE.Vector3();
 const _p = new THREE.Vector3();
 const _q = new THREE.Quaternion();
 const _z = new THREE.Vector3(0, 0, 1);
@@ -44,6 +48,9 @@ export class Rollerbrute extends MurkEnemy {
     this.lastX = this.position.x;
     this.lastZ = this.position.z;
     this.rev = 0;
+    // the roller sits ~1.4 m ahead of the body capsule, so it gets its own collision
+    this.rollerContacts = makeContacts();
+    this.bumpN = new THREE.Vector3();
   }
 
   _buildRoller() {
@@ -105,6 +112,52 @@ export class Rollerbrute extends MurkEnemy {
   rollerPoint(out) {
     const s = Math.sin(this.yaw), c = Math.cos(this.yaw);
     return out.set(this.position.x + s * AXLE_Z * SCALE, this.position.y, this.position.z + c * AXLE_Z * SCALE);
+  }
+
+  _physics(dt) {
+    super._physics(dt);
+    if (this.hitWall) this.bumpN.copy(this.contacts.wallNormal); else this.bumpN.set(0, 0, 0);
+    this._collideRoller();
+  }
+
+  /**
+   * Keep the drum out of walls: collide a capsule along the axle and push the whole brute back by
+   * the wall-normal part of the correction (ground pushes on ramps are ignored).
+   */
+  _collideRoller() {
+    const p = this.position, s = Math.sin(this.yaw), c = Math.cos(this.yaw);
+    const R = ROLLER_R * SCALE, ax = AXLE_Z * SCALE, half = 0.55 * SCALE, r = R - 0.02;
+    // lifted ~0.2 m off the floor so kerbs and stair risers read as ground, not walls
+    const cx = p.x + s * ax, cz = p.z + c * ax, cy = p.y + R + 0.18;
+    // axle runs along local X: world (cos yaw, 0, -sin yaw)
+    _ra.set(cx + c * half, cy, cz - s * half);
+    _rb.set(cx - c * half, cy, cz + s * half);
+    const x0 = _ra.x, z0 = _ra.z;
+    const k = this.session.level.collideCapsule(_ra, _rb, r, this.rollerContacts);
+    if (!k.wall) return;
+    const n = k.wallNormal, nl = Math.hypot(n.x, n.z);
+    if (nl < 1e-3) return;
+    const nx = n.x / nl, nz = n.z / nl;
+    const push = (_ra.x - x0) * nx + (_ra.z - z0) * nz;
+    if (push <= 1e-4) return;
+    p.x += nx * push; p.z += nz * push;
+    const v = this.velocity, vn = v.x * nx + v.z * nz;
+    if (vn < 0) { v.x -= nx * vn; v.z -= nz * vn; }
+    this.hitWall = true;
+    this.bumpN.set(nx, 0, nz);
+  }
+
+  /** Ledge probe that also checks under the roller when rolling forward (it hangs 1.4 m ahead). */
+  _probeAhead(vx, vz, sp) {
+    if (!super._probeAhead(vx, vz, sp)) return false;
+    const s = Math.sin(this.yaw), c = Math.cos(this.yaw);
+    if ((vx * s + vz * c) / sp < 0.25) return true;
+    // (+ speed lookahead: the base probe is cached for a few steps at charge speed)
+    const look = (AXLE_Z + ROLLER_R * 0.7) * SCALE + Math.min(0.5, sp * 0.05), p = this.position;
+    _pa.set(p.x + s * look, p.y + 0.9, p.z + c * look);
+    const h = this.session.level.raycast(_pa, DOWN, 0.9 + this.maxDrop);
+    if (!h) return false;
+    return h.normal.y > 0.5 || h.normal.y < -0.3;
   }
 
   onState(s) {
@@ -185,7 +238,9 @@ export class Rollerbrute extends MurkEnemy {
           this.faceYaw = Math.atan2(this.chargeDir.x, this.chargeDir.z);
           this.turnRate = 10;
           this.rev = 1;
-          if (this.modeT > 0.25 && this.hitWall && !this.atLedge) { this.turnRate = 3.2; this.setMode('stunned'); break; }
+          // bonk only on a head-on hit; a glancing scrape just slides along the wall
+          const headOn = this.bumpN.x * this.chargeDir.x + this.bumpN.z * this.chargeDir.z < -0.45;
+          if (this.modeT > 0.25 && this.hitWall && headOn && !this.atLedge) { this.turnRate = 3.2; this.setMode('stunned'); break; }
           if (this.atLedge || this.modeT > 1.9 || this.chargeHit) { this.turnRate = 3.2; this.setMode('recover'); }
           if (Math.random() < 0.35) S.audio?.sfx('roller_roll', { pos: this.position, volume: 0.7, throttle: 0.2 });
           break;
