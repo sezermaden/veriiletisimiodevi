@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { Special, registerSpecial } from '../base.js';
 import { Entity } from '../../entities/base.js';
 import { makeCloudModel, addPoseHook } from '../models.js';
-import { hitActor, sfx, UP, DOWN } from '../mains/shared.js';
+import { hitActor, noCharge, sfx, UP, DOWN } from '../mains/shared.js';
 import { ownModel } from '../subs/sprinkler.js';
 
 const _m = new THREE.Vector3();
@@ -86,10 +86,18 @@ export class StormCloud extends Entity {
       const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * s.radius;
       _m.set(c.x + Math.cos(a) * r, c.y - 0.5, c.z + Math.sin(a) * r);
       _v.set(this.drift.x, -9 - Math.random() * 3, this.drift.z);
+      const pr = s.paintRadius * (0.8 + Math.random() * 0.45);
       S.projectiles.spawn({
         pos: _m, vel: _v, team: this.team, owner: this.owner, damage: 0, size: 0.06, radius: 0.05,
-        gravity: 14, life: 2.2, paint: { radius: s.paintRadius * (0.8 + Math.random() * 0.45) }, fx: false, ignoreActors: true,
-        onHit: (p, hit) => { if (Math.random() < 0.35 && hit.normal) S.fx.burst(hit.point, hit.normal, color, 3, 2, { size: 0.04, life: 0.35 }); },
+        gravity: 14, life: 2.2, fx: false, ignoreActors: true,
+        // paint here (not via `paint:`) so the rain counts as the owner's turf without feeding
+        // the owner's special gauge
+        onWorld: (p, hit) => {
+          noCharge(this.owner, () => S.ink.paint(hit.point, pr, this.team, hit.normal, { source: this.owner }));
+          if (Math.random() < 0.35) S.fx.burst(hit.point, hit.normal, color, 3, 2, { size: 0.04, life: 0.35 });
+          S.projectiles.kill(p);
+          return true;
+        },
       });
     }
     // damage tick for anyone under the cloud (and not under a roof)
@@ -181,8 +189,6 @@ export class InkStorm extends Special {
     super.activate();
     this.t = 0;
     this.thrown = false;
-    this.cloud = null;
-    this.seedLive = false;
     sfx(this.w, 'special', { volume: 0.8 });
   }
 
@@ -191,9 +197,9 @@ export class InkStorm extends Special {
   update(dt) {
     this.t += dt;
     if (!this.thrown && this.t >= 0.14) this.throwSeed();
-    // stay active (so the gauge doesn't refill from our own rain) until the storm has passed
-    if (this.thrown && this.t >= 0.34 && !this.seedLive && (!this.cloud || this.cloud.dead)) this.end();
-    if (this.t > 14) this.end();
+    // The storm lives on as its own entity; the special ends with the throw so sub weapons, wall
+    // climbing and the gauge come straight back (the rain itself never feeds the gauge: noCharge).
+    if (this.thrown && this.t >= 0.45) this.end();
   }
 
   throwSeed() {
@@ -218,20 +224,17 @@ export class InkStorm extends Special {
       // don't bury the cloud in a ceiling
       const up = S.level.raycast(_p.set(pos.x, gy + 0.5, pos.z), UP, s.height, { staticOnly: true });
       if (up) at.y = gy + Math.max(2.2, up.distance - 0.4);
-      this.seedLive = false;
-      if (this.active) this.cloud = S.addEntity(new StormCloud(S, w, at, drift, s));
-      else S.addEntity(new StormCloud(S, w, at, drift, s));
+      S.addEntity(new StormCloud(S, w, at, drift, s));
       S.fx.explosion(at, DOWN, color, 1.6);
       S.audio?.sfx('storm_spawn', { pos: at, volume: 0.9 });
     };
-    this.seedLive = true;
     const seedP = S.projectiles.spawn({
       pos: _m, vel: _v, team: w.team, owner: w, damage: 0, radius: 0.2, gravity: 16, life: s.seedTime, mesh: seed, ignoreActors: true, fx: false,
       onStep: (p, dt) => { seed.rotation.x += dt * 9; seed.rotation.y += dt * 5; if (Math.random() < 0.6) S.fx.spray(p.pos, _hc.set(0, -1, 0), color, 1, 0.6, { size: 0.05, life: 0.3 }); },
       onHit: (p, hit) => burst(hit.point),
       onExpire: (p) => burst(p.pos),
     });
-    if (!seedP) { this.seedLive = false; seed.geometry.dispose(); seed.material.dispose(); }
+    if (!seedP) { seed.geometry.dispose(); seed.material.dispose(); }
     sfx(w, 'storm_throw', { volume: 0.7 });
   }
 

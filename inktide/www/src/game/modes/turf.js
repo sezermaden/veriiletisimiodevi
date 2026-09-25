@@ -599,12 +599,13 @@ export class TurfMode {
     }
     // HUD scoreboard: only touch the DOM when the shown second or someone's alive state changes
     if (this.phase === 'play' || this.phase === 'ready') {
-      const sec = Math.floor(this.timeLeft);
+      // whole seconds rounded up: 3:00 at GO, 0:01 in the last second (matches the 10…1 countdown)
+      const sec = Math.ceil(this.timeLeft);
       let mask = 0;
       for (let i = 0; i < this.allPlayers.length; i++) if (this.allPlayers[i].alive) mask |= 1 << i;
       if (sec !== this._hudSec || mask !== this._hudMask) {
         this._hudSec = sec; this._hudMask = mask;
-        S.hud.turf(this.timeLeft, this._roster(TEAM_HERO), this._roster(TEAM_MURK));
+        S.hud.turf(sec, this._roster(TEAM_HERO), this._roster(TEAM_MURK));
       }
     }
     // map

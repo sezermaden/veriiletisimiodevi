@@ -110,6 +110,8 @@ export class MainWeapon {
   /** Fixed-step update. ctrl = { fire (held), firePressed, fireReleased } */
   update(dt, ctrl) { void dt; void ctrl; }
   get moveMul() { return this.firing ? this.s.moveMul : 1; }
+  /** Optional hook, called each fixed step BEFORE the wielder's movement code (and before jump is consumed). */
+  // preMove(dt, { firing, wish, wishLen }) {}
   /** While true the wielder skips its own movement code (the weapon drives velocity, e.g. dodge rolls). */
   get drivesMovement() { return false; }
   /** 0..1 charge for the crosshair (chargers, splatlings). */

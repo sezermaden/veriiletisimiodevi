@@ -136,6 +136,9 @@ function buildDredge(boss) {
   };
 }
 
+const LURE_ANGRY = new THREE.Color('#ff5a2a');
+const LURE_CALM = new THREE.Color('#ffe98a');
+
 function buildMurkwell(boss) {
   const skin = boss.mat('mw-skin', '#4b3f6e', { roughness: 0.45, rim: 0.5, rimColor: '#b9a8ff' });
   const skinD = boss.mat('mw-skinD', '#2c2447', { roughness: 0.5 });
@@ -204,8 +207,8 @@ function buildMurkwell(boss) {
       const glow = angry ? 1.25 : 0.8 + Math.sin(t * 3) * 0.2;
       lureGlow.scale.setScalar(0.6 * glow);
       lureM.emissiveIntensity = 2 + glow * 1.5;
-      lureM.emissive.set(angry ? '#ff5a2a' : '#ffe98a');
-      lureGlow.material.color.set(angry ? '#ff5a2a' : '#ffe98a');
+      lureM.emissive.copy(angry ? LURE_ANGRY : LURE_CALM);
+      lureGlow.material.color.copy(angry ? LURE_ANGRY : LURE_CALM);
       void dt;
     },
   };

@@ -14,7 +14,7 @@
 import { block, box, container, ent, murk } from '../kit.js';
 import { PI, D, SCENERY, quay, bollards, containerStack, warehouse, fishingBoat, cargoShip, farWarehouses } from './docks-kit.js';
 
-const A = 12, B = 22, C = 24, TOP = 30, HANG = 28;
+const A = 12, B = 22, C = 24, TOP = 30, HANG = 26;
 const T = (x, y, z, o) => ent('trigger', x, y, z, o);
 const YEL = '#f2c230', ORG = '#e0612b', STEEL = '#b9bcc8';
 
@@ -79,10 +79,10 @@ const brushes = [
   block(0, -154, 8.4, 8.4, TOP, 0.12, { mat: 'concrete', color: '#b8b0a6' }),
   block(-4.5, -143, 1.2, 2.6, C, 1.0, { mat: 'concrete', color: YEL }),
   block(3.5, -141.5, 2.4, 1.2, C, 1.0, { mat: 'concrete', color: '#e8e2d6' }),
-  ...jib(-158, -182, TOP + 0.12, '#d9482b'),
-  box(-5, HANG - 0.6, -191, 5, HANG, -181, { mat: 'metal', color: '#6d7384' }),       // hanging capsule platform
-  ...[[-4.6, -181.4], [4.6, -181.4], [-4.6, -190.6], [4.6, -190.6]].map(([x, z]) => box(x - 0.04, HANG, z - 0.04, x + 0.04, TOP + 3, z + 0.04, SCENERY({ mat: 'metal', color: '#1b1f2e' }))),
-  block(0, -182, 2.2, 2.2, TOP + 1.7, 1.6, SCENERY({ mat: 'metal', color: '#d9482b' })),  // jib-tip sheave block (overhead)
+  ...jib(-158, -172, TOP + 0.12, '#d9482b'),
+  box(-5, HANG - 0.6, -183, 5, HANG, -173, { mat: 'metal', color: '#c3cad6' }),       // hanging capsule platform (drop 4 m off the jib tip)
+  ...[[-4.6, -173.4], [4.6, -173.4], [-4.6, -182.6], [4.6, -182.6]].map(([x, z]) => box(x - 0.04, HANG, z - 0.04, x + 0.04, TOP + 3, z + 0.04, SCENERY({ mat: 'metal', color: '#1b1f2e' }))),
+  block(0, -172, 2.2, 2.2, TOP + 1.7, 1.6, SCENERY({ mat: 'metal', color: '#d9482b' })),  // jib-tip sheave block (overhead)
 
   // A-frames on the crane houses (scenery silhouettes)
   block(0, -44, 0.6, 0.6, A + 4.3, 5, SCENERY({ mat: 'metal', color: YEL })),
@@ -172,15 +172,16 @@ const entities = [
   ent('checkpoint', 2.6, TOP + 0.12, -151.5, { id: 'cp3', yaw: PI }),
   ent('pearl-trail', -2.8, TOP + 0.12, -150.8, { to: [-2.8, TOP + 0.12, -153.2], count: 3 }),
   ent('murk-barrier', 0, TOP + 0.12, -166, { id: 'bar-top', size: [7, 4, 0.4], group: 'craneC' }),
-  ent('snipe-eel', 3, HANG, -188.5, { group: 'top', yaw: 0.2, aggro: 30 }),
-  ent('glooper', -3, HANG, -185, { group: 'top', yaw: 0 }),
-  ent('pearl-trail', 0, TOP + 0.12, -168, { to: [0, TOP + 0.12, -180], count: 4 }),
-  ent('prism-core', 0, HANG, -186.5, { id: 'core' }),
+  ent('snipe-eel', 3, HANG, -181, { group: 'top', yaw: 0.2, aggro: 30 }),
+  ent('glooper', -3, HANG, -176.5, { group: 'top', yaw: 0 }),
+  ent('pearl-trail', 0, TOP + 0.12, -167.5, { to: [0, TOP + 0.12, -171], count: 3 }),
+  ent('pearl-trail', -4, HANG, -175, { to: [-4, HANG, -181], count: 3 }),
+  ent('prism-core', 0, HANG, -178.5, { id: 'core' }),
   D('railing', -1.55, TOP + 0.12, -162, { yaw: PI / 2, length: 8, collide: true }), D('railing', 1.55, TOP + 0.12, -162, { yaw: PI / 2, length: 8, collide: true }),
-  D('railing', -1.55, TOP + 0.12, -174, { yaw: PI / 2, length: 14, collide: true }), D('railing', 1.55, TOP + 0.12, -174, { yaw: PI / 2, length: 14, collide: true }),
-  D('flag', -4.6, HANG, -190.6, { color: '#ff8a1f', height: 3 }), D('flag', 4.6, HANG, -190.6, { color: '#2fd6ff', height: 3 }),
+  D('railing', -1.55, TOP + 0.12, -169.2, { yaw: PI / 2, length: 5, collide: true }), D('railing', 1.55, TOP + 0.12, -169.2, { yaw: PI / 2, length: 5, collide: true }),
+  D('flag', -4.6, HANG, -182.6, { color: '#ff8a1f', height: 3 }), D('flag', 4.6, HANG, -182.6, { color: '#2fd6ff', height: 3 }),
   D('antenna', -3, TOP + 0.12, -151, { variant: 'radar', height: 2.4 }),
-  D('lamp', -4.4, HANG, -181.6, { yaw: PI * 0.75 }),
+  D('lamp', -4.4, HANG, -173.6, { yaw: PI * 0.75 }),
 
   // ---------------- water dressing ----------------
   D('buoy', -12, -1.6, -60), D('buoy', 12, -1.6, -75, { color: '#2fb35a', light: '#ff3030' }), D('buoy', -14, -1.6, -125, { color: '#f2c230' }),
@@ -211,13 +212,13 @@ export default {
     { at: [0, A + 2.5, -88.95], r: 1.8, team: 'murk', n: [0, 0, 1] },                     // stained climb face (repaint!)
     { at: [0, B - 2.5, -93.95], r: 1.6, team: 'murk', n: [0, 0, 1] },
     murk(0, C, -146, 2.6), murk(-6, C, -148, 2), murk(6, C, -146, 2), murk(0, C, -152, 1.6),
-    murk(0, TOP + 0.12, -170, 1.4), murk(0, HANG, -186.5, 2.6),
+    murk(0, TOP + 0.12, -170, 1.4), murk(0, HANG, -178.5, 2.6),
   ],
   entities,
   route: [
     [0, 0, 9], [0, 0, -15], [0, 2.6, -18.5, 'climb'], [0, 2.6, -21], [0, A, -36.5, 'launch'], [5.6, A, -41], [5.6, A, -47.5],
     [0, A, -49.5], [0, A, -69], [0, A, -85.5, 'mover'], [0, A, -87.8], [0, A + 5, -90, 'climb'], [0, A + 5, -93.2],
     [0, B + 0.12, -95.5, 'climb'], [0, B + 0.12, -123], [0, C, -141, 'launch'], [0, C, -148.5], [0, TOP + 0.12, -151, 'climb'],
-    [0, TOP + 0.12, -157], [0, TOP + 0.12, -181], [0, HANG, -183.5], [0, HANG, -185],
+    [0, TOP + 0.12, -157], [0, TOP + 0.12, -171.5], [0, HANG, -175], [0, HANG, -176.5],
   ],
 };

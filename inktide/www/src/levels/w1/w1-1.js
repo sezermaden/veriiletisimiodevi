@@ -99,10 +99,10 @@ const brushes = [
 
   // ---------------- H: gantry court ----------------
   ...quay(-12, -190.6, 12, -216.6, 0, { mat: 'concrete', color: '#cfc7bb', stripe: false }),
-  block(-7.5, -206, 9, 6, 0, 2.8, { mat: 'metal', color: '#7b8296' }),              // gantry (x -12..-3, z -203..-209)
+  block(-7.5, -206, 9, 6, 0, 2.8, { mat: 'metal', color: '#d2d6de' }),              // gantry (x -12..-3, z -203..-209)
   box(-12, 2.8, -203.2, -3, 3.35, -203, { mat: 'metal', color: '#f2c230' }),         // parapet (front, low: they peek over)
   box(-3.2, 2.8, -209, -3, 3.35, -205.2, { mat: 'metal', color: '#f2c230' }),         // parapet (east, leaves the stair gap)
-  stairs(-3, 0, -205, 0.2, 2.8, -203.2, '-x', { mat: 'metal', color: '#565d78' }),   // flank stairs up
+  stairs(-3, 0, -205, 0.2, 2.8, -203.2, '-x', { mat: 'metal', color: '#f2c230' }),   // flank stairs up
   box(-12, 0, -216.6, 1.2, 4.6, -215.4, { mat: 'brick', color: '#c65a3e' }),         // exit wall with gate (x 1.25..6.75)
   box(6.8, 0, -216.6, 12, 4.6, -215.4, { mat: 'brick', color: '#c65a3e' }),
   block(7.5, -198, 2.4, 1.2, 0, 1.0, { mat: 'concrete', color: '#e8e2d6' }),

@@ -10,7 +10,7 @@
 //   { type: 'boss-bucketeer', pos (floor centre), arena: { center, radius }, tower: [x, topY, z] }
 import * as THREE from 'three';
 import { registerEntity } from '../base.js';
-import { Boss, G, UP, TEAM_MURK, clamp, lerp, smooth, easeOut, angleDiff, turnToward, emblemTexture, hazardTexture, mergeStatic } from './common.js';
+import { Boss, G, UP, DOWN, TEAM_MURK, clamp, lerp, smooth, easeOut, angleDiff, turnToward, emblemTexture, hazardTexture, mergeStatic, EYE_RED, EYE_AMBER } from './common.js';
 import { Pilot } from './pilots.js';
 
 const _v = new THREE.Vector3();
@@ -268,10 +268,10 @@ export class Bucketeer extends Boss {
       case 'pour-warn': {
         if (enter) {
           S.audio?.sfx('boss_alarm', { pos, volume: 0.8 });
-          // line of rings along the pour path
+          // line of rings along the pour path, on whatever the curtain lands on (tower top, decks…)
           for (let i = 0; i <= 5; i++) {
-            _p.lerpVectors(this.pourFrom, this.pourTo, i / 5).setY(this.floorY);
-            this.warn(_p, 1.8, 0.9 + (i / 5) * (this.pourLen / C.pour), '#ff3b2a');
+            _p.lerpVectors(this.pourFrom, this.pourTo, i / 5);
+            this.warn(this.ground(_p, _p), 1.8, 0.9 + (i / 5) * (this.pourLen / C.pour), '#ff3b2a');
           }
         }
         this.target.copy(this.pourFrom);
@@ -426,19 +426,25 @@ export class Bucketeer extends Boss {
         if (r === 1 && gaps.includes(c)) continue;
         const lat = (c - 4) * 1.45 + (Math.random() - 0.5) * 0.4;
         _v.copy(aim).addScaledVector(_d, rows[r]).addScaledVector(perp, lat);
-        _v.y = this.floorY;
         this._clampFloor(_v);
+        this._surface(_v);
         const T = C.waveT + r * 0.12 + Math.abs(c - 4) * 0.03;
         this.lob(_t, _v, T, { damage: 22, splash: { radius: 1.35, damage: 22 }, paint: 1.35, size: 0.3 });
       }
     }
     for (let c = 0; c < 9; c += 2) {
-      _v.copy(aim).addScaledVector(perp, (c - 4) * 1.45).setY(this.floorY);
+      _v.copy(aim).addScaledVector(perp, (c - 4) * 1.45);
       this._clampFloor(_v);
-      this.warn(_v, 1.5, C.waveT, '#ff3b2a');
+      this.warn(this._surface(_v), 1.5, C.waveT, '#ff3b2a');
     }
     S.fx.burst(_t, _d, this.pal.ink, 18, 6, { size: 0.12 });
     void dist;
+  }
+
+  /** Snap p onto the first static surface below the bucket's flight height (tower top, decks, roof). */
+  _surface(p) {
+    p.y = Math.max(this.position.y, this.floorY + 7);
+    return this.ground(p, p);
   }
 
   _clampFloor(p) {
@@ -479,7 +485,29 @@ export class Bucketeer extends Boss {
     if (onTower || _d.lengthSq() < 1) _d.subVectors(this.position, T).setY(0);
     if (_d.lengthSq() < 1e-3) _d.set(1, 0, 0);
     _d.normalize();
-    this.perch = new THREE.Vector3(T.x, this.floorY + 3.3, T.z).addScaledVector(_d, this.tower ? 6.4 : 0);
+    this.perch = (this.perch || new THREE.Vector3()).set(T.x, this.floorY + 3.3, T.z);
+    if (!this.tower) return;
+    // settle on clear roof beside the tower: never on the stairs, the landing or an AC unit
+    // (the bucket has no collider, so it would swallow the player walking up the stairs)
+    const a0 = Math.atan2(_d.x, _d.z);
+    for (let k = 0; k < 17; k++) {
+      const a = a0 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 8);
+      _q.set(T.x + Math.sin(a) * 6.4, 0, T.z + Math.cos(a) * 6.4);
+      if (this._perchClear(_q)) { this.perch.set(_q.x, this.floorY + 3.3, _q.z); return; }
+    }
+    this.perch.addScaledVector(_d, 6.4);
+  }
+
+  /** Nothing taller than a planter under the grounded bucket (spout ~1 m, rim ~1.8 m up). */
+  _perchClear(c) {
+    const L = this.S.level;
+    for (let i = 0; i < 5; i++) {
+      const a = i * (Math.PI / 2) + Math.PI / 4, r = i === 4 ? 0 : 2.4;
+      _t.set(c.x + Math.sin(a) * r, this.floorY + 4, c.z + Math.cos(a) * r);
+      const hit = L.raycast(_t, DOWN, 6, { staticOnly: true });
+      if (hit && hit.point.y > this.floorY + (r ? 1.3 : 0.8)) return false;
+    }
+    return true;
   }
 
   /** One blob falling from the spout (pour curtain). */
@@ -582,7 +610,7 @@ export class Bucketeer extends Boss {
       this.S.fx.spray(this.spout.getWorldPosition(_t), _d.set(0, -2, 0), this.pal.ink, 1, 0.5, { size: 0.09, life: 0.8 });
     }
     this.eyeMat.emissiveIntensity = st === 'slosh-warn' || st === 'pour-warn' ? (Math.sin(t * 30) > 0 ? 4 : 1) : st === 'grounded' ? 0.4 : 2.2;
-    this.eyeMat.emissive.set(st === 'slosh-warn' || st === 'pour-warn' ? '#ff3b2a' : '#ffd23a');
+    this.eyeMat.emissive.copy(st === 'slosh-warn' || st === 'pour-warn' ? EYE_RED : EYE_AMBER);
     const mood = this.defeated || st === 'sputter' || st === 'grounded' ? 'panic' : st === 'slosh-warn' || st === 'pour' || st === 'intro' ? 'angry' : 'idle';
     this.pilot.update(dt, mood);
     if (this._eject) this._animateEject(dt);

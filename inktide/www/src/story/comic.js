@@ -189,7 +189,15 @@ export class ComicScreen extends ClockScreen {
     const k = 1 - Math.exp(-c.t / 5.5);
     const z = 1.03 + c.kb.zoom * k;
     c.svg.style.transform = `scale(${z.toFixed(4)}) translate(${(c.kb.x * k).toFixed(3)}%, ${(c.kb.y * k).toFixed(3)}%)`;
-    for (const L of c.layers) L.g.setAttribute('transform', `translate(${(-c.kb.x * 34 * L.d * k).toFixed(1)} ${(-c.kb.y * 22 * L.d * k).toFixed(1)})`);
+    // Layer parallax re-rasterises the whole SVG whenever an attribute changes (the zoom above is a
+    // composited CSS transform and is free), so quantise to half a viewBox unit (well under a pixel)
+    // and only touch the DOM when the value actually moved: early on that is ~20 updates/s, then
+    // almost none as the ease settles, instead of a full repaint every frame.
+    const q = (v) => (Math.round(v * 2) / 2).toFixed(1);
+    for (const L of c.layers) {
+      const tr = `translate(${q(-c.kb.x * 34 * L.d * k)} ${q(-c.kb.y * 22 * L.d * k)})`;
+      if (tr !== L.last) { L.last = tr; L.g.setAttribute('transform', tr); }
+    }
   }
 
   update(dt) {

@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { MainWeapon, registerMain, muzzleOf, aimDir } from '../base.js';
 import { makeDualieModel, addPoseHook } from '../models.js';
 import { wishDir, sfx, UP } from './shared.js';
+import { disposeTree } from '../../engine/dispose.js';
 
 const _m = new THREE.Vector3();
 const _d = new THREE.Vector3();
@@ -70,6 +71,11 @@ export class Dualies extends MainWeapon {
   buildModel() { return makeDualieModel(this.w.session.ink.color(this.w.team), false); }
 
   get moveMul() { return this.firing ? this.s.moveMul : 1; }
+
+  setColor(c) {
+    super.setColor(c);
+    this.offModel?.traverse((o) => { if (o.userData.inkPart) { o.material.color.set(c); o.material.emissive?.set(c); } });
+  }
 
   get drivesMovement() {
     this.pollRoll();
@@ -218,6 +224,8 @@ export class Dualies extends MainWeapon {
     this.unhook?.();
     if (this.w.model) this.resetRoll(this.w.model);
     this.offSocket?.parent?.remove(this.offSocket);
+    disposeTree(this.offModel);          // the off-hand pistol is not this.model: free it too
+    this.offModel = null;
     super.dispose();
   }
 }

@@ -49,11 +49,28 @@ export function isCombatant(a, team) {
   return a.alive && !a.untargetable && a.team !== team && a.team !== TEAM_NONE && !a.prop;
 }
 
-/** Damage one actor and emit the 'hit' event (HUD hit marker, stats). */
+/** Damage one actor and emit the 'hit' event (HUD hit marker, stats) — only when the hit landed
+ *  (damage() returns false for invulnerable / shielded / frozen targets). Returns whether it did. */
 export function hitActor(S, a, amount, info) {
-  if (!a.alive || amount <= 0) return;
-  a.damage(amount, info);
+  if (!a.alive || amount <= 0) return false;
+  const applied = a.damage(amount, info);
+  if (applied === false) return false;
   S.events.emit('hit', { target: a, source: info.source, damage: amount, point: (info.point || a.hitCenter(_hc)).clone() });
+  return true;
+}
+
+/**
+ * Run fn() with the wielder's special gauge locked, so ink laid down by a special weapon (storm
+ * rain, missile blasts) still counts as the wielder's turf but does not recharge the gauge. The
+ * Player only charges while `kit.special.active` is false; the flag is held for this synchronous
+ * call only, so the special itself can end right away (sub weapons, wall climbing and the bots'
+ * state machine all key off `special.active`).
+ */
+export function noCharge(w, fn) {
+  const sp = w?.kit?.special;
+  if (!sp || sp.active) return fn();
+  sp.active = true;
+  try { return fn(); } finally { sp.active = false; }
 }
 
 /**

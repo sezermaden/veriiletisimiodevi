@@ -331,7 +331,13 @@ export class MenuScene {
     this.fov = 46;
     this._placeCamera(1, true);
 
-    this._unsub = settings.onChange((p) => { if (p === 'gameplay.inkPalette' || p === '*') this.recolor(); });
+    this.calm = settings.get('video.motionFx') === false;
+    this._unsub = settings.onChange((p) => {
+      if (p === 'gameplay.inkPalette' || p === '*') this.recolor();
+      if (p === 'video.motionFx' || p === '*') this.calm = settings.get('video.motionFx') === false;
+      // a quality change rebuilds the post chain with stock bloom: restore the plaza grade
+      if ((p === 'video.quality' || p === '*') && this.active && !app.session) this._applyLook();
+    });
 
     app.menuScene = this;
     R.setScene(this.scene, this.camera);
@@ -416,7 +422,8 @@ export class MenuScene {
 
   _placeCamera(dt, snap = false) {
     const S = SHOTS[this.shot];
-    this.orbit += dt * S.speed;
+    const sway = this.calm ? 0 : 1;              // Options ▸ Video ▸ Motion effects
+    this.orbit += dt * S.speed * sway;
     const a = S.base + Math.sin(this.orbit) * S.sweep;
     const c = _v.fromArray(S.center);
     const wantPos = _w.set(c.x + Math.sin(a) * S.radius, c.y + S.height + Math.sin(this.orbit * 1.7) * 0.12, c.z + Math.cos(a) * S.radius);
@@ -428,8 +435,8 @@ export class MenuScene {
     const cam = this.camera;
     cam.position.copy(this.camPos);
     // gentle handheld drift
-    cam.position.x += Math.sin(this.time * 0.63) * 0.04;
-    cam.position.y += Math.sin(this.time * 0.91) * 0.03;
+    cam.position.x += Math.sin(this.time * 0.63) * 0.04 * sway;
+    cam.position.y += Math.sin(this.time * 0.91) * 0.03 * sway;
     cam.lookAt(this.camTarget);
 
     // keep the subject at `frame` of the viewport width (menus cover the left third): render a

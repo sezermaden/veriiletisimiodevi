@@ -137,10 +137,18 @@ export class StoryMode {
           const bp = new THREE.Vector3();
           if (boss.hitCenter) boss.hitCenter(bp); else bp.copy(boss.position).addScaledVector(_up, 2);
           const dir = bp.clone().sub(S.player.position).setY(0);
-          if (dir.lengthSq() < 1e-4) dir.set(0, 0, -1);
-          dir.normalize();
-          const cam = S.player.position.clone().addScaledVector(dir, -3.2).addScaledVector(_up, 2.4);
-          await cs.camera(cam, bp, 1.4, 'inOut');
+          const dist = dir.length();
+          if (dist < 1e-2) dir.set(0, 0, -1); else dir.divideScalar(dist);
+          // push in toward the boss (arenas start it ~20 m away, where it reads as a speck), then
+          // pull the camera back in front of any wall between it and the boss
+          const back = Math.min(Math.max(8, dist * 0.45), dist + 3.2);
+          const cam = bp.clone().addScaledVector(dir, -back);
+          cam.y = Math.max(S.player.position.y + 2.4, bp.y + 0.4);
+          const ray = cam.clone().sub(bp);
+          const len = ray.length();
+          const hit = len > 1e-3 ? S.level?.raycast?.(bp, ray.divideScalar(len), len, { staticOnly: true }) : null;
+          if (hit && hit.distance > 2) cam.copy(bp).addScaledVector(ray, hit.distance - 0.6);
+          await cs.camera(cam, bp, 1.6, 'inOut');
         }
         await cs.say(m.intro);
         if (boss && !cs.skipping) await cs.returnCamera(0.8);

@@ -75,7 +75,9 @@ export class InkJet extends Special {
       v.y += (vy - v.y) * Math.min(1, dt * (this.phase === 'rise' ? 6 : 8));
       if (this.phase === 'rise' && this.t > 0.7) this.phase = 'fly';
       // the main weapon is blocked while flying (blocksFire), so read the trigger directly
-      const fire = ctrl.fire || (w.isPlayer ? !!w.session.input?.isDown('fire') : !!w.botFire);
+      // (level-triggered): the player's input, a turf bot's BotInput, or an explicit botFire flag
+      const src = w.isPlayer ? S.input : w.bot?.input;
+      const fire = ctrl.fire || !!w.botFire || !!src?.isDown?.('fire');
       if (fire && this.fireCool <= 0 && this.t > 0.25) this.shoot();
       if (this.t >= s.duration) { this.phase = 'land'; this.landT = 0; sfx(w, 'special_end', { volume: 0.6 }); }
       if (w.isPlayer) this.loop.keep(Math.min(1, Math.hypot(v.x, v.z) / s.speed * 0.5 + 0.5), 1);

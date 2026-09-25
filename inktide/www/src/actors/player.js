@@ -302,6 +302,9 @@ export class Player {
 
     this.submerged = squid && ((onOwn && !onDynamic) || this.climbing);
 
+    // weapons that change movement (dualies dodge roll) get a look before movement consumes jump
+    this.kit.main.preMove?.(dt, { firing: this.kit.main.firing, wish: _wish, wishLen });
+
     // ---- velocity ----
     const v = this.velocity;
     if (specialActive && special.drivesMovement) {
@@ -335,6 +338,9 @@ export class Player {
       if (squid) speed = this.submerged ? T.swimSpeed : T.hopSpeed;
       else speed = T.runSpeed * this.kit.main.moveMul;
       if (onEnemy) speed *= T.enemyInkMul;
+      // airborne: never steer below the take-off speed (a squid leap out of ink keeps its swim
+      // momentum instead of decaying toward the dry-hop speed)
+      if (!this.grounded) speed = Math.max(speed, this.airSpeed || 0);
       const accel = this.grounded ? (this.submerged ? T.swimAccel : T.groundAccel) : T.airAccel;
       const tx = _wish.x * speed * wishLen, tz = _wish.z * speed * wishLen;
       const k = Math.min(1, (accel * dt) / Math.max(0.001, speed));
@@ -359,6 +365,7 @@ export class Player {
     }
 
     this._integrate(dt, this.climbing || (specialActive && special.drivesMovement && this.velocity.y > 0));
+    if (this.grounded || this.climbing) this.airSpeed = Math.min(T.swimSpeed * 1.1, Math.hypot(v.x, v.z));
 
     // ---- enemy ink, refill, regen ----
     if (onEnemy && !this.submerged) {

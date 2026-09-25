@@ -28,6 +28,9 @@ export { TEAM_HERO, TEAM_MURK };
 export const UP = new THREE.Vector3(0, 1, 0);
 export const DOWN = new THREE.Vector3(0, -1, 0);
 export const WHITE = new THREE.Color(1, 1, 1);
+// eye / telegraph colours (copied per frame — Color.set(string) would re-parse every frame)
+export const EYE_RED = new THREE.Color('#ff3b2a');
+export const EYE_AMBER = new THREE.Color('#ffd23a');
 export const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const smooth = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
@@ -217,9 +220,11 @@ export class BossPart {
   restore(frac = 1) { this.broken = false; this.hp = this.maxHp * frac; this.setOpen(false); }
   hitCenter(out) { return out.copy(this.center); }
   track() { this.anchor.localToWorld(this.center.copy(this.offset)); }
+  /** Returns false when the hit did no damage (closed/broken weak point, armour ping) so the
+   *  projectile/explosion code shows no hit marker and emits no 'hit' event. */
   damage(amount, info = {}) {
-    if (!this.alive || this.untargetable) return;
-    this.boss.onPartHit(this, amount, info);
+    if (!this.alive || this.untargetable) return false;
+    return this.boss.onPartHit(this, amount, info) === true;
   }
   dispose() {
     this.alive = false;
@@ -573,10 +578,12 @@ export class Boss extends Entity {
   }
 
   // ---- damage / feedback ----------------------------------------------------------------------
+  /** Returns true when a weak point took damage. */
   onPartHit(part, amount, info = {}) {
-    if (this.defeated) return;
+    if (this.defeated) return false;
     const S = this.S;
-    if (part.kind === 'armor') { this.armorPing(info.point || part.center); return; }
+    if (part.kind === 'armor') { this.armorPing(info.point || part.center); return false; }
+    if (!part.open || part.broken || !(amount > 0)) return false;
     const dmg = Math.min(part.hp, amount);
     part.hp -= dmg;
     part.flash = 1;
@@ -602,6 +609,7 @@ export class Boss extends Entity {
       this.onWeakBroken(part, info);
       this.updateBar();
     }
+    return true;
   }
   onWeakBroken(part, info) { void part; void info; }
 
@@ -618,9 +626,11 @@ export class Boss extends Entity {
       this.hint(this.armorHint || 'Armour plating! Aim for the glowing weak spot.', 4);
     }
   }
-  /** Projectiles that hit a solid boss collider. */
+  /** Projectiles that hit a solid boss collider. Level also calls this for every splat that lands
+   *  near a collider (a stand-in without a velocity): those only painted the floor nearby and must
+   *  not ping, flash sparks on the floor or count toward the armour hint. */
   onInkHit(p, hit) {
-    if (this.defeated || p.team === TEAM_MURK) return;
+    if (this.defeated || p.team === TEAM_MURK || !p.vel) return;
     this.armorPing(hit.point);
   }
 
@@ -723,7 +733,7 @@ export class Boss extends Entity {
         S.shake(_v, 0.3);
         // splash hero ink on the floor below
         const g = S.level.raycast(_w.copy(_v).setY(_v.y + 0.5), DOWN, 30, { staticOnly: true });
-        if (g) S.ink.paint(g.point, 1.8 + Math.random() * 1.4, TEAM_HERO, g.normal, { source: this.player });
+        if (g) S.ink.paint(g.point, 1.8 + Math.random() * 1.4, TEAM_HERO, g.normal, { source: this });   // not the player: no free special charge
       }
     }
     this.defeatStep?.(dt, this.defeatT);
@@ -738,7 +748,7 @@ export class Boss extends Entity {
     const c = this.finalBlastAt ? this.finalBlastAt(_v) : this.group.getWorldPosition(_v);
     const g = S.level.raycast(_w.copy(c).setY(c.y + 1), DOWN, 60, { staticOnly: true });
     const at = g ? g.point : c;
-    inkExplosion(S, at, g ? g.normal : UP, TEAM_HERO, { paintRadius: 7, damage: 0, owner: this.player, sound: 'bigboom' });
+    inkExplosion(S, at, g ? g.normal : UP, TEAM_HERO, { paintRadius: 7, damage: 0, owner: this, sound: 'bigboom' });
     S.fx.explosion(c, UP, this.pal.hero, 4.5);
     S.flash(`#${this.pal.hero.getHexString()}`, 0.5);
     S.shake(c, 1);

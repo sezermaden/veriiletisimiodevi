@@ -39,6 +39,7 @@ const _q = new THREE.Vector3();
 const _j = new THREE.Vector3();
 const _jp = new THREE.Vector3();
 const DOWN = new THREE.Vector3(0, -1, 0);
+const UP = new THREE.Vector3(0, 1, 0);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const CLIMB_CHECK = [0.25, 0.6, 0.92];
 const SIDES = [-0.4, 0.4];
@@ -462,6 +463,9 @@ export class BotBrain {
       if (score > bestS) {
         const n = nav.nearest(_v, 2.2, this.teamBit);
         if (n < 0 || nav.baseTeam[n]) continue;
+        // floor that runs on under a solid block (a stack, a container) can never be inked
+        _jp.copy(_v).setY(_v.y + 0.05);
+        if (this.S.level.raycast(_jp, UP, 1.6, { staticOnly: true })) continue;
         bestS = score; bx = nav.px[n]; by = nav.py[n]; bz = nav.pz[n];
       }
     }
@@ -601,7 +605,7 @@ export class BotBrain {
   }
 
   /** Steer along the path. Returns false when there is nothing to follow (arrived / no path). */
-  followPath(dt, speedMul = 1) {
+  followPath(dt, speedMul = 1, noClimb = false) {
     const nav = this.nav, p = this.p, path = this.path;
     if (!path) { this.climb = null; return false; }
     while (this.pathIdx < path.length) {
@@ -616,7 +620,11 @@ export class BotBrain {
     const prev = this.pathIdx > 0 ? path[this.pathIdx - 1] : -1;
     const e = prev >= 0 ? nav.edge(prev, n) : -1;
     const kind = e >= 0 ? nav.eKind[e] : WALK;
-    if (kind === CLIMB) { this.climbActive = true; return this.stepClimb(dt, e, n); }
+    if (kind === CLIMB) {
+      if (noClimb) { this.climb = null; return false; }
+      this.climbActive = true;
+      return this.stepClimb(dt, e, n);
+    }
     this.pathDrop = kind === DROP;
     _v.set(nav.px[n] - p.position.x, 0, nav.pz[n] - p.position.z);
     const dxz = _v.length();
@@ -848,7 +856,8 @@ export class BotBrain {
       if (d > 4) this.move.copy(_v.normalize()).multiplyScalar(0.8);
     } else {
       const flying = special?.active && special.drivesMovement;
-      if (!flying) this.followPath(dt);     // waypoints are on the floor: a flyer never "arrives"
+      // waypoints are on the floor (a flyer never "arrives"); no wall climbing while a special runs
+      if (!flying) this.followPath(dt, 1, true);
       if (this.hasGoal) this.aimWant.copy(this.goal);
       else this.aimWant.copy(p.position).add(_v.set(this.sign * 8, 0, 0));
       // flying specials (Ink Jet): with nothing to shoot, cruise toward the goal / the front

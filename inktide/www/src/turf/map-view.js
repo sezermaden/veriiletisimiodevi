@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 
 const BASE_OPT = Object.freeze({ kind: 'base', label: 'BASE' });
+const OUTLINE = 'rgba(13,16,48,0.9)';
 
 export class MapView {
   constructor(session, mode) {
@@ -184,7 +185,7 @@ export class MapView {
     for (const a of mode.teamOf(S.player.enemyTeam)) {
       if (!a.alive || !mode.isRevealed(a)) continue;
       this.toPx(a.position.x, a.position.z, P);
-      this.dot(c, P, col(a.team), 7, '#ffffff');
+      this.dot(c, P, col(a.team), 9, '#ffffff');
     }
     // teammates + you
     for (const a of mode.teamOf(S.player.team)) {
@@ -195,30 +196,36 @@ export class MapView {
         const yaw = S.camRig.yaw;
         const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
         // canvas: +x world → up (−y), +z world → right; rotate(θ) maps the "up" arrow to (sin θ, −cos θ)
-        c.save(); c.translate(P.x, P.y); c.rotate(Math.atan2(fz, fx));
-        c.fillStyle = '#ffffff'; c.strokeStyle = col(a.team); c.lineWidth = 3;
-        c.beginPath(); c.moveTo(0, -12); c.lineTo(8, 9); c.lineTo(0, 4); c.lineTo(-8, 9); c.closePath(); c.fill(); c.stroke();
+        // (dark outline first: the arrow has to read on top of any ink colour)
+        c.save(); c.translate(P.x, P.y); c.rotate(Math.atan2(fz, fx)); c.scale(1.5, 1.5);
+        c.lineJoin = 'round';
+        c.beginPath(); c.moveTo(0, -12); c.lineTo(8, 9); c.lineTo(0, 4); c.lineTo(-8, 9); c.closePath();
+        c.strokeStyle = OUTLINE; c.lineWidth = 5; c.stroke();
+        c.fillStyle = '#ffffff'; c.fill();
+        c.strokeStyle = col(a.team); c.lineWidth = 2; c.stroke();
         c.restore();
       } else {
         const selected = sel?.kind === 'mate' && sel.actor === a;
-        this.dot(c, P, col(a.team), 8, '#ffffff');
+        this.dot(c, P, col(a.team), 10, '#ffffff');
         if (selected) this.ring(c, P, true, '#ffffff', t, a.name);
       }
     }
   }
 
   dot(c, P, fill, r, stroke) {
-    c.fillStyle = fill; c.strokeStyle = stroke; c.lineWidth = 2.5;
-    c.beginPath(); c.arc(P.x, P.y, r, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.beginPath(); c.arc(P.x, P.y, r, 0, Math.PI * 2);
+    c.strokeStyle = OUTLINE; c.lineWidth = 6; c.stroke();
+    c.fillStyle = fill; c.fill();
+    c.strokeStyle = stroke; c.lineWidth = 2.5; c.stroke();
   }
 
   ring(c, P, on, color, t, label) {
-    c.strokeStyle = color;
-    c.lineWidth = on ? 4 : 2;
-    const r = on ? 15 + Math.sin(t * 8) * 2 : 12;
-    c.beginPath(); c.arc(P.x, P.y, r, 0, Math.PI * 2); c.stroke();
+    const r = on ? 17 + Math.sin(t * 8) * 2 : 14;
+    c.beginPath(); c.arc(P.x, P.y, r, 0, Math.PI * 2);
+    c.strokeStyle = OUTLINE; c.lineWidth = on ? 8 : 6; c.stroke();
+    c.strokeStyle = color; c.lineWidth = on ? 4 : 3; c.stroke();
     if (on && label) {
-      c.font = '700 15px "Baloo 2", system-ui, sans-serif';
+      c.font = '800 24px "Baloo 2", system-ui, sans-serif';
       c.textAlign = 'center';
       c.lineWidth = 4; c.strokeStyle = 'rgba(0,0,0,.7)';
       c.strokeText(label, P.x, P.y - r - 6);

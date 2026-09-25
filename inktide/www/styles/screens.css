@@ -147,7 +147,8 @@
 .dialog-btns .btn { min-width: 9em; }
 .dialog.danger .btn-yes.focused { background: var(--danger); }
 
-.kp { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(1280px, calc(100vw - 2 * var(--pad-x))); max-height: calc(100vh - 2 * var(--pad-y));
+.kp { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: max-content; min-width: min(760px, calc(100vw - 2 * var(--pad-x)));
+  max-width: min(1600px, calc(100vw - 2 * var(--pad-x))); max-height: calc(100vh - 2 * var(--pad-y));
   display: flex; flex-direction: column; gap: clamp(10px, 2vh, 22px); padding: clamp(18px, 3vh, 36px) clamp(20px, 2.4vw, 44px); }
 .kp-kicker { font-size: var(--step--1); letter-spacing: .12em; color: var(--accent-2); font-weight: 800; }
 .kp-title { margin: .1em 0 0; font-family: var(--font-display); font-weight: 400; font-size: var(--step-1); line-height: 1.05; }
@@ -165,6 +166,14 @@
 .kit-card.focused { background: linear-gradient(170deg, rgba(var(--accent-rgb), .42), rgba(var(--accent-rgb), .12)); box-shadow: var(--ring), var(--hard); transform: rotate(0deg) translateY(-6px) scale(1.04); }
 .kit-card.chosen { animation: stamp 480ms var(--ui-pop); background: var(--accent); }
 .kp-desc { margin: 0; min-height: 1.35em; text-align: center; font-size: var(--step-0); color: var(--text-muted); }
+/* five or more kits make two rows: on short screens (720p/800p) compact the cards so the whole dialog,
+   prompts included, stays inside the safe area */
+@media (max-height: 820px) {
+  .kit-card { padding: .5em .6em .55em; gap: .15em; min-height: 0; }
+  .kit-card .kc-art .kit-ico { width: min(150px, 100%, 13vh); }
+  .kc-name { font-size: var(--step--1); }
+  .kc-subs { gap: 0 .7em; font-size: var(--step--2); }
+}
 
 /* ---------- notifications ---------- */
 .notify-root { position: fixed; right: var(--pad-x); top: var(--pad-y); z-index: 70; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
@@ -464,9 +473,10 @@ body:has(#ui-root > .screen.pause.under) #hud-root { visibility: hidden; }
 
 /* CONTROLS CARD */
 .cc { grid-template-rows: auto minmax(0, 1fr) auto auto; max-width: 1500px; margin-inline: auto; }
-.cc-body { min-height: 0; overflow-y: auto; padding: 16px 28px 20px; scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
+.cc-body { min-height: 0; overflow-y: auto; padding: 0 28px 20px; scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
 .cc-cols, .cc-row { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 1em; align-items: center; }
-.cc-cols { position: sticky; top: -16px; z-index: 1; padding: 10px 0 12px; background: var(--panel-2); font-family: var(--font-display); font-size: var(--step--1); letter-spacing: .06em; color: var(--accent-2); border-bottom: 2px solid var(--line-2); }
+/* sticky column header: flush with the top of the scrollport and opaque, so scrolled rows never show through */
+.cc-cols { position: sticky; top: 0; z-index: 1; padding: 22px 0 12px; background: var(--surface-2); box-shadow: inset 0 2px 0 var(--line-2); font-family: var(--font-display); font-size: var(--step--1); letter-spacing: .06em; color: var(--accent-2); border-bottom: 2px solid var(--line-2); }
 .cc-col { display: inline-flex; align-items: center; gap: .5em; }
 .cc-col .menu-ico { width: 1.4em; height: 1.4em; color: var(--accent-2); }
 .cc-row { min-height: 54px; border-bottom: 2px solid var(--line); font-size: var(--step-0); }
@@ -657,3 +667,5 @@ body:has(#ui-root > .screen.pause.under) #hud-root { visibility: hidden; }
 .mm.has-quit .mm-rail { gap: clamp(12px, 2.4vh, 40px); }
 .mm.has-quit .logo--sm { font-size: clamp(42px, min(3.8vw, 6.8vh), 90px); }
 @media (max-height: 800px) { .mm.has-quit .logo-tag { display: none; } }
+/* Options ▸ Video ▸ Motion effects off: idle loops (logo float, drips, pulses, bobbing) play once and rest */
+body.reduce-motion .screen.ui *, body.reduce-motion .screen.ui *::before, body.reduce-motion .screen.ui *::after { animation-iteration-count: 1 !important; }

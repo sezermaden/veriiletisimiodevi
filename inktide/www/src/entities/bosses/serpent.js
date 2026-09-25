@@ -11,7 +11,7 @@
 //   { type: 'boss-serpent', pos (arena centre), vats: [[x,y,z]…], vatR, sludgeY, seaY, ring }
 import * as THREE from 'three';
 import { registerEntity } from '../base.js';
-import { Boss, Beam, G, UP, DOWN, TEAM_MURK, clamp, lerp, smooth, easeOut, hash01, mergeStatic } from './common.js';
+import { Boss, Beam, G, UP, DOWN, TEAM_MURK, clamp, lerp, smooth, easeOut, hash01, mergeStatic, EYE_RED, EYE_AMBER } from './common.js';
 
 const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
@@ -322,11 +322,13 @@ export class Serpent extends Boss {
         const v = this.vats[this.vatA];
         const fx = this.vatFx[this.vatA];
         if (enter) {
-          this.warn(_p.set(v.x, this.sludgeY, v.z), this.vatR, 1.1, '#ff3b2a');
+          this._vatWarn(v, 1.1);
           S.audio?.sfx('rumble', { pos: v, volume: 0.9 });
         }
         fx.boil = 1;
         if (Math.random() < 0.5) S.fx.burst(_p.set(v.x + (Math.random() - 0.5) * this.vatR * 1.4, this.sludgeY + 0.1, v.z + (Math.random() - 0.5) * this.vatR * 1.4), UP, this.pal.ink, 3, 3, { size: 0.12 });
+        // geyser spray that clears the vat rim, so the tell reads from the platform too
+        if (this.stateT < 1.1 && Math.random() < 0.7) S.fx.spray(_p.set(v.x + (Math.random() - 0.5) * this.vatR, this.sludgeY + 0.2, v.z + (Math.random() - 0.5) * this.vatR), _w.set(0, 6 + Math.random() * 4, 0), this.pal.inkBright, 2, 1.6, { size: 0.16, life: 0.9, gravity: 12 });
         if (this.stateT > 1.1) {
           // burst out
           const k = smooth((this.stateT - 1.1) / C.rise);
@@ -469,6 +471,21 @@ export class Serpent extends Boss {
     const opp = (this.vatA + Math.floor(n / 2)) % n;
     const nb = (this.vatA + (Math.random() < 0.5 ? 1 : n - 1)) % n;
     this.vatB = Math.random() < 0.6 ? opp : nb;
+    // Usually fly the arc that passes closest to the player: the cells are only open in flight
+    // and the vats sit ~19 m out, beyond a shooter's reach from most of the platform.
+    if (n > 2 && Math.random() < 0.65) {
+      const Pl = this.player.position, A = this.vats[this.vatA];
+      let best = this.vatB, bestD = 1e9;
+      for (let i = 0; i < n; i++) {
+        if (i === this.vatA) continue;
+        const E = this.vats[i];
+        const ex = E.x - A.x, ez = E.z - A.z, l2 = ex * ex + ez * ez || 1;
+        const k = clamp(((Pl.x - A.x) * ex + (Pl.z - A.z) * ez) / l2, 0.15, 0.85);
+        const d = Math.hypot(A.x + ex * k - Pl.x, A.z + ez * k - Pl.z);
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      this.vatB = best;
+    }
     const E = this.vats[this.vatB];
     this.arcS.copy(H);
     this.arcE.set(E.x, this.sludgeY - 6, E.z);
@@ -506,7 +523,15 @@ export class Serpent extends Boss {
     this.circleBeamT = 2.5;
     this.setState('circle');
     this.S.audio?.sfx('boss_splash', { pos: v, volume: 1 });
-    this.warn(_p.set(v.x, this.sludgeY, v.z), this.vatR, 0.9, '#ff3b2a');
+    this._vatWarn(v, 0.9);
+  }
+
+  /** Warning ring on a vat's sludge surface (the sludge disc is not level geometry: lift it above). */
+  _vatWarn(v, time) {
+    const it = this.warn(_p.set(v.x, this.sludgeY, v.z), this.vatR, time, '#ff3b2a');
+    it.g.position.y = Math.max(it.g.position.y, this.sludgeY + 0.12);
+    it.g.quaternion.identity();
+    return it;
   }
 
   /** Move the head along the circling swim path (slower while reared up). */
@@ -593,7 +618,7 @@ export class Serpent extends Boss {
       S.ink.paint(end, 1.05, TEAM_MURK, hit ? hit.normal : UP, { source: this });
       if (Math.random() < 0.5) S.fx.burst(end, hit ? hit.normal : UP, this.pal.ink, 4, 4, { size: 0.08 });
     }
-    if (Pl.alive && this.beam.distanceTo(Pl.hitCenter(_hc)) < 1.05) this.hurt('beam', 40, end, 7, 4, 0.7);
+    if (Pl.alive && this.beam.distanceTo(Pl.hitCenter(_hc)) < 1.05) this.hurt('beam', 40, this._shoveFrom(), 3.5, 3.5, 0.7);
     void dt;
   }
 
@@ -647,12 +672,23 @@ export class Serpent extends Boss {
     if (!Pl.alive || this.state === 'submerged') return;
     Pl.hitCenter(_hc);
     const hy = this.hideY(this.head.x, this.head.z);
-    if (this.head.y > hy && _hc.distanceTo(this.head) < this.headR + 0.5) { this.hurt('touch', 35, this.head, 10, 6, 1.0); return; }
+    if (this.head.y > hy && _hc.distanceTo(this.head) < this.headR + 0.5) { this.hurt('touch', 35, this._shoveFrom(), 6, 5.5, 1.0); return; }
     for (const seg of this.segs) {
       if (!seg.visible) continue;
       const d = _hc.distanceTo(seg.g.position);
-      if (d < seg.r + 0.5) { this.hurt('touch', 30, seg.g.position, 9, 6, 1.0); return; }
+      if (d < seg.r + 0.5) { this.hurt('touch', 30, this._shoveFrom(), 6, 5.5, 1.0); return; }
     }
+  }
+
+  /**
+   * Contact shoves push the player toward the arena centre (never sideways off a 3 m grate ramp or
+   * the platform edge into the sludge sea, which would be an instant splat on top of the damage).
+   */
+  _shoveFrom() {
+    const P = this.player.position, c = this.center;
+    _t.set(P.x - c.x, 0, P.z - c.z);
+    if (_t.lengthSq() < 1e-4) _t.set(0, 0, 1);
+    return _t.setLength(1).add(P);
   }
 
   onWeakBroken(part) {
@@ -727,7 +763,7 @@ export class Serpent extends Boss {
     this.mouthMat.emissiveIntensity = aiming ? 2 + Math.sin(t * 40) * 1.5 + 2 : this.beamOn ? 6 : 2;
     this.mouthGlow.material.opacity = aiming || this.beamOn ? 0.9 : 0.35;
     this.mouthGlow.scale.setScalar(aiming ? 1.6 + Math.sin(t * 30) * 0.4 : this.beamOn ? 2.4 : 1.4);
-    this.eyeMat.emissive.set(aiming || this.beamOn ? '#ff3b2a' : '#ffd23a');
+    this.eyeMat.emissive.copy(aiming || this.beamOn ? EYE_RED : EYE_AMBER);
     this.seamMat.emissiveIntensity = 1.2 + Math.sin(t * 3) * 0.4;
     // sludge surfaces: slow swirl + boil
     for (const f of this.vatFx) {

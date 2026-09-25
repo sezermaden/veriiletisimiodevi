@@ -62,7 +62,7 @@ export class ControlsCardScreen extends UiScreen {
     super.update(dt);
     // right stick: smooth continuous scroll
     const ry = this.input.stick?.ry || 0;
-    if (Math.abs(ry) > 0.3) this.body.scrollTop += ry * 900 * Math.min(dt, 0.05);
+    if (Math.abs(ry) > 0.3 && this.app.ui.top === this) this.body.scrollTop += ry * 900 * Math.min(dt, 0.05);
   }
 
   updateScroll() {

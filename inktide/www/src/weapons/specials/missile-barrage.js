@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { Special, registerSpecial, muzzleOf } from '../base.js';
 import { makeMissileModel, makeMissilePodModel, reticleTexture, addPoseHook } from '../models.js';
-import { isCombatant, blast, sfx, UP, DOWN } from '../mains/shared.js';
+import { isCombatant, blast, noCharge, sfx, UP, DOWN } from '../mains/shared.js';
 
 const _hc = new THREE.Vector3();
 const _d = new THREE.Vector3();
@@ -36,6 +36,7 @@ export class MissileBarrage extends Special {
   }
 
   activate() {
+    this.clearReticles();
     super.activate();
     const w = this.w, S = w.session, s = this.s;
     this.t = 0;
@@ -109,8 +110,10 @@ export class MissileBarrage extends Special {
       if (!this.queue.length) { this.phase = 'done'; this.t = 0; }
     } else if (this.phase === 'done') {
       for (const r of this.reticles) this.placeReticle(r);
-      // stay active until the volley has landed (no gauge refill from our own missiles)
-      if ((this.t > 0.35 && this.inFlight <= 0) || this.t > 6) this.end();
+      // the special ends once the pod has retracted; missiles still in the air carry on by
+      // themselves and their blasts never feed the gauge (noCharge). Reticles stay on the targets
+      // until the volley has landed (pose() keeps them placed).
+      if (this.t > 0.35) this.end();
     }
   }
 
@@ -186,7 +189,7 @@ export class MissileBarrage extends Special {
       if (exploded) return;
       exploded = true;
       this.inFlight--;
-      blast(S, pos, normal || UP, w.team, { owner: w, damage: s.damage, radius: s.radius, paintRadius: s.paintRadius, kind: 'special', sound: 'boom' });
+      noCharge(w, () => blast(S, pos, normal || UP, w.team, { owner: w, damage: s.damage, radius: s.radius, paintRadius: s.paintRadius, kind: 'special', sound: 'boom' }));
       mesh.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
     };
     const proj = S.projectiles.spawn({
@@ -229,11 +232,13 @@ export class MissileBarrage extends Special {
   }
 
   end() {
+    const wasActive = this.active;
     super.end();
-    const S = this.w.session;
-    for (const r of this.reticles) { S.scene.remove(r); r.material.dispose(); }
-    this.reticles = [];
     this.queue = [];
+    this.postT = 0;
+    // interrupted before launch (splatted, respawned): nothing is in the air, drop the reticles
+    if (wasActive && this.phase === 'lock') this.clearReticles();
+    this.phase = 'done';
     if (this.pod) {
       this.pod.parent?.remove(this.pod);
       this.pod.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
@@ -242,7 +247,21 @@ export class MissileBarrage extends Special {
     if (this.w.model?.pack) this.w.model.pack.visible = true;
   }
 
+  clearReticles() {
+    const S = this.w.session;
+    for (const r of this.reticles) { S.scene.remove(r); r.material.dispose(); }
+    this.reticles = [];
+  }
+
   pose(dt, st, m) {
+    void st; void m;
+    // after the special ended: keep the lock reticles on the targets until the volley has landed
+    if (!this.active && this.reticles.length) {
+      this.t += dt;
+      this.postT += dt;
+      for (const r of this.reticles) this.placeReticle(r);
+      if (this.inFlight <= 0 || this.postT > 6) this.clearReticles();
+    }
     if (!this.pod) return;
     this.podK = Math.min(1, this.podK + dt * 6);
     const out = this.phase === 'done' ? Math.max(0, 1 - this.t / 0.35) : 1;
@@ -251,12 +270,12 @@ export class MissileBarrage extends Special {
     const sc = (k < 1 ? k * (1 + Math.sin(k * Math.PI) * 0.4) : 1) * out;
     this.pod.scale.setScalar(Math.max(0.01, sc));
     this.pod.position.y = 0.26 - this.podKick * 0.03;
-    void st;
   }
 
   dispose() {
     this.unhook?.();
     if (this.active) this.end();
+    this.clearReticles();
   }
 }
 

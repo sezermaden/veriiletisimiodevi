@@ -193,9 +193,11 @@ export class Environment {
           float wd = clamp(length(vWPos.xz - cameraPosition.xz) / 260.0, 0.0, 1.0);
           diffuseColor.rgb = mix(diffuseColor.rgb, wDeep, 0.45 + wd * 0.35);`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-          // soft sparkle + shallow tint near the camera
-          float spark = pow(max(0.0, texture2D(normalMap, vWPos.xz * 0.21 + wTime * 0.03).b - 0.55) * 2.2, 6.0);
-          totalEmissiveRadiance += vec3(spark * 0.35);`);
+          // sparse sun glints where two scrolling normal layers tilt the same way
+          vec2 g1 = texture2D(normalMap, vWPos.xz * 0.21 + wTime * 0.03).xy - 0.5;
+          vec2 g2 = texture2D(normalMap, vWPos.xz * 0.17 - wTime * 0.025).xy - 0.5;
+          float spark = smoothstep(0.34, 0.42, length(g1 + g2)) * (1.0 - wd);
+          totalEmissiveRadiance += vec3(spark * 0.6);`);
     };
     const g = new THREE.PlaneGeometry(2400, 2400, 1, 1);
     g.rotateX(-Math.PI / 2);

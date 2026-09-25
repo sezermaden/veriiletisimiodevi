@@ -224,7 +224,7 @@ const entities = [
   ent('murk-barrier', 0, 0, -200.2, { id: 'bar-final', size: [5, 4, 0.4], group: 'yardc' }),
   ent('pearl-trail', -19, 0, -166, { to: [-19, 0, -186], count: 5 }),
   ent('pearl-trail', -12, 5.2, -170.6, { to: [-12, 5.2, -173.4], count: 2 }),
-  ent('crate', 18.5, 0, -168, { pearls: 2 }), ent('crate', 19.2, 0, -169.4, { pearls: 2 }),
+  ent('crate', 16.8, 0, -171.5, { pearls: 2 }), ent('crate', 17.6, 0, -172.9, { pearls: 2 }),
   D('lamp', -21.4, 0, -176, { yaw: PI / 2 }), D('lamp', 21.4, 0, -184, { yaw: -PI / 2 }), D('lamp', -3.4, 0, -199, { yaw: PI }), D('lamp', 3.4, 0, -199, { yaw: PI }),
   D('barrel', 20.5, 0, -196), D('barrel', 21, 0, -195.1), D('barrel', 20.2, 0, -194.3, { variant: 'toxic' }),
   D('crate-stack', -20, 0, -196.5, { count: 4, yaw: 0.3 }), D('tire-stack', 9, 0, -165, { count: 3 }),

@@ -29,6 +29,8 @@ function applyUiSettings() {
   const size = settings.get('gameplay.subtitleSize') || 'medium';
   document.body.classList.toggle('subs-small', size === 'small');
   document.body.classList.toggle('subs-large', size === 'large');
+  // "Motion effects" off: looping menu animations play once (the menu camera stops drifting too)
+  document.body.classList.toggle('reduce-motion', settings.get('video.motionFx') === false);
   const c = settings.inkColors();
   const root = document.documentElement.style;
   root.setProperty('--ink-hero', c.hero);
@@ -43,7 +45,7 @@ export function install(app) {
   app.onPause = () => app.ui.push(new PauseScreen(app));
   setHome((a) => showMainMenu(a));
   applyUiSettings();
-  settings.onChange((p) => { if (p.startsWith('gameplay') || p === '*') applyUiSettings(); });
+  settings.onChange((p) => { if (p.startsWith('gameplay') || p === 'video.motionFx' || p === '*') applyUiSettings(); });
 }
 
 /** The mode object for a stage: story (w*), turf (turf-*), else sandbox. Missing modules fall back. */

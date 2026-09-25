@@ -83,6 +83,10 @@ const brushes = [
   ...hedge(-21, -73, -18.5, -74.4, TER), ...hedge(-21, -82, -18.5, -83.4, TER),     // corridor cover
   ...hedge(1, -70, 6, -71.4, TER), ...hedge(-3, -86, 2, -87.4, TER),
   block(4.5, -92, 3, 3, TER, 1.1, { mat: 'wood', color: '#b8845a' }),
+  box(-1.4, TER, -76.2, 1.4, TER + 0.03, -60, { mat: 'tiles', color: '#f2e6f0', collide: false }),          // stone paths
+  box(-25.7, TER, -79.2, 7.7, TER + 0.03, -76.2, { mat: 'tiles', color: '#f2e6f0', collide: false }),
+  box(-1.4, TER, -97.7, 1.4, TER + 0.03, -79.2, { mat: 'tiles', color: '#e8dcf0', collide: false }),
+  ...planter(4.5, -66, 3, 3, TER, 0.5, '#8a5a3a'), ...planter(-5, -94, 4, 2, TER, 0.5, '#8a5a3a'),
 
   // ---------------- G4: greenhouse grove ----------------
   box(-34, TER - 0.8, -80, -26, TER, -76, { mat: 'wood', color: '#c9955e' }),                   // bridge
@@ -164,7 +168,7 @@ const entities = [
   ent('switch', -9, TER + 1.6, -77.8, { id: 'sw-2', yaw: 0, targets: ['gate-2'] }),
   ent('glooper', -3.5, TER, -90, { group: 'terrace', yaw: 0.2 }),
   ent('glooper', 3.5, TER, -76, { group: 'terrace', yaw: 0, patrol: [[3.5, TER, -76], [4, TER, -86]] }),
-  ent('bomblob', -19.5, TER, -74, { group: 'terrace', yaw: 0.4 }),
+  ent('bomblob', -20, TER, -69.5, { group: 'terrace', yaw: 0.4 }),
   ent('gate', -26, TER, -78, { id: 'gate-2', yaw: PI / 2, size: [4.4, 3.4, 0.6], color: '#d9c8ff' }),
   ent('pearl-trail', -11, TER + 1.6, -82.5, { to: [-7, TER + 1.6, -82.5], count: 3 }),
   ent('pearl-trail', -20, TER, -67.5, { to: [-20, TER, -75], count: 4 }),
@@ -178,11 +182,14 @@ const entities = [
   D('bench', 6.9, TER, -80, { yaw: -PI / 2 }), D('palm', 6.6, TER, -96.6), D('palm', -2, TER, -96.6),
   D('neon-sign', -9, TER, -76.7, { text: 'ROSE BED', color: '#ff3f7a', height: 2.2, pole: true }),
   D('speaker-tower', 6.8, TER, -61.4, { height: 2.4, color: '#7ee08f' }),
+  D('bush', 4.5, TER + 0.5, -66, { flowerColor: '#ff5fd2' }), D('bush', -5, TER + 0.5, -94, { flowerColor: '#2fd6ff' }),
+  D('lamp', -2, TER, -70, { yaw: PI / 2, light: '#ffd23f' }), D('lamp', 2, TER, -86, { yaw: -PI / 2, light: '#ff9ff0' }),
+  D('lamp', -12, TER, -80.2, { yaw: 0, light: '#9ff3ff' }), D('flowerpot', -1.9, TER, -62, { color: '#ffd23f' }), D('flowerpot', 1.9, TER, -62, { color: '#ff5fd2' }),
   D('flag', -24.8, TER, -61.2, { color: '#7ee08f', height: 4 }),
 
   // ---------------- G4 ----------------
   T(-36.5, TER, -78, { size: [4, 3, 4], dialogue: 'w2-3.pa', objective: 'Clear the greenhouse grove' }),
-  ent('checkpoint', -37.5, TER, -73, { id: 'cp3', yaw: PI }),
+  ent('checkpoint', -39.5, TER, -70.5, { id: 'cp3', yaw: PI }),
   ent('buzzdrone', -48, TER, -78, { group: 'grove', alt: 4.5, patrol: [[-48, TER, -78], [-38, TER, -84]] }),
   ent('murk-turret', -40, TER, -104, { group: 'grove', yaw: 0.3, aggro: 20 }),
   ent('glooper', -49, TER, -91, { group: 'grove', yaw: 0 }),
@@ -231,7 +238,7 @@ export default {
   brushes,
   preInk: [
     murk(0, 0, -6, 1.8), murk(-4, 0, -30, 2.2), murk(3, 0, -36, 2.2), murk(0, 0, -44, 2.4), murk(-4, 2.9, -28, 1.4),
-    murk(-9, TER + 1.6, -80, 2.2), murk(0, TER, -80, 2.4), murk(-20, TER, -74, 2), murk(-4, TER, -90, 2), murk(3, TER, -70, 1.8),
+    murk(-9, TER + 1.6, -80, 2.2), murk(0, TER, -80, 2.4), murk(-20, TER, -69.5, 2), murk(-4, TER, -90, 2), murk(3, TER, -70, 1.8),
     murk(-40, TER, -92, 2.4), murk(-47, TER, -103, 2.6), murk(-49, TER, -90, 2.2), murk(-54, TER, -100, 2), murk(-40, TER, -104, 1.8),
     murk(-46, DAIS, -112.5, 2.4),
   ],

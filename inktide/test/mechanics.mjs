@@ -63,6 +63,18 @@ const r = await h.page.evaluate(async () => {
     g.input._injectKey('KeyW', false); tick(2);
     return { y: maxY, frames: t };
   };
+  // 7. squid leap out of own ink with forward held keeps its momentum (≈8 m, not a 3 m hop)
+  reset(-6, 18); s.camRig.yaw = 0;
+  for (let z = 18; z >= 9; z -= 1.5) s.ink.paint(new V(-6, 0, z), 1.6, 1, up);
+  tick(2);
+  g.input._injectKey('ShiftLeft', true); g.input._injectKey('KeyW', true);
+  tick(50);                                   // reach swim speed in our ink
+  const z0 = p.position.z;
+  g.input._injectKey('Space', true); tick(1); g.input._injectKey('Space', false);
+  let air = 0;
+  for (let i = 0; i < 90; i++) { tick(1); if (!p.grounded) air++; else if (air > 5) break; }
+  out.leap = Math.abs(p.position.z - z0);
+  g.input._injectKey('ShiftLeft', false); g.input._injectKey('KeyW', false); tick(5);
   out.stairs = climbWalk(-13, 5.5, 200);
   out.steep = climbWalk(18.5, 19, 200);
   g.halted = false;
@@ -75,6 +87,7 @@ ok &= report('swimming refills the tank fast', r.refillPerSec > 30, `${r.refillP
 ok &= report('climbs a wall painted with own ink', r.climbed && r.climbMaxY > 3, `max y ${r.climbMaxY.toFixed(2)} m, end y ${r.endY.toFixed(2)} m`);
 ok &= report('cannot climb an unpainted wall', !r.climbedBare && r.maxBare < 0.5, `max y ${r.maxBare.toFixed(2)} m`);
 ok &= report('enemy ink slows the kid', r.speedMurk < r.speedClean * 0.6, `${r.speedClean.toFixed(2)} → ${r.speedMurk.toFixed(2)} m/s`);
+ok &= report('squid leap keeps momentum with forward held', r.leap > 6.5, `${r.leap.toFixed(2)} m`);
 ok &= report('walks up 0.29 m stairs', r.stairs.y > 1.9 && r.stairs.frames > 0 && r.stairs.frames < 120, `top y ${r.stairs.y.toFixed(2)} after ${r.stairs.frames} frames`);
 // 4.3 m of path to reach 1.9 m: at >= 4 m/s that is < 70 frames (the pre-fix controller took 107 and stalled at 2.1 m)
 ok &= report('walks up a 34° ramp without crawling', r.steep.y > 2.3 && r.steep.frames > 0 && r.steep.frames < 70, `y ${r.steep.y.toFixed(2)}, reached 1.9 m after ${r.steep.frames} frames`);

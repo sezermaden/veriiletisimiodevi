@@ -89,7 +89,7 @@ export class OptionsScreen extends UiScreen {
       R.push({ kind: 'slider', label: 'Render scale', min: 0.5, max: 1.5, step: 0.1, format: pct, ...S('video.renderScale'), help: 'Lower for speed, higher for sharpness.' });
       R.push({ kind: 'slider', label: 'Field of view', min: 60, max: 100, step: 2, format: (v) => `${v}°`, ...S('video.fov'), help: 'How much of the world the gameplay camera shows.' });
       R.push({ kind: 'slider', label: 'Camera shake', min: 0, max: 1, step: 0.1, format: pct, ...S('video.cameraShake'), help: 'Screen shake from explosions and impacts.' });
-      R.push({ kind: 'toggle', label: 'Motion effects', ...S('video.motionFx'), help: 'Extra motion flourishes like speed lines and camera sway.' });
+      R.push({ kind: 'toggle', label: 'Motion effects', ...S('video.motionFx'), help: 'Menu camera drift and looping menu animations. Turn off for a calmer screen.' });
       R.push({ kind: 'toggle', label: 'Show FPS', ...S('video.showFps'), help: 'Frame-rate counter in the corner during play.' });
       R.push({ kind: 'button', label: 'Reset video', value: 'Defaults', danger: true, help: 'Restore every video setting.', onActivate: () => this.resetSection('video', 'Reset video settings?') });
     } else {

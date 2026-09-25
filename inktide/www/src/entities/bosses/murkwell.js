@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { registerEntity } from '../base.js';
 import { inkExplosion } from '../../weapons/base.js';
-import { Boss, Beam, G, UP, DOWN, TEAM_MURK, TEAM_HERO, clamp, lerp, smooth, easeOut, easeIn, angleDiff, turnToward, emblemTexture, hazardTexture, mergeStatic } from './common.js';
+import { Boss, Beam, G, UP, DOWN, TEAM_MURK, TEAM_HERO, clamp, lerp, smooth, easeOut, easeIn, angleDiff, turnToward, emblemTexture, hazardTexture, mergeStatic, EYE_RED, EYE_AMBER } from './common.js';
 import { Pilot } from './pilots.js';
 
 const _v = new THREE.Vector3();
@@ -32,6 +32,7 @@ const PALM_HP = 280;
 const POD_HP = 175;
 const MS = 1.2;                    // model scale (reach / heights below are multiplied by it)
 const CORE_HP = 525;
+const FLOOD_SAFE = 0.5;                // flood fraction (rises over 6 s) before it hurts (12 dps) and turns the roof Murk
 const UPPER = 2.8, FORE = 2.7, HANDOFF = 0.55;
 const ARM_LEN = UPPER + FORE + HANDOFF;
 const SHOULDER = [2.35, 2.55];     // x, y above the upper-body pivot (hips)
@@ -800,12 +801,15 @@ export class MurkwellMech extends Boss {
     const prev = this.flood;
     this.flood = Math.min(this.floodTarget, this.flood + dt / 6);
     this.floodMesh.position.y = this.floodY();
-    // paint the roof Murk as the flood rises (a sweep of splats from the mech outward)
-    if (this.flood > prev && this._floodPaint < 1) {
+    // paint the roof Murk once the flood is half up (a sweep of splats from the mech outward).
+    // Until then the roof stays runnable at full speed: a player caught in the far north corner
+    // needs ~4 s to reach the stairs, and wading through Murk at 36 % speed took ~9 s (a certain
+    // splat at the old 20 dps).
+    if (this.flood > prev && this.flood > FLOOD_SAFE && this._floodPaint < 1) {
       const c = this.aCenter, hx = this.aHalf[0], hz = this.aHalf[1];
       const cols = 14, rows = 14;
       const total = cols * rows;
-      const from = Math.floor(this._floodPaint * total), to = Math.floor(Math.min(1, this.flood * 1.05) * total);
+      const from = Math.floor(this._floodPaint * total), to = Math.floor(Math.min(1, ((this.flood - FLOOD_SAFE) / (1 - FLOOD_SAFE)) * 1.05) * total);
       for (let i = from; i < to; i++) {
         const cx = i % cols, cz = Math.floor(i / cols);
         _p.set(c.x - hx + (cx + 0.5) * (2 * hx / cols), this.floorY, c.z - hz + (cz + 0.5) * (2 * hz / rows));
@@ -815,7 +819,7 @@ export class MurkwellMech extends Boss {
     }
     // the flood hurts whoever wades in it
     const Pl = this.player;
-    if (Pl.alive && this.flood > 0.3 && Pl.position.y < this.floodY() - 0.05) this.hurt('flood', 5, _p.copy(Pl.position).setY(this.floorY - 5), 0, 0, 0.25);
+    if (Pl.alive && this.flood > FLOOD_SAFE && Pl.position.y < this.floodY() - 0.05) this.hurt('flood', 3, _p.copy(Pl.position).setY(this.floorY - 5), 0, 0, 0.25);
   }
 
   _beamAim(dt, enter) {
@@ -850,7 +854,7 @@ export class MurkwellMech extends Boss {
     const end = hit ? hit.point : _t.copy(this.beamFromV).addScaledVector(_d, len);
     this.beam.fire(this.beamFromV, end, this.t);
     if (end.distanceTo(this.bPaint) > 0.4) { this.bPaint.copy(end); S.ink.paint(end, 1.1, TEAM_MURK, hit ? hit.normal : UP, { source: this }); }
-    if (Pl.alive && this.beam.distanceTo(Pl.hitCenter(_hc)) < 1.1) this.hurt('beam', 40, end, 7, 4, 0.7);
+    if (Pl.alive && this.beam.distanceTo(Pl.hitCenter(_hc)) < 1.1) this.hurt('beam', 40, end, 3.5, 3.5, 0.7);   // soft shove: pontoons are small
     if (k >= 1) { this.beam.hide(); this.setState('chest'); }
   }
 
@@ -930,7 +934,7 @@ export class MurkwellMech extends Boss {
     }
     // eyes + lure
     const angry = st === 'slam-raise' || st === 'beam-aim' || st === 'missiles' || st === 'intro';
-    this.eyeMat.emissive.set(angry ? '#ff3b2a' : '#ffd23a');
+    this.eyeMat.emissive.copy(angry ? EYE_RED : EYE_AMBER);
     this.eyeMat.emissiveIntensity = angry ? 3 + Math.sin(t * 20) : 2.2;
     const lure = st === 'beam-aim' ? 3 + Math.sin(t * 30) * 2 : st === 'beam-fire' ? 6 : 2.4 + Math.sin(t * 2) * 0.5;
     this.lureMat.emissiveIntensity = lure;
@@ -1024,7 +1028,7 @@ export class MurkwellMech extends Boss {
     const c = this.aCenter;
     for (let i = 0; i < 12; i++) {
       _p.set(c.x + (Math.random() - 0.5) * this.aHalf[0] * 1.6, this.floorY, c.z + (Math.random() - 0.5) * this.aHalf[1] * 1.6);
-      this.S.ink.paint(_p, 3 + Math.random() * 2, TEAM_HERO, UP, { source: this.player });
+      this.S.ink.paint(_p, 3 + Math.random() * 2, TEAM_HERO, UP, { source: this });
     }
   }
 
