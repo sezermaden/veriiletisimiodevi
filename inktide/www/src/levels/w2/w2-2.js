@@ -143,7 +143,7 @@ const entities = [
   ent('balloon', -10, 2.4, 1.5, { group: 'b1', pearls: 1 }),
   ent('balloon', 10, 2.8, -8, { group: 'b1', pearls: 1, move: [0, 0, 2.5], period: 4 }),
   ent('balloon', 0, 2.9, -12.5, { group: 'b1', pearls: 1, move: [0, 0.8, 0], period: 3 }),
-  ent('balloon', -9, 2.9, 13.5, { group: 'b1', pearls: 2 }),                               // behind you: look around!
+  ent('balloon', -3.6, 2.7, 13.4, { group: 'b1', pearls: 2 }),                            // behind you: look around! (in the open)
   ent('gate', 0, 0, -18, { id: 'gate-1', size: [6.4, 3.6, 0.6], openOn: 'event:balloons:b1', color: '#d9c8ff' }),
   ent('pearl-trail', 6.5, 1.0, -0.5, { to: [9.5, 1.0, -0.5], count: 3 }),
   D('neon-sign', 0, 7.6, -17.9, { text: 'CORAL SKATEPARK', color: '#ff5fa8', height: 0.2 }),
@@ -159,7 +159,7 @@ const entities = [
   D('billboard', -18, 0, 2, { yaw: PI / 2, text: 'Tidepool Racing' }),
 
   // ---------------- S2 ----------------
-  ent('checkpoint', 3.5, 0, -21, { id: 'cp1', yaw: PI }),
+  ent('checkpoint', 1.2, 0, -23.4, { id: 'cp1', yaw: PI, radius: 4.5 }),           // through gate 1 (circle must not reach back past the gate)
   T(0, 0, -20.8, { size: [36, 3, 3], dialogue: 'w2-2.spring', objective: 'Pop the course balloons' }),
   ent('spring', 9.6, 0, -22.2, { id: 'spring-shop', yaw: PI / 2, push: 4, power: 15.5 }),
   ent('pearl-trail', 13.5, 4.45, -21, { to: [13.5, 4.45, -27], count: 4 }),
@@ -188,7 +188,7 @@ const entities = [
   D('graffiti', 17.6, 0.4, -40, { yaw: -PI / 2, text: 'KICKFLIP', size: 4.4, color: '#2fd6ff', color2: '#ffffff' }),
 
   // ---------------- S3 ----------------
-  ent('checkpoint', 5, 0, -64.5, { id: 'cp2', yaw: PI }),
+  ent('checkpoint', 1.2, 0, -67, { id: 'cp2', yaw: PI, radius: 4.5 }),             // through gate 2, at the drop-in
   T(0, 0, -64, { size: [40, 3, 3], dialogue: 'w2-2.halfpipe', objective: 'Pop the balloons over the halfpipe' }),
   ent('rollerbrute', 0, PIPE, -79, { group: 'pipe', yaw: 0, aggro: 22 }),
   ent('bomblob', -8, DECK, -95, { group: 'pipe', yaw: 0 }),
@@ -215,9 +215,9 @@ const entities = [
   D('billboard', 26, -1, -80, { yaw: -PI / 2, text: 'Squidberry Soda' }),
 
   // ---------------- S4 ----------------
-  ent('checkpoint', 5, DECK, -103, { id: 'cp3', yaw: PI }),
+  ent('checkpoint', 1.2, DECK, -105.2, { id: 'cp3', yaw: PI, radius: 4.5 }),        // through gate 3, on the bowl rim
   T(0, DECK, -103.5, { size: [16, 3, 3], objective: 'Clear the Big Bowl', hint: 'Bomblobs telegraph with a red ring: sidestep, then splat back!' }),
-  ent('shield-glooper', 0, BOWL, -121, { group: 'final', yaw: 0 }),
+  ent('shield-glooper', 0, BOWL, -122.4, { group: 'final', yaw: 0 }),
   ent('bomblob', -17, DECK + 2.2, -119, { group: 'final', yaw: 0.3 }),
   ent('bomblob', 17, DECK + 2.2, -121, { group: 'final', yaw: -0.3 }),
   ent('glooper', -15, DECK, -108, { group: 'final', yaw: 0.2 }),

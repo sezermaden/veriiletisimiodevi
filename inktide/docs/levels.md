@@ -24,6 +24,41 @@ Shared kits (stage-local, registered on import — same contract as `entities/st
 
 Screenshots: `docs/shots/w3-1-*.png`, `w3-2-*`, `w3-3-*`, `w4-1-*`, `w4-2-*`.
 
+### Adversarial playtest pass (W3/W4)
+
+Every stage was driven end to end in headless Chromium with the real controller (a scripted bot
+that presses keys and ticks `__game`; teleports only for rescues after a bot-caused failure or for
+isolated re-tests). All five reach the Prism Core and complete; every checkpoint fires on the
+natural path; `playtest` shots are `docs/shots/<id>-pt*.png`. What the pass found and changed:
+
+- **Checkpoints sat 3-9 m off the path** (7 of 18 were within reach of the route; 0 of 3 in 3-1 fired in the sim). All now
+  stand 1-2 m beside the line the player walks, with `radius: 2.4`; landings from rails and pads
+  (3-2 CP2, 4-2 CP4) were measured and the flags moved to where players actually land.
+- **Climbs blocked by protruding trims.** The unpaintable band on Tank 9 (3-2) and on Vat D (3-3)
+  and Vat D's overhanging rim cap stopped the squid mid-climb. Bands are now `collide: false`
+  (visual only) and the rim cap is flush. Tank 9's ledge is 2.5 m wide (was 1.5) so the upper
+  tank can be painted to its rim from the ledge (from the old 1.5 m ledge the climb stalled).
+- **Sequence breaks closed** (convention: walls that frame a barrier/gate must be unpaintable or
+  unreachable): 3-1 intake façade, gallery gate frame, Main Line north wall and capsule passage
+  walls are `paint: false`; 3-2 Snipe Eel perch is unpaintable (a leap off it cleared the maze exit);
+  3-3 gets a second `rim` barrier along the terrace front (a squid leap from the rim reached the
+  terrace — verified in sim); 4-2 gets glass on the intake's south edge, a longer glass run beside
+  the shutter and a 9.5 m Heart barrier (a kid jump round the 5 m one landed on the Heart), and the
+  turret pylons are unpaintable.
+- **4-1**: the gust-ledge break is 2.5 m (a 3.0 m break needed a frame-perfect kid jump); the west
+  rail is slower (12) and ends heading east at the SW corner with a low parapet — before, the
+  fly-off dumped the player into the sponge gap every time. Gondola dwell 2.6 s (was 1.6).
+- **Sponges** in 4-1/4-2 sit higher (small top ~1 m under the walkway) so they can be seen and
+  inked from the edge; full sponges stand 0.6 m proud, like 3-3's (a hop onto each).
+- **Readability**: signs moved off climb faces (Main Line tower, Tank 9, Vat D, Line 1 post, 4-2
+  boiler stack); props moved off the narrow 4-1 ledges (and made solid); the 3-3 mover hint now
+  says what actually drives it (riding it); 3-1 objectives no longer stay on "Ride Line 1" through
+  the control deck and gallery; the secret 4-2 pylon is wide enough for its return pad.
+
+Notes for designers: belts DO carry enemies (the 4-2 Heart belt delivers its Rollerbrute and
+Shield Glooper to the dodge bays); launch pads auto-charge only on clean hero ink — after a fight
+leaves Murk on the pad, players press Jump (the pad's hint says so).
+
 ## World 1–2 story stages (w1-1 … w2-3)
 
 Shared helpers: `levels/w1/docks-kit.js` (piers on pilings, quays with a paintable top slab and an

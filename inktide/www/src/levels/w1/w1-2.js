@@ -66,7 +66,7 @@ const brushes = [
   box(-16, 0, -34.5, 16, DOCK, -33.9, GRATE),                          // loading-dock wall (grate: no climbing)
   ...[-14, -9.5, -5, 5, 9.5, 14].map((x) => block(x, -33.78, 0.36, 0.24, 0, DOCK, SCENERY({ mat: 'metal', color: '#f2c230' }))),
   box(-16, DOCK - 0.32, -33.9, 16, DOCK, -33.66, SCENERY({ mat: 'metal', color: '#f2c230' })),
-  box(-1.9, -0.02, -33.9, 1.9, 0.02, -27.4, { mat: 'concrete', color: '#f2c230', collide: false }),   // sponge pad marking
+  box(-3.6, -0.02, -33.9, 2.4, 0.02, -27.8, { mat: 'concrete', color: '#f2c230', collide: false }),   // sponge pad marking
 
   // ---------------- C: Dock 4 ----------------
   block(0, -43.25, 32, 17.5, 0, DOCK, { mat: 'concrete', color: '#d6cfc4' }),
@@ -146,8 +146,9 @@ const entities = [
   T(0, 0, -24.5, { size: [26, 3, 3], dialogue: 'w1-2.sponge', objective: 'Puff up the sponges and climb onto the dock', hint: 'Shoot both sponges to puff them up, then hop up them like stairs' }),
   // two sponge steps: full tops at 1.0 and 1.9, dock at 2.7 (every rise is a kid jump, and a
   // player who falls back off the dock can always climb again)
-  ent('sponge', 0, 0, -29, { id: 'sponge-step', size: [2.6, 1.0, 2.6] }),
-  ent('sponge', 0, 0, -32.3, { id: 'sponge-dock', size: [3, 1.9, 3] }),
+  // (staggered so the small back sponge is not hidden behind the front one)
+  ent('sponge', -2.1, 0, -29.3, { id: 'sponge-step', size: [2.6, 1.0, 2.6] }),
+  ent('sponge', 0.7, 0, -32.4, { id: 'sponge-dock', size: [3, 1.9, 3] }),
   ent('pearl', 0, DOCK, -35.3), ent('pearl', -1, DOCK, -35.3), ent('pearl', 1, DOCK, -35.3),
   D('graffiti', -9, 0.5, -33.85, { text: 'DOCK 4', size: 4.5, color: '#ffd23f', color2: '#ff8a1f' }),
   D('graffiti', 9, 0.4, -33.85, { style: 'squid', size: 3, color: '#2fd6ff', color2: '#ff5fa8' }),
@@ -156,7 +157,7 @@ const entities = [
   D('tire-stack', 1.5, 0, -14, { count: 4 }), D('cone', -1.2, 0, -21), D('hydrant', 12.8, 0, -4.8),
 
   // ---------------- C ----------------
-  ent('checkpoint', 5.5, DOCK, -37, { id: 'cp1', yaw: PI }),
+  ent('checkpoint', 1.5, DOCK, -36.4, { id: 'cp1', yaw: PI, radius: 3.4 }),        // top of the sponge steps
   T(0, DOCK, -38.8, { size: [32, 3, 2], dialogue: 'w1-2.shield', objective: 'Splat the Shield Glooper squad' }),
   ent('shield-glooper', 0, DOCK, -47.8, { group: 'dock', yaw: 0 }),
   ent('glooper', -8.5, DOCK, -46.5, { group: 'dock', yaw: 0.3 }),
@@ -189,7 +190,7 @@ const entities = [
   D('graffiti', -3.95, 0.3, -72, { yaw: PI / 2, text: 'CRATE ESCAPE', size: 3.4, color: '#ff8a1f', color2: '#ffd23f' }),
 
   // ---------------- E ----------------
-  ent('checkpoint', 6.5, 0, -88.8, { id: 'cp2', yaw: PI }),
+  ent('checkpoint', 1.8, 0, -90, { id: 'cp2', yaw: PI, radius: 4 }),               // at the sponge bridge
   T(0, 0, -89.8, { size: [32, 3, 3], objective: 'Build a sponge bridge across the canal', hint: 'Ink both sponges to puff them up. Murk ink shrinks them!' }),
   ent('sponge', 0, -0.3, -96.2, { id: 'sponge-a', size: [4, 0.8, 4] }),
   ent('sponge', 0, -0.3, -101.4, { id: 'sponge-b', size: [4, 0.8, 4] }),
@@ -204,7 +205,7 @@ const entities = [
   ent('glooper', -7.25, 5.2, -131, { group: 'alley', yaw: 0.4 }),
   ent('glooper', 12, 0, -133, { group: 'alley', yaw: 0 }),
   ent('shield-glooper', 3.5, 0, -147, { group: 'alley', yaw: 0 }),
-  ent('murk-barrier', 0, 0, -150.2, { id: 'bar-alley', size: [5, 4, 0.4], group: 'alley' }),
+  ent('murk-barrier', 0, 0, -150.2, { id: 'bar-alley', size: [8.5, 4, 0.4], group: 'alley' }),   // wider than the 5 m gangway: no jumping round it
   ent('crate', 12, 0, -117.2, { pearls: 2 }), ent('crate', -12.5, 0, -127.8, { pearls: 2 }), ent('crate', -13.2, 0, -129.2, { pearls: 2 }),
   ent('pearl-trail', 12, 0, -110, { to: [12, 0, -128], count: 5 }),
   ent('pearl-trail', 7.25, 5.2, -109, { to: [7.25, 5.2, -136], count: 4 }),
@@ -218,13 +219,13 @@ const entities = [
 
   // ---------------- G ----------------
   T(0, 0, -163.5, { size: [8, 3, 3], dialogue: 'w1-2.pa', objective: 'Clear Yard C' }),
-  ent('checkpoint', 4.5, 0, -165, { id: 'cp3', yaw: PI }),
+  ent('checkpoint', 1.4, 0, -163.8, { id: 'cp3', yaw: PI, radius: 3.6 }),         // end of the gangway
   ent('shield-glooper', 0, 0, -193, { group: 'yardc', yaw: 0 }),
   ent('glooper', -12, 0, -179.5, { group: 'yardc', yaw: 0.2 }),
   ent('glooper', 12, 2.6, -178, { group: 'yardc', yaw: -0.2 }),
   ent('rollerbrute', -8, 0, -194, { group: 'yardc', yaw: 0.5, aggro: 20 }),
   ent('glooper', 8, 0, -195.5, { group: 'yardc', yaw: -0.3, patrol: [[8, 0, -195.5], [9, 0, -184], [2, 0, -181]] }),
-  ent('murk-barrier', 0, 0, -200.2, { id: 'bar-final', size: [5, 4, 0.4], group: 'yardc' }),
+  ent('murk-barrier', 0, 0, -200.2, { id: 'bar-final', size: [8.5, 4, 0.4], group: 'yardc' }),
   ent('pearl-trail', -19, 0, -166, { to: [-19, 0, -186], count: 5 }),
   ent('pearl-trail', -12, 5.2, -170.6, { to: [-12, 5.2, -173.4], count: 2 }),
   ent('crate', 16.8, 0, -171.5, { pearls: 2 }), ent('crate', 17.6, 0, -172.9, { pearls: 2 }),
@@ -270,7 +271,7 @@ export default {
   ],
   entities,
   route: [
-    [0, 0, 9], [0, 0, -4], [1.5, 0, -16], [-2, 0, -26], [0, 0, -27.2], [0, DOCK, -36, 'mover'],                     // 'mover' = sponge-assisted
+    [0, 0, 9], [0, 0, -4], [1.5, 0, -16], [-2, 0, -26], [-2.1, 0, -27.4], [0.7, DOCK, -36, 'mover'],                     // 'mover' = sponge-assisted
     [0, DOCK, -50], [0, DOCK, -53], [0, 0, -62], [3.5, 0, -78], [5.5, 0, -86], [0, 0, -91.5], [0, 0, -107, 'mover'],
     [0, 0, -148], [0, 0, -161], [0, 0, -175], [2, 0, -186], [0, 0, -199], [0, 0, -210], [0, 0, -219],
   ],

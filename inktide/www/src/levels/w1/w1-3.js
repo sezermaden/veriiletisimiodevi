@@ -56,7 +56,7 @@ const brushes = [
   ...craneLegs(-6, 6, -34, -46, A - 0.8, YEL),
   box(-7.5, A - 0.8, -48, 7.5, A, -32, { mat: 'metal', color: STEEL }),
   block(0, -44, 8, 6, A, 4, { mat: 'metal', color: YEL }),                            // machine house
-  block(0, -44, 8.6, 6.6, A + 4, 0.3, { mat: 'metal', color: '#3b4052' }),
+  block(0, -44, 8, 6, A + 4, 0.3, { mat: 'metal', color: '#3b4052' }),               // roof flush with the walls (an overhang stops a climbing squid)
   block(0, -40.95, 3, 0.1, A + 1.6, 1.3, { mat: 'glass', color: '#bfe8ff' }),
   ...jib(-48, -70, A),
   box(7.5, A - 0.6, -41.5, 20, A, -38.5, { mat: 'metal', color: YEL }),               // counter-jib (postcard)
@@ -67,7 +67,7 @@ const brushes = [
   box(-8, A - 0.8, -104, 8, A, -84, { mat: 'metal', color: STEEL }),
   block(0, -91.5, 8, 5, A, 5, { mat: 'metal', color: ORG }),                           // step house (climb 1)
   block(0, -98, 8, 8, A, B - A, { mat: 'metal', color: '#f4f1ea' }),                   // tower (climb 2)
-  block(0, -98, 8.4, 8.4, B, 0.12, { mat: 'concrete', color: '#b8b0a6' }),
+  block(0, -98, 8, 8, B, 0.12, { mat: 'concrete', color: '#b8b0a6' }),                 // flush: the climb face must not be capped by a lip
   block(4.05, -98, 0.1, 4, B - 3.4, 1.6, { mat: 'glass', color: '#bfe8ff' }),           // cab window (east face, off the climb)
   block(-5.5, -87.5, 2.4, 1.2, A, 1.0, { mat: 'concrete', color: YEL }),
   ...jib(-102, -126, B + 0.12, ORG),
@@ -76,7 +76,7 @@ const brushes = [
   ...craneLegs(-7, 7, -140, -156, C - 0.8, '#d9482b'),
   box(-8.5, C - 0.8, -160, 8.5, C, -136, { mat: 'metal', color: STEEL }),
   block(0, -154, 8, 8, C, TOP - C, { mat: 'metal', color: '#d9482b' }),                // machine house (climb 6 m)
-  block(0, -154, 8.4, 8.4, TOP, 0.12, { mat: 'concrete', color: '#b8b0a6' }),
+  block(0, -154, 8, 8, TOP, 0.12, { mat: 'concrete', color: '#b8b0a6' }),               // flush (climbable)
   block(-4.5, -143, 1.2, 2.6, C, 1.0, { mat: 'concrete', color: YEL }),
   block(3.5, -141.5, 2.4, 1.2, C, 1.0, { mat: 'concrete', color: '#e8e2d6' }),
   ...jib(-158, -172, TOP + 0.12, '#d9482b'),
@@ -100,7 +100,7 @@ const entities = [
   // ---------------- A ----------------
   T(0, 0, 7, { size: [16, 3, 8], objective: 'Climb the cranes to the Prism Capsule' }),
   ent('glooper', -7, 0, -26, { group: 'base', yaw: 0.3 }),
-  ent('glooper', 7.5, 0, -30, { group: 'base', yaw: -0.3 }),
+  ent('glooper', 6.8, 0, -29, { group: 'base', yaw: -0.3 }),
   T(0, 0, -15.5, { size: [10, 3, 2.5], hint: 'Paint the plinth wall and swim up it' }),
   T(0, 2.6, -18.2, { size: [8, 3, 2], dialogue: 'w1-3.launchpad', objective: 'Ride the launch pad to Crane A' }),
   ent('launchpad', 0, 2.6, -21, { id: 'pad-a', target: [0, A, -36.5] }),
@@ -117,7 +117,7 @@ const entities = [
   D('flag', 15.4, 0, 13, { color: '#ff8a1f', height: 6 }), D('bench', -4, 0, 12.8, { yaw: PI }),
 
   // ---------------- B ----------------
-  ent('checkpoint', 4.8, A, -35, { id: 'cp1', yaw: PI }),
+  ent('checkpoint', 1.8, A, -35, { id: 'cp1', yaw: PI, radius: 3 }),                // where pad A lands you
   ent('glooper', -6, A, -44.5, { group: 'craneA', yaw: 0.2 }),
   ent('glooper', 6, A, -46, { group: 'craneA', yaw: -0.2 }),
   ent('pearl-trail', 0, A, -52, { to: [0, A, -66], count: 5 }),
@@ -148,7 +148,7 @@ const entities = [
 
   // ---------------- D ----------------
   T(0, B + 0.12, -96.5, { size: [8, 3, 5], dialogue: 'w1-3.halfway' }),
-  ent('checkpoint', 2.6, B + 0.12, -95.6, { id: 'cp2', yaw: PI }),
+  ent('checkpoint', 1.2, B + 0.12, -96.2, { id: 'cp2', yaw: PI, radius: 4.5 }),     // covers the whole climb edge
   ent('pearl-trail', 0, B + 0.12, -104, { to: [0, B + 0.12, -119], count: 5 }),
   ent('launchpad', 0, B + 0.12, -123.4, { id: 'pad-b', target: [0, C, -141] }),
   D('railing', -1.55, B + 0.12, -112, { yaw: PI / 2, length: 18, collide: true, color: '#e0442a' }), D('railing', 1.55, B + 0.12, -112, { yaw: PI / 2, length: 18, collide: true, color: '#e0442a' }),
@@ -169,14 +169,14 @@ const entities = [
   D('speaker-tower', 7.6, C, -136.8, { height: 2.2, color: '#b77dff' }),
 
   // ---------------- F ----------------
-  ent('checkpoint', 2.6, TOP + 0.12, -151.5, { id: 'cp3', yaw: PI }),
+  ent('checkpoint', 0.9, TOP + 0.12, -155.5, { id: 'cp3', yaw: PI, radius: 4 }),     // lift + jib entrance
   ent('pearl-trail', -2.8, TOP + 0.12, -150.8, { to: [-2.8, TOP + 0.12, -153.2], count: 3 }),
   ent('murk-barrier', 0, TOP + 0.12, -166, { id: 'bar-top', size: [7, 4, 0.4], group: 'craneC' }),
-  ent('snipe-eel', 3, HANG, -181, { group: 'top', yaw: 0.2, aggro: 30 }),
-  ent('glooper', -3, HANG, -176.5, { group: 'top', yaw: 0 }),
+  ent('snipe-eel', -3.4, HANG, -182, { group: 'top', yaw: -0.2, aggro: 30 }),
+  ent('glooper', 3, HANG, -176.8, { group: 'top', yaw: 0 }),
   ent('pearl-trail', 0, TOP + 0.12, -167.5, { to: [0, TOP + 0.12, -171], count: 3 }),
   ent('pearl-trail', -4, HANG, -175, { to: [-4, HANG, -181], count: 3 }),
-  ent('prism-core', 0, HANG, -178.5, { id: 'core' }),
+  ent('prism-core', 0, HANG, -181, { id: 'core' }),        // far end: while you shoot it the camera sits clear of the jib overhead
   D('railing', -1.55, TOP + 0.12, -162, { yaw: PI / 2, length: 8, collide: true }), D('railing', 1.55, TOP + 0.12, -162, { yaw: PI / 2, length: 8, collide: true }),
   D('railing', -1.55, TOP + 0.12, -169.2, { yaw: PI / 2, length: 5, collide: true }), D('railing', 1.55, TOP + 0.12, -169.2, { yaw: PI / 2, length: 5, collide: true }),
   D('flag', -4.6, HANG, -182.6, { color: '#ff8a1f', height: 3 }), D('flag', 4.6, HANG, -182.6, { color: '#2fd6ff', height: 3 }),
@@ -212,13 +212,13 @@ export default {
     { at: [0, A + 2.5, -88.95], r: 1.8, team: 'murk', n: [0, 0, 1] },                     // stained climb face (repaint!)
     { at: [0, B - 2.5, -93.95], r: 1.6, team: 'murk', n: [0, 0, 1] },
     murk(0, C, -146, 2.6), murk(-6, C, -148, 2), murk(6, C, -146, 2), murk(0, C, -152, 1.6),
-    murk(0, TOP + 0.12, -170, 1.4), murk(0, HANG, -178.5, 2.6),
+    murk(0, TOP + 0.12, -170, 1.4), murk(0, HANG, -180.8, 2.6),
   ],
   entities,
   route: [
-    [0, 0, 9], [0, 0, -15], [0, 2.6, -18.5, 'climb'], [0, 2.6, -21], [0, A, -36.5, 'launch'], [5.6, A, -41], [5.6, A, -47.5],
-    [0, A, -49.5], [0, A, -69], [0, A, -85.5, 'mover'], [0, A, -87.8], [0, A + 5, -90, 'climb'], [0, A + 5, -93.2],
+    [0, 0, 9], [0, 0, -15], [0, 2.6, -18.5, 'climb'], [0, 2.6, -21], [0, A, -36.5, 'launch'], [5.6, A, -41], [5.6, A, -47.4],
+    [0.4, A, -47.4], [0, A, -49.5], [0, A, -69], [0, A, -85.5, 'mover'], [0, A, -87.8], [0, A + 5, -90, 'climb'], [0, A + 5, -93.2],
     [0, B + 0.12, -95.5, 'climb'], [0, B + 0.12, -123], [0, C, -141, 'launch'], [0, C, -148.5], [0, TOP + 0.12, -151, 'climb'],
-    [0, TOP + 0.12, -157], [0, TOP + 0.12, -171.5], [0, HANG, -175], [0, HANG, -176.5],
+    [0, TOP + 0.12, -157], [0, TOP + 0.12, -171.5], [0, HANG, -175], [0, HANG, -178],
   ],
 };

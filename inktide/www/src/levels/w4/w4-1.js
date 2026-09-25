@@ -1,7 +1,7 @@
 // 4-1 The Ascent — one storm-lashed lap up the outside of Murkwell Tower. The core is dark
 // unpaintable cladding and tinted glass; only the concrete ledges, terrace walls and pillars take ink.
 //   South: LOBBY PLAZA (y 20, spawn) → paint & climb the 6 m terrace wall → TERRACE (26, CP1)
-//   East:  WIND LEDGE 26 → ramp → 29 with a 3 m break; gusts shove you outward (w4-1.storm)
+//   East:  WIND LEDGE 26 → ramp → 29 with a 2.5 m break; gusts shove you outward (w4-1.storm)
 //   North: NE corner (CP2) → window-washer GONDOLA up to 37 under a Snipe Eel → (CP3, w4-1.halfway)
 //          and a second gust ledge
 //   West:  ledge crew (w4-1.pa) → INK RAIL spiralling up round the SW corner to 44

@@ -144,7 +144,7 @@ const entities = [
   D('neon-sign', 12, 1.2, 4, { yaw: -PI / 2, text: 'FLOWER POWER', color: '#ff5fd2', height: 1.6 }),
 
   // ---------------- G2 ----------------
-  ent('checkpoint', 4.8, 0, -17, { id: 'cp1', yaw: PI }),
+  ent('checkpoint', 1.2, 0, -19.2, { id: 'cp1', yaw: PI, radius: 4.2 }),           // through gate 1 (circle clear of the gate)
   T(0, 0, -17.5, { size: [16, 3, 3], dialogue: 'w2-3.barrier', objective: 'Splat the grunts powering the barrier' }),
   ent('glooper', -4, 2.9, -28, { group: 'walk', yaw: 0 }),
   ent('glooper', 4.5, 0, -33, { group: 'walk', yaw: -0.2, patrol: [[4.5, 0, -33], [5.5, 0, -44], [0, 0, -40]] }),
@@ -162,7 +162,7 @@ const entities = [
   D('graffiti', 0, TER - 2.6, -59.96, { text: 'BLOOM', size: 4, color: '#7ee08f', color2: '#ff5fd2', height: 1.6 }),
 
   // ---------------- G3 ----------------
-  ent('checkpoint', 5, TER, -63, { id: 'cp2', yaw: PI }),
+  ent('checkpoint', 1.2, TER, -62.8, { id: 'cp2', yaw: PI, radius: 4.2 }),         // top of the stairs
   T(0, TER, -62.8, { size: [16, 3, 3], dialogue: 'w2-3.turret', objective: 'Flank the turret and shoot the switch on the rose bed' }),
   ent('murk-turret', -9, TER + 1.6, -81, { group: 'terrace', yaw: 0, aggro: 20 }),
   ent('switch', -9, TER + 1.6, -77.8, { id: 'sw-2', yaw: 0, targets: ['gate-2'] }),
@@ -180,7 +180,7 @@ const entities = [
   D('bush', -9, TER + 1.6, -80, { flowerColor: '#ff3f7a', color: '#2f8a3f' }),
   D('lamp', 7, TER, -70, { yaw: -PI / 2, light: '#9ff3ff' }), D('lamp', 7, TER, -90, { yaw: -PI / 2, light: '#ff9ff0' }),
   D('bench', 6.9, TER, -80, { yaw: -PI / 2 }), D('palm', 6.6, TER, -96.6), D('palm', -2, TER, -96.6),
-  D('neon-sign', -9, TER, -76.7, { text: 'ROSE BED', color: '#ff3f7a', height: 2.2, pole: true }),
+  D('neon-sign', -4.4, TER, -83.6, { yaw: -0.6, text: 'ROSE BED', color: '#ff3f7a', height: 2.2, pole: true }),   // beside the bed, never in front of the switch
   D('speaker-tower', 6.8, TER, -61.4, { height: 2.4, color: '#7ee08f' }),
   D('bush', 4.5, TER + 0.5, -66, { flowerColor: '#ff5fd2' }), D('bush', -5, TER + 0.5, -94, { flowerColor: '#2fd6ff' }),
   D('lamp', -2, TER, -70, { yaw: PI / 2, light: '#ffd23f' }), D('lamp', 2, TER, -86, { yaw: -PI / 2, light: '#ff9ff0' }),
@@ -189,7 +189,7 @@ const entities = [
 
   // ---------------- G4 ----------------
   T(-36.5, TER, -78, { size: [4, 3, 4], dialogue: 'w2-3.pa', objective: 'Clear the greenhouse grove' }),
-  ent('checkpoint', -39.5, TER, -70.5, { id: 'cp3', yaw: PI }),
+  ent('checkpoint', -37, TER, -76.6, { id: 'cp3', yaw: PI, radius: 4.5 }),         // off the west bridge
   ent('buzzdrone', -48, TER, -78, { group: 'grove', alt: 4.5, patrol: [[-48, TER, -78], [-38, TER, -84]] }),
   ent('murk-turret', -40, TER, -104, { group: 'grove', yaw: 0.3, aggro: 20 }),
   ent('glooper', -49, TER, -91, { group: 'grove', yaw: 0 }),

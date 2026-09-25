@@ -42,10 +42,11 @@ const brushes = [
   cyl(0, 2.48, -27, 0.2, 0.6, { mat: 'metal', color: '#f2c230', sides: 8 }),
   block(-9.6, -22, 2.2, 6, 0, 0.55, { mat: 'wood', color: '#b8845a' }),              // planters
   block(9.6, -33, 2.2, 6, 0, 0.55, { mat: 'wood', color: '#b8845a' }),
-  box(-11, 0, -40.6, -3, 4.4, -39.4, { mat: 'brick', color: '#e3a07a' }),            // gate wall
-  box(3, 0, -40.6, 11, 4.4, -39.4, { mat: 'brick', color: '#e3a07a' }),
-  box(-11.2, 4.4, -40.8, -3, 4.7, -39.2, { mat: 'concrete', color: '#f4f1ea' }),
-  box(3, 4.4, -40.8, 11.2, 4.7, -39.2, { mat: 'concrete', color: '#f4f1ea' }),
+  // gate walls are unpaintable (paint: false): climbing them would skip the gate
+  box(-11, 0, -40.6, -3, 4.4, -39.4, { mat: 'brick', color: '#e3a07a', paint: false }),            // gate wall
+  box(3, 0, -40.6, 11, 4.4, -39.4, { mat: 'brick', color: '#e3a07a', paint: false }),
+  box(-11.2, 4.4, -40.8, -3, 4.7, -39.2, { mat: 'concrete', color: '#f4f1ea', paint: false }),
+  box(3, 4.4, -40.8, 11.2, 4.7, -39.2, { mat: 'concrete', color: '#f4f1ea', paint: false }),
 
   // ---------------- C: swim lane + side float ----------------
   ...pier(-3, -40.6, 3, -80, 0, { edges: 'x', color: '#b88a5e' }),
@@ -92,8 +93,8 @@ const brushes = [
   block(-3, -179, 1.2, 2.6, 0, 1.0, { mat: 'concrete', color: '#e8e2d6' }),
   block(8, -183, 2.4, 2.4, 0, 1.3, { mat: 'wood', color: '#b8845a' }),              // pallet stack
   ...bollards(21.6, -150, 21.6, -188, 8),
-  box(-15, 0, -190.6, -3.7, 4.6, -189.4, { mat: 'plaster', color: '#e8e2d6' }),      // bay exit wall
-  box(3.7, 0, -190.6, 22, 4.6, -189.4, { mat: 'plaster', color: '#e8e2d6' }),
+  box(-15, 0, -190.6, -3.7, 4.6, -189.4, { mat: 'plaster', color: '#e8e2d6', paint: false }),      // bay exit wall (unpaintable: no climbing round the barrier)
+  box(3.7, 0, -190.6, 22, 4.6, -189.4, { mat: 'plaster', color: '#e8e2d6', paint: false }),
   // hidden fishing jetty
   ...pier(-26, -171.5, -15, -179.5, 0, { edges: 'all', color: '#c49a6c', step: 3 }),
 
@@ -103,8 +104,8 @@ const brushes = [
   box(-12, 2.8, -203.2, -3, 3.35, -203, { mat: 'metal', color: '#f2c230' }),         // parapet (front, low: they peek over)
   box(-3.2, 2.8, -209, -3, 3.35, -205.2, { mat: 'metal', color: '#f2c230' }),         // parapet (east, leaves the stair gap)
   stairs(-3, 0, -205, 0.2, 2.8, -203.2, '-x', { mat: 'metal', color: '#f2c230' }),   // flank stairs up
-  box(-12, 0, -216.6, 1.2, 4.6, -215.4, { mat: 'brick', color: '#c65a3e' }),         // exit wall with gate (x 1.25..6.75)
-  box(6.8, 0, -216.6, 12, 4.6, -215.4, { mat: 'brick', color: '#c65a3e' }),
+  box(-12, 0, -216.6, 1.2, 4.6, -215.4, { mat: 'brick', color: '#c65a3e', paint: false }),         // exit wall with gate (x 1.25..6.75), unpaintable
+  box(6.8, 0, -216.6, 12, 4.6, -215.4, { mat: 'brick', color: '#c65a3e', paint: false }),
   block(7.5, -198, 2.4, 1.2, 0, 1.0, { mat: 'concrete', color: '#e8e2d6' }),
 
   // ---------------- I: pier's end plaza ----------------
@@ -236,13 +237,13 @@ const entities = [
   
   // ---------------- I ----------------
   T(4, 0, -218.6, { size: [8, 3, 3], dialogue: 'w1-1.special', objective: 'Clear the pier', hint: 'Paint turf to charge your special, then press {special}' }),
-  ent('checkpoint', 4.9, 0, -219.6, { id: 'cp3', yaw: PI, radius: 4 }),          // just through the court gate
+  ent('checkpoint', 4.9, 0, -220.2, { id: 'cp3', yaw: PI, radius: 3.8 }),        // just through the court gate (circle stays clear of it)
   ent('glooper', -6, 0, -228, { group: 'pier', yaw: 0 }),
   ent('glooper', 5, 0, -231, { group: 'pier', yaw: 0, patrol: [[5, 0, -231], [9, 0, -240], [2, 0, -238]] }),
   ent('glooper', 0, 0, -238, { group: 'pier', yaw: 0 }),
   ent('glooper', -9, 0, -242, { group: 'pier', yaw: 0.3 }),
   ent('glooper', 9, 0, -246, { group: 'pier', yaw: -0.3 }),
-  ent('murk-barrier', 0, 0, -250, { id: 'bar-final', size: [6, 4, 0.4], group: 'pier' }),
+  ent('murk-barrier', 0, 0, -250, { id: 'bar-final', size: [8.5, 4, 0.4], group: 'pier' }),   // wider than the 6 m pier: no jumping round its ends
   ent('pearl-trail', -10.5, 0, -223, { to: [-10.5, 0, -235], count: 4 }),
   D('lamp', -11.4, 0, -226, { yaw: PI / 2 }), D('lamp', 11.4, 0, -234, { yaw: -PI / 2 }), D('lamp', -11.4, 0, -244, { yaw: PI / 2 }),
   D('barrel', 10.8, 0, -225), D('barrel', 11.2, 0, -224.2), D('crate-stack', 10.4, 0, -247.5, { count: 3, yaw: -0.3 }),

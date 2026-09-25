@@ -31,7 +31,7 @@ const brushes = [
   // ---------------- R2: garden terrace ----------------
   ...building(-14, -34, 14, -66, R2, { color: '#c9b8f0', roofMat: 'tiles', roofColor: '#eadcca' }),
   ...parapet(-14, -34, 14, -66, R2, ['+z', '-x', '+x'], { gaps: { '+z': [[-3.5, 3.5]], '+x': [[-51, -41]] } }),
-  box(-14, R2, -66, -4.4, R2 + 1.4, -65.7, GLASS), box(4.4, R2, -66, 14, R2 + 1.4, -65.7, GLASS),   // edge rail
+  box(-14, R2, -66, -4.4, R2 + 2.2, -65.7, GLASS), box(4.4, R2, -66, 14, R2 + 2.2, -65.7, GLASS),   // edge rail (2.2 m: no squid leap round the barrier)
   box(-4.4, R2, -66, -4.1, R2 + 2.2, -63, GLASS), box(4.1, R2, -66, 4.4, R2 + 2.2, -63, GLASS),     // jump pen
   ...planter(-9, -42, 6, 2, R2), ...planter(9, -51, 2, 7, R2), ...planter(-3, -56, 5, 2, R2), ...planter(-11, -58, 2, 5, R2),
   block(6, -41.5, 4, 3, R2, 2.2, { ...GLASS, color: '#c8ffe0' }),        // greenhouse (glass: cover, no climbing)
@@ -50,7 +50,7 @@ const brushes = [
   ...building(-9, -68.3, 9, -100, R3, { color: '#9ec5f0', roofColor: '#c7c0d6' }),
   ...parapet(-9, -68.3, 9, -86, R3, ['-x', '+x']),
   block(0, -93, 18, 14, R3, PH - R3 - 0.25, { mat: 'plaster', color: '#ffd6e8' }),     // penthouse (climb its front face)
-  block(0, -93, 18.2, 14.2, PH - 0.25, 0.25, { mat: 'concrete', color: '#e2d6ea' }),
+  block(0, -93, 18, 14, PH - 0.25, 0.25, { mat: 'concrete', color: '#e2d6ea' }),        // flush: a lip over the climb face stops the squid
   block(-6, -86.02, 3, 0.1, R3 + 0.6, 2.4, { mat: 'glass', color: '#ffd9a8' }),         // lit windows (not climbable)
   block(6, -86.02, 3, 0.1, R3 + 0.6, 2.4, { mat: 'glass', color: '#ffd9a8' }),
   ...acUnit(-5, -76.5, R3), ...acUnit(6.2, -81, R3, 1),
@@ -98,7 +98,7 @@ const entities = [
   D('billboard', -13, R1, -2, { yaw: PI / 2, text: 'Pix FM 88.1' }),
 
   // ---------------- R2 ----------------
-  ent('checkpoint', 5.5, R2, -37.5, { id: 'cp1', yaw: PI }),
+  ent('checkpoint', 1.8, R2, -38, { id: 'cp1', yaw: PI, radius: 3 }),              // end of rail 1
   T(0, R2, -39.5, { size: [28, 3, 3], dialogue: 'w2-1.drones', objective: 'Clear the garden terrace' }),
   ent('buzzdrone', -6, R2, -50, { group: 'garden', alt: 4, patrol: [[-6, R2, -50], [6, R2, -54], [0, R2, -60]] }),
   ent('buzzdrone', 7, R2, -58, { group: 'garden', alt: 4.5 }),
@@ -120,7 +120,7 @@ const entities = [
   D('flag', 23.3, TOM, -51.3, { color: '#ff3030', height: 3 }), D('flowerpot', 23.2, TOM, -41, { color: '#ff3030' }),
 
   // ---------------- R3 ----------------
-  ent('checkpoint', 5, R3, -74, { id: 'cp2', yaw: PI }),
+  ent('checkpoint', 0.8, R3, -73.5, { id: 'cp2', yaw: PI, radius: 4.8 }),           // the whole landing strip
   T(0, R3, -76, { size: [18, 3, 3], objective: 'Climb the penthouse', hint: 'Paint the pink wall and swim up it' }),
   ent('glooper', -6, R3, -81, { group: 'r3', yaw: 0.3 }),
   ent('shield-glooper', 2.5, R3, -83.5, { group: 'r3', yaw: 0 }),
@@ -138,7 +138,7 @@ const entities = [
 
   // ---------------- R4 ----------------
   T(18.5, R4, -145, { size: [12, 3, 4], dialogue: 'w2-1.pa', objective: 'Clear the sign-shop roof' }),
-  ent('checkpoint', 24.5, R4, -144.5, { id: 'cp3', yaw: PI }),
+  ent('checkpoint', 20, R4, -144, { id: 'cp3', yaw: PI, radius: 3 }),               // end of rail 2
   ent('buzzdrone', 12, R4, -158, { group: 'final', alt: 4 }),
   ent('buzzdrone', 24, R4, -163, { group: 'final', alt: 5, patrol: [[24, R4, -163], [16, R4, -156]] }),
   ent('glooper', 9.5, R4, -166.5, { group: 'final', yaw: 0.3 }),
