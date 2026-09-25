@@ -3,9 +3,13 @@
 // All animation is procedural (springs + cycles); no skinning is needed.
 import * as THREE from 'three';
 import { charMat, inkMat, setMatColor } from './materials.js';
+import { disposeTree } from '../engine/dispose.js';
 
 const G = {};   // shared geometry cache
-function geo(key, make) { return G[key] || (G[key] = make()); }
+function geo(key, make) {
+  if (!G[key]) { G[key] = make(); G[key].userData.cached = true; }
+  return G[key];
+}
 
 function capsuleDown(r, len) {
   // capsule whose top cap centre sits at the origin, extending down -Y
@@ -257,7 +261,8 @@ export class SquidkinModel {
     this.neck.position.y = 0.36;
     this.torso.add(this.neck);
     this.head = new THREE.Group();
-    this.head.position.y = 0.17;
+    this.head.position.y = 0.19;
+    this.head.scale.setScalar(1.16);     // chibi proportions: big head, big eyes
     this.neck.add(this.head);
     const skull = new THREE.Mesh(sphere(0.205, 28, 20), this.mSkin);
     skull.scale.set(1.0, 0.96, 0.95);
@@ -520,6 +525,10 @@ export class SquidkinModel {
       } else if (air) {
         A.sh.rotation.set(-0.6, 0, A.side * 0.9);
         A.elbow.rotation.x = -0.5;
+      } else if (A === this.gunArm) {
+        // ready stance: weapon held forward at the hip, bobbing with the run
+        A.sh.rotation.set(-0.3 + Math.sin(p) * 0.25 * run, 0, -0.1);
+        A.elbow.rotation.x = -1.15 + Math.sin(p) * 0.15 * run;
       } else {
         A.sh.rotation.set(Math.sin(p) * 0.9 * run, 0, A.side * (0.12 + run * 0.1));
         A.elbow.rotation.x = -0.25 - run * 0.7;
@@ -576,6 +585,6 @@ export class SquidkinModel {
   }
 
   dispose() {
-    this.root.traverse((o) => { if (o.isMesh && o.material?.dispose) o.material.dispose(); });
+    disposeTree(this.root);
   }
 }

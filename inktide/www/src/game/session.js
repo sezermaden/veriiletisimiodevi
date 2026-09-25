@@ -76,6 +76,9 @@ export class Session {
     this.hud = new Hud(this);
     for (const e of def.entities || []) spawnEntity(this, e);
     this.renderer.setScene(this.scene, this.camera);
+    // music + ambience default to the stage theme; modes may override after start
+    this.audio?.playMusic?.(def.music || def.theme || 'docks');
+    this.audio?.ambience?.(def.theme || null);
     await this.mode?.start?.(this);
     this.events.on('hit', (e) => { if (e.source === this.player && e.target !== this.player) this.hud.hitMarker(); });
     // warm the ink atlas + shaders so the first splat doesn't hitch
@@ -125,12 +128,14 @@ export class Session {
     }
 
     // ---- EDGES: once per frame, latched into buffers ----
-    this.player.latchInput(input);
+    // (legacyEdges reproduces the old bug for the negative-control test only: no latch, no SNAP)
+    if (!this.legacyEdges) this.player.latchInput(input);
     this.mode?.latchInput?.(this, input);
 
     this._acc += dt * (this.timeScale ?? 1);
     let steps = 0;
-    while (this._acc + SNAP >= FIXED && steps < 5) {
+    const snap = this.legacyEdges ? 0 : SNAP;
+    while (this._acc + snap >= FIXED && steps < 5) {
       this.step(FIXED);
       this._acc = Math.max(0, this._acc - FIXED);
       steps++;
@@ -190,6 +195,7 @@ export class Session {
   }
 
   dispose() {
+    this.audio?.ambience?.(null);
     this.mode?.dispose?.(this);
     for (const e of this.entities) e.dispose();
     this.entities.length = 0;

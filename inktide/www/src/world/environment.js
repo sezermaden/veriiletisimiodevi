@@ -1,6 +1,7 @@
 // Sky dome, sun + fill lights, fog, water and distant backdrop, driven by a theme preset.
 import * as THREE from 'three';
 import { mulberry } from '../ink/ink-system.js';
+import { disposeTree } from '../engine/dispose.js';
 
 export const THEMES = {
   docks: {
@@ -209,10 +210,10 @@ export class Environment {
     const rnd = mulberry(7 + T.backdrop.length);
     const center = bounds.getCenter(new THREE.Vector3());
     const size = bounds.getSize(new THREE.Vector3());
-    const R = Math.max(size.x, size.z) * 0.5 + 110;
+    const R = Math.max(size.x, size.z) * 0.5 + 150;
     const tint = new THREE.Color(T.backdropTint);
     const winTex = windowTexture(T.backdrop === 'neon' || T.backdrop === 'industrial' || T.stars > 0.5);
-    const mat = new THREE.MeshStandardMaterial({ color: tint, roughness: 0.9, metalness: 0.0, map: winTex.map, emissiveMap: winTex.emissive, emissive: new THREE.Color(T.backdrop === 'city' ? '#ffe1a8' : '#ffb0f0'), emissiveIntensity: T.stars > 0.3 ? 1.2 : 0.25, fog: true });
+    const mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, metalness: 0.0, map: winTex.map, emissiveMap: winTex.emissive, emissive: new THREE.Color(T.backdrop === 'city' ? '#ffe1a8' : '#ffb0f0'), emissiveIntensity: T.stars > 0.3 ? 1.2 : 0.25, fog: true });
     const box = new THREE.BoxGeometry(1, 1, 1);
     box.translate(0, 0.5, 0);
     const count = 90;
@@ -222,14 +223,14 @@ export class Environment {
       const a = (i / count) * Math.PI * 2 + rnd() * 0.05;
       const r = R + rnd() * 90;
       const w = 12 + rnd() * 22, d = 12 + rnd() * 22;
-      let h = 18 + rnd() * (T.backdrop === 'industrial' ? 40 : 90);
+      let h = 14 + rnd() * (T.backdrop === 'industrial' ? 30 : 55) + (rnd() < 0.12 ? 35 : 0);
       if (T.backdrop === 'storm') h *= 0.7;
       p.set(center.x + Math.cos(a) * r, -3, center.z + Math.sin(a) * r);
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -a + rnd() * 0.3);
       s.set(w, h, d);
       m.compose(p, q, s);
       inst.setMatrixAt(i, m);
-      const c = tint.clone().offsetHSL((rnd() - 0.5) * 0.05, 0, (rnd() - 0.5) * 0.12);
+      const c = tint.clone().offsetHSL((rnd() - 0.5) * 0.08, -0.15 + rnd() * 0.1, (rnd() - 0.5) * 0.18);
       inst.setColorAt(i, c);
     }
     inst.castShadow = false; inst.receiveShadow = false;
@@ -294,7 +295,7 @@ export class Environment {
   dispose() {
     this.scene.remove(this.group);
     this.envRT?.dispose();
-    this.group.traverse((o) => { o.geometry?.dispose?.(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.dispose()); });
+    disposeTree(this.group);
     this.scene.fog = null;
     this.scene.environment = null;
   }

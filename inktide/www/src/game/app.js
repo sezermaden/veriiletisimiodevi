@@ -51,9 +51,18 @@ export class App {
 
   start() { requestAnimationFrame(this._frame); }
 
+  /** Test hook: advance exactly one frame of `dt` seconds (use with app.halted = true). */
+  tick(dt) {
+    this.input.update(dt);
+    if (this.session && this.session.started) { this.ui.update(dt, this.input); this.session.update(dt); }
+    this.input.endFrame();
+    this.frames++;
+  }
+
   _frame(t) {
     const dt = Math.min(0.1, Math.max(0, (t - this.last) / 1000));
     this.last = t;
+    if (this.halted) { requestAnimationFrame(this._frame); return; }   // tests drive frames manually
     try {
       this.input.update(dt);
       if (this.session && this.session.started) {

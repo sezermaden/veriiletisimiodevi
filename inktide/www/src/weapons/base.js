@@ -8,6 +8,7 @@
 //   addSpecial(points), isPlayer (bool)
 import * as THREE from 'three';
 import { charMat, inkMat } from '../actors/materials.js';
+import { disposeTree } from '../engine/dispose.js';
 
 export const MAINS = {};
 export const SUBS = {};
@@ -109,6 +110,8 @@ export class MainWeapon {
   /** Fixed-step update. ctrl = { fire (held), firePressed, fireReleased } */
   update(dt, ctrl) { void dt; void ctrl; }
   get moveMul() { return this.firing ? this.s.moveMul : 1; }
+  /** While true the wielder skips its own movement code (the weapon drives velocity, e.g. dodge rolls). */
+  get drivesMovement() { return false; }
   /** 0..1 charge for the crosshair (chargers, splatlings). */
   get charge() { return 0; }
   /** Rough effective range in metres (for bots/aim assist). */
@@ -116,7 +119,7 @@ export class MainWeapon {
   /** Called when the wielder swims/dies; drop charges etc. */
   cancel() { this.firing = false; }
   setColor(c) { this.model?.traverse((o) => { if (o.userData.inkPart) { o.material.color.set(c); o.material.emissive?.set(c); } }); }
-  dispose() { this.model?.parent?.remove(this.model); }
+  dispose() { this.model?.parent?.remove(this.model); disposeTree(this.model); }
 }
 
 export class SubWeapon {

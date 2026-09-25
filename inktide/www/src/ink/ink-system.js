@@ -600,6 +600,7 @@ export class InkSystem {
 
   dispose() {
     this.rt?.dispose();
+    this.uniforms.inkNoise.value?.dispose();
     this._paintMesh?.geometry.dispose();
     this._paintMesh?.material.dispose();
   }

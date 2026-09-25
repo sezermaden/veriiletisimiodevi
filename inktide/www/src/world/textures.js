@@ -292,6 +292,7 @@ export function surfaceTextures(key) {
   const rnd = mulberry(hash(key));
   (PAINTERS[def.painter] || PAINTERS.concrete)(c, h, rnd);
   const out = { map: toTexture(c, true), normalMap: toTexture(normalFromHeight(h, 3.0), false), def };
+  out.map.userData.cached = true; out.normalMap.userData.cached = true;   // shared across sessions
   cache.set(key, out);
   return out;
 }
@@ -313,6 +314,7 @@ export function softSprite(inner = 'rgba(255,255,255,1)', outer = 'rgba(255,255,
   x.fillStyle = g; x.fillRect(0, 0, size, size);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.userData.cached = true;
   cache.set(key, t);
   return t;
 }

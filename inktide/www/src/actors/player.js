@@ -8,6 +8,7 @@ import { TEAM_HERO, TEAM_MURK, TEAM_NONE } from '../ink/ink-system.js';
 import { makeContacts } from '../world/level.js';
 import { settings } from '../engine/settings.js';
 import { charMat } from './materials.js';
+import { disposeTree } from '../engine/dispose.js';
 
 const _wish = new THREE.Vector3();
 const _fwd = new THREE.Vector3();
@@ -245,6 +246,9 @@ export class Player {
       return;
     }
 
+    // negative-control only: the old bug read edges inside the fixed step
+    if (S.legacyEdges && input.justPressed('jump')) this.jumpBuffer = 0.15;
+
     // ---- intent ----
     _fwd.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     _right.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
@@ -299,6 +303,9 @@ export class Player {
     const v = this.velocity;
     if (specialActive && special.drivesMovement) {
       special.update(dt, { fire: fireHeld, firePressed: this.firePressed, jumpPressed: this.jumpBuffer > 0 });
+    } else if (this.kit.main.drivesMovement) {
+      // e.g. a dualies dodge roll: the weapon sets this.velocity itself; only gravity applies here
+      if (!this.grounded) v.y = Math.max(-T.maxFall, v.y - T.gravity * dt);
     } else if (this.climbing) {
       const n = this.climbNormal;
       const into = -_wish.dot(n) * wishLen;
@@ -543,6 +550,7 @@ export class Player {
   dispose() {
     this.session.scene.remove(this.model.root);
     this.session.scene.remove(this.bump);
+    disposeTree(this.bump);
     this.model.dispose();
     for (const k of ['main', 'sub', 'special']) this.kit[k]?.dispose?.();
   }

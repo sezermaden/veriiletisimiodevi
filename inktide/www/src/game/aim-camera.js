@@ -107,12 +107,19 @@ export class AimCamera {
     const want = this.baseDistance;
     const back = _to.copy(fwd).negate();
     let clear = want;
-    if (level) {
-      const hit = level.raycast(_pivot, back, want + 0.4, { staticOnly: false });
-      if (hit) clear = Math.max(2.0, Math.min(want, hit.distance - 0.35));
+    if (this.legacy) {
+      // negative-control only: the old rig cast from the FEET and snapped the boom unsmoothed
+      const feet = player.position.clone();
+      const hit = level?.raycast(feet, back, want + 0.4, { staticOnly: false });
+      this._dist = hit ? Math.max(0.4, Math.min(want, hit.distance - 0.35)) : want;
+    } else {
+      if (level) {
+        const hit = level.raycast(_pivot, back, want + 0.4, { staticOnly: false });
+        if (hit) clear = Math.max(2.0, Math.min(want, hit.distance - 0.35));
+      }
+      // pull in fast (or it clips through walls), push out slowly (or every gap fires it backwards)
+      this._dist += (clear - this._dist) * Math.min(1, dt * (clear < this._dist ? 22 : 2.6));
     }
-    // pull in fast (or it clips through walls), push out slowly (or every gap fires it backwards)
-    this._dist += (clear - this._dist) * Math.min(1, dt * (clear < this._dist ? 22 : 2.6));
     _want.copy(_pivot).addScaledVector(back, this._dist);
     this.camera.position.copy(_want);
     this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');

@@ -39,7 +39,7 @@ export class Particles {
 
     // ---- rings ----
     this.rings = [];
-    const ringGeo = new THREE.RingGeometry(0.55, 1, 28);
+    const ringGeo = this.ringGeo = new THREE.RingGeometry(0.55, 1, 28);
     for (let i = 0; i < 48; i++) {
       const r = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0 }));
       r.visible = false;
@@ -188,6 +188,7 @@ export class Particles {
     this.drops.geometry.dispose();
     this.drops.material.dispose();
     for (const r of this.rings) { this.scene.remove(r.mesh); r.mesh.material.dispose(); }
+    this.ringGeo.dispose();
     for (const p of this.puffs) { this.scene.remove(p.sp); p.sp.material.dispose(); }
   }
 }
