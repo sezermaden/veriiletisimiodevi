@@ -51,7 +51,7 @@ const brushes = [
   ramp(11, T1, -2, 14.5, C2, 4, '-z', conc('#b8b4c8')),
   box(11, T1 - 0.6, -2, 14.5, T1, 4, conc('#8c87a0', { paint: false })),
   ...ledge(11, -5, 14.5, -2, C2),
-  ...ledge(11, -14.5, 14.5, -8, C2),
+  ...ledge(11, -14.5, 14.5, -7.5, C2),                                                               // 2.5 m break: a running kid jump clears it
   hazard(14.2, -14.5, 14.5, 11, C2 + 0.01),
   // ---------------- north (gondola) ----------------
   ...ledge(4, -14.5, 14.5, -11, C2),
@@ -62,9 +62,10 @@ const brushes = [
   ...ledge(-14.5, 2, -11, 7, 33),                                                                      // secret balcony
   // ---------------- south upper (sponges) ----------------
   ...ledge(-14.5, 11, -2, 14.5, S2),
+  box(-14.5, S2, 14.2, -5, S2 + 0.6, 14.5, conc('#8c87a0')), box(-14.5, S2, 11, -14.2, S2 + 0.6, 14.2, conc('#8c87a0')),   // low parapet round the rail landing
   ...ledge(6, 11, 14.5, 14.5, S2),
-  block(0.2, 12.75, 0.5, 0.7, S2 - 3.2, 0.6, { mat: 'metal', color: '#2e2a3d', paint: false }),         // sponge brackets (hidden under the sponge)
-  block(3.8, 12.75, 0.5, 0.7, S2 - 3.2, 0.6, { mat: 'metal', color: '#2e2a3d', paint: false }),
+  block(0.2, 12.75, 0.5, 0.7, S2 - 2.6, 0.6, { mat: 'metal', color: '#2e2a3d', paint: false }),         // sponge brackets (hidden under the sponge)
+  block(3.8, 12.75, 0.5, 0.7, S2 - 2.6, 0.6, { mat: 'metal', color: '#2e2a3d', paint: false }),
   // ---------------- east upper (crew) + service platform ----------------
   ...ledge(11, -4.4, 14.5, 11, S2),
   stairs(11, S2, -8.6, 14.5, SV, -4.4, '-z', conc('#b8b4c8')),
@@ -107,7 +108,7 @@ add(
   // north (gondola)
   ent('checkpoint', 12.2, C2, -12.6, { yaw: -PI / 2, id: 'cp2' }),
   ent('pearl-trail', 9.5, C2, -12, { to: [5, C2, -12], count: 3 }),
-  ent('mover', 1, C2, -12.75, { size: [3, 0.4, 2.5], path: [[1, C2, -12.75], [1, N2, -12.75]], speed: 2.2, wait: 1.6, mat: 'metal', id: 'gondola' }),
+  ent('mover', 1, C2, -12.75, { size: [3, 0.4, 2.5], path: [[1, C2, -12.75], [1, N2, -12.75]], speed: 2.2, wait: 2.6, mat: 'metal', id: 'gondola' }),
   ent('snipe-eel', -13, N2, -12.8, { yaw: PI / 2, group: 'north', aggro: 30 }),
   ent('buzzdrone', -7, N2, -12.8, { alt: 3.8, group: 'north' }),
   ent('trigger', -3, N2, -12.75, { size: [4, 3, 3.5], dialogue: 'w4-1.halfway' }),
@@ -118,7 +119,7 @@ add(
   ent('trigger', -12.75, N2, -8, { size: [3.5, 3, 5], dialogue: 'w4-1.pa' }),
   ent('glooper', -12.4, N2, -6, { group: 'west' }),
   ent('glooper', -13.2, N2, -4.2, { group: 'west' }),
-  ent('ink-rail', -12.75, N2 + 0.65, -4.2, { id: 'rail-west', points: [[-12.75, N2 + 0.65, -4.2], [-13.3, N2 + 1.6, 1], [-13.5, N2 + 3.4, 6], [-13, N2 + 5.4, 10.4], [-10.4, S2 + 0.8, 13.1], [-6.5, S2 + 0.5, 13.1]] }),
+  ent('ink-rail', -12.75, N2 + 0.65, -4.2, { id: 'rail-west', speed: 12, points: [[-12.75, N2 + 0.65, -4.2], [-13.3, N2 + 1.6, 1], [-13.5, N2 + 3.4, 6], [-13.2, N2 + 6.6, 9.4], [-12.6, S2 + 0.75, 12.2], [-10.8, S2 + 0.6, 12.3]] }),   // ends at the SW corner heading east: the fly-off lands mid-ledge, well short of the sponge gap
   ent('pearl-trail', -13.5, N2 + 2.3, 2.6, { to: [-13.4, N2 + 4.9, 8.6], count: 4 }),
   // secret balcony (drop off the rail or jump from the ledge end)
   ent('postcard', -12.8, 33, 6.2, { id: 'w4-1-postcard', title: 'Murkwell Tower Grand Opening', text: 'The tallest building in Tidehaven! Beautifully gray! Please remember to wipe your fins.' }),
@@ -126,13 +127,13 @@ add(
   ent('launchpad', -12.2, 33, 4, { id: 'pad-balcony', target: [-12.75, N2, -6] }),
   // south upper (sponges)
   ent('trigger', -4, S2, 12.75, { size: [3, 3, 3.5], hint: 'Puff up the sponges with ink. Cross between gusts!', hintTime: 5 }),
-  ent('sponge', 0.2, S2 - 2.6, 12.75, { size: [2.6, 2.6, 2.6], id: 'spA' }),
-  ent('sponge', 3.8, S2 - 2.6, 12.75, { size: [2.6, 2.6, 2.6], id: 'spB' }),
+  ent('sponge', 0.2, S2 - 2.0, 12.75, { size: [2.6, 2.6, 2.6], id: 'spA' }),   // small top 1.2 m under the ledge: easy to see and ink from its edge
+  ent('sponge', 3.8, S2 - 2.0, 12.75, { size: [2.6, 2.6, 2.6], id: 'spB' }),
   ent('wind-gust', 2, S2, 14.05, { size: [10, 6, 3.9], dir: [0, 1], strength: 3.2, period: 5, gust: 1.4, warn: 1.1, offset: 1 }),
   ent('shield-glooper', 9, S2, 12.8, { yaw: -PI / 2, group: 'south' }),
   ent('glooper', 12.6, S2, 13.2, { yaw: -PI / 2, group: 'south' }),
   ent('checkpoint', 8.6, S2, 12.3, { yaw: PI / 2, id: 'cp4' }),
-  ent('pearl', 0.2, S2 + 0.1, 12.75), ent('pearl', 3.8, S2 + 0.1, 12.75),
+  ent('pearl', 0.2, S2 + 0.7, 12.75), ent('pearl', 3.8, S2 + 0.7, 12.75),
   // east upper (crew) → service door
   ent('trigger', 12.75, S2, 10.5, { size: [3.5, 3, 2], objective: 'Break through the crew to the service door' }),
   ent('wind-gust', 14.05, S2, 3.3, { size: [3.9, 6, 15], dir: [1, 0], strength: 3.6, period: 5.4, gust: 1.6, warn: 1.1, offset: 3 }),
@@ -164,23 +165,23 @@ add(
   D('flag', -17.4, PZ, 36.4, { color: '#6a2bd9', height: 7 }), D('flag', 17.4, PZ, 36.4, { color: '#6a2bd9', height: 7 }),
   D('flag', -14, T1, 14, { color: '#6a2bd9', height: 5 }), D('flag', 14, T1, 14, { color: '#6a2bd9', height: 5 }),
   D('vending', -17.4, PZ, 30, { yaw: PI / 2, color: '#6a2bd9' }), D('vending', 17.4, PZ, 21.5, { yaw: -PI / 2, color: '#6a2bd9' }),
-  D('speaker-tower', -3.8, T1, 13.6, { height: 2.2, color: '#a77bff' }), D('speaker-tower', 3.8, T1, 13.6, { height: 2.2, color: '#a77bff' }),
+  D('speaker-tower', -3.8, T1, 14.1, { height: 2.2, color: '#a77bff' }), D('speaker-tower', 3.8, T1, 14.1, { height: 2.2, color: '#a77bff' }),
   D('billboard', 0, PZ, 37.4, { yaw: PI, text: 'Murk Industries' }),
   D('railing', 0, PZ, 37.2, { yaw: PI, length: 8, color: '#b8b4c8' }),
   D('railing', -18.2, PZ, 25.8, { yaw: PI / 2, length: 22, color: '#b8b4c8' }), D('railing', 18.2, PZ, 25.8, { yaw: -PI / 2, length: 22, color: '#b8b4c8' }),
   D('cone', -2.6, PZ, 16.2), D('cone', 2.6, PZ, 16.2), D('hydrant', 15, PZ, 33.6, { color: '#8a6bff' }),
   // ledges
-  D('satellite', 13.4, T1, 6, { yaw: -PI / 2 }), D('antenna', 13.6, C2, -13.6, { height: 3.2, variant: 'radar' }),
-  D('crate-stack', 12.2, T1, 8.4, { count: 2, yaw: 0.2 }), D('barrel', 11.8, C2, -3.2), D('barrel', 12.4, C2, -3.8, { variant: 'toxic' }),
+  D('satellite', 14.0, T1, 5.6, { yaw: -PI / 2, collide: true }), D('antenna', 13.6, C2, -13.6, { height: 3.2, variant: 'radar' }),
+  D('crate-stack', 13.9, T1, 7.6, { count: 2, yaw: PI / 2, collide: true }), D('barrel', 13.95, C2, -2.5, { collide: true }), D('barrel', 13.9, C2, -3.3, { variant: 'toxic', collide: true }),
   D('lamp', 11.6, C2, -14, { yaw: -PI / 2, light: '#d9ccff' }), D('lamp', -1.4, N2, -11.6, { yaw: PI, light: '#d9ccff' }),
   D('neon-sign', 1, C2 + 4.2, -11.05, { text: 'SERVICE LIFT', color: '#ffc53a', height: 0.2, yaw: PI }),
-  D('crate-stack', -9, N2, -11.8, { count: 2, yaw: 0.3 }), D('satellite', -13.6, N2, -13.8, { yaw: PI * 0.75 }),
-  D('barrel', -12, N2, -3.6, { variant: 'toxic' }), D('lamp', -14, N2, -10.4, { yaw: PI / 2, light: '#d9ccff' }),
+  D('crate-stack', -9, N2, -11.7, { count: 2, yaw: 0.3, collide: true }), D('satellite', -13.6, N2, -13.8, { yaw: PI * 0.75 }),
+  D('barrel', -14.0, N2, -3.5, { variant: 'toxic', collide: true }), D('lamp', -14, N2, -10.4, { yaw: PI / 2, light: '#d9ccff' }),
   D('pipe', -12.2, 33, 2.4, { yaw: PI / 2, length: 1.6, radius: 0.22, height: 0.4, color: '#ff7ab8' }),
   D('lamp', -13.8, 33, 6.6, { yaw: PI / 2, light: '#ffb3e6' }),
-  D('antenna', -13.6, S2, 13.8, { height: 2.6 }), D('crate-stack', -8, S2, 13.2, { count: 2, yaw: -0.4 }),
+  D('antenna', -13.6, S2, 13.8, { height: 2.6 }), D('crate-stack', -4.6, S2, 11.65, { count: 2, yaw: 0.1, collide: true }),
   D('neon-sign', 2, S2 + 1.2, 11.05, { text: 'MIND THE GAP', color: '#ff5a5a', height: 1.3 }),
-  D('lamp', 14, S2, 11.4, { yaw: -PI / 2, light: '#d9ccff' }), D('barrel', 11.7, S2, 5.4), D('barrel', 11.8, S2, -1.6, { variant: 'toxic' }),
+  D('lamp', 14, S2, 11.4, { yaw: -PI / 2, light: '#d9ccff' }), D('barrel', 11.7, S2, 5.4, { collide: true }), D('barrel', 11.8, S2, -1.6, { variant: 'toxic', collide: true }),
   D('satellite', 13.8, S2, 9.8, { yaw: -PI / 2 }),
   // service platform
   D('neon-sign', 12.75, SV, -10.2, { text: 'STAFF ONLY', color: '#3fb6ff', height: 3.9 }),
@@ -219,7 +220,7 @@ export default {
     [0, PZ, 31], [0, PZ, 25], [-2, PZ, 16], [-2, T1, 13, 'climb'], [8, T1, 12.75], [12.75, T1, 8], [12.75, T1, 4],
     [12.75, C2, -2], [12.75, C2, -4.8], [12.75, C2, -8.4], [12.75, C2, -12.75], [5, C2, -12.75],
     [-2, N2, -12.75, 'mover'], [-12.75, N2, -12.75], [-12.75, N2, -4.4],
-    [-7, S2, 12.75, 'rail'], [-2.4, S2, 12.75], [6.4, S2, 12.75, 'mover'], [12.75, S2, 12.75], [12.75, S2, -4.2],
+    [-6, S2, 12.75, 'rail'], [-2.4, S2, 12.75], [6.4, S2, 12.75, 'mover'], [12.75, S2, 12.75], [12.75, S2, -4.2],
     [12.75, SV, -8.4], [12.75, SV, -11.4], [13.2, SV + 0.25, -12.6],
   ],
 };

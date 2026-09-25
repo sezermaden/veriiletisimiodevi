@@ -63,6 +63,7 @@ export class MurkwellMech extends Boss {
     this.missiles = [];
     this.flood = 0; this.floodTarget = 0;
     this.defeatDuration = 7.6;
+    this.defeatCamDist = 22; this.defeatCamHeight = 6;   // frames the topple over the north edge
     this.defeatBooms = 3.4;
     this.armorHint = 'The Graytide Mech is armoured! Wait for its weak spots to glow.';
     this._build();
@@ -1019,6 +1020,17 @@ export class MurkwellMech extends Boss {
   }
 
   finalBlastAt(out) { return out.copy(this.home).setY(this.floorY + 1); }
+
+  /**
+   * Defeat camera: first south of the mech (the stagger and topple), then up over the north
+   * parapet looking down the tower face so the fall itself stays in frame.
+   * (The roof edge sits 6.2 m beyond the arena half-depth on 4-B.)
+   */
+  defeatCamPose(out) {
+    const b = this._dcBase, k = smooth((this.defeatT - 2.9) / 1.9);
+    const edgeZ = this.aCenter.z - this.aHalf[1] - 6.2;
+    return out.set(b.x + lerp(5, 8, k), lerp(b.y + 6, this.floorY + 21, k), lerp(b.z + 21, edgeZ + 2.8, k));
+  }
 
   onFinalBlast() {
     // the roof drains back to colour

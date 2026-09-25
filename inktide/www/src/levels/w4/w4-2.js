@@ -60,6 +60,7 @@ const brushes = [
   ...tank(-6, 41.2, 1.3, EY, 3.2, { color: '#7d7896', band: '#2e2a3d' }),
   block(10.5, 32, 5.4, 4, EY - 1.2, 1.2, conc('#9a95b0')),                                 // bridge → P1
   box(7.9, EY, 34, 8.3, EY + 3.6, 43.4, { mat: 'glass', color: '#b7a8ff' }),
+  box(3.6, EY, 29.55, 8.3, EY + 3.6, 29.95, { mat: 'glass', color: '#b7a8ff' }),                // no squid leap round the barrier's south end
   // ---------------- pressure deck (P1) ----------------
   ...deck(21, 24, 18, 20, EY, { cap: 'metal', capColor: '#8c87a0' }),
   block(28, 16.5, 3, 3, EY, 2, steel('#6d6784')),                                         // boiler (bomblob)
@@ -70,14 +71,14 @@ const brushes = [
   ...hpipe('x', 28.2, 41.8, 3, EY, 1.3, { color: '#6a4bb0', collar: '#2e2a3d', every: 3.4 }),
   ...deck(28, -16, 24, 16, UP),
   block(34, -18, 5, 5, UP, 5, conc('#a39dbb')),                                            // boiler stack (switch on top)
-  box(19.3, UP, -24.1, 23, UP + 3.4, -23.7, { mat: 'glass', color: '#b7a8ff' }),
+  box(19.3, UP, -24.1, 27.5, UP + 3.4, -23.7, { mat: 'glass', color: '#b7a8ff' }),              // long enough that no diagonal leap reaches the loop deck
   block(22.5, -12, 1, 3, UP, 1.1, conc()), block(27, -21.5, 3, 1, UP, 1.1, conc()),
-  ...[-25.4, -28.6].map((z) => cyl(17, EY - 7, z, 0.3, UP - 2.2 - (EY - 7), { mat: 'metal', color: '#2e2a3d', paint: false, sides: 10 })),
+  ...[-25.4, -28.6].map((z) => cyl(17, EY - 7, z, 0.3, UP - 1.6 - (EY - 7), { mat: 'metal', color: '#2e2a3d', paint: false, sides: 10 })),
   // ---------------- coolant loop (P3) ----------------
   ...deck(7, -37, 22, 14, UP, { cap: 'metal', capColor: '#8c87a0' }),
   block(12, -41, 3, 3, UP, 1.6, steel('#6d6784')),
   block(2, -33.5, 1, 2.6, UP, 1.1, conc()),
-  cyl(-11, EY - 7, -20, 2, HY + 2 - (EY - 7), { mat: 'concrete', color: '#a39dbb', sides: 16 }),   // secret pylon
+  cyl(-11, EY - 7, -20, 2.8, HY + 2 - (EY - 7), { mat: 'concrete', color: '#a39dbb', sides: 16 }),   // secret pylon (wide enough for the return pad)
   cyl(-22, EY - 7, -14, 1.6, HY - (EY - 7), { mat: 'metal', color: '#5e5a72', sides: 14 }),        // sniper pylon
   // ---------------- west gallery (P4) + heart bridge ----------------
   ...deck(-34, 0, 12, 16, HY),
@@ -86,9 +87,9 @@ const brushes = [
   block(-18.25, 0, 21.7, 5.2, HY - 0.3, 0.3, { mat: 'tiles', color: '#c9c3dc' }),
   block(-19, 0, 4, 11, HY - 3, 3, steel('#4a4560')),                                        // dodge bays
   block(-19, 0, 4.2, 11.2, HY - 0.3, 0.3, { mat: 'tiles', color: '#c9c3dc' }),
-  cyl(-18, EY - 7, -10, 1.6, HY - (EY - 7), { mat: 'metal', color: '#5e5a72', sides: 14 }),        // turret pylons
-  cyl(-12, EY - 7, 9.5, 1.6, HY - (EY - 7), { mat: 'metal', color: '#5e5a72', sides: 14 }),
-  cyl(-25, EY - 7, 9.5, 1.6, HY + 1 - (EY - 7), { mat: 'metal', color: '#5e5a72', sides: 14 }),
+  cyl(-18, EY - 7, -10, 1.6, HY - (EY - 7), { mat: 'metal', color: '#5e5a72', sides: 14, paint: false }),   // turret pylons (unpaintable: no leaping round the barrier)
+  cyl(-12, EY - 7, 9.5, 1.6, HY - (EY - 7), { mat: 'metal', color: '#5e5a72', sides: 14, paint: false }),
+  cyl(-25, EY - 7, 9.5, 1.6, HY + 1 - (EY - 7), { mat: 'metal', color: '#5e5a72', sides: 14, paint: false }),
   // ---------------- the Heart ----------------
   cyl(0, EY - 7, 0, 8, HY - (EY - 7), { mat: 'metal', color: '#4a4560', sides: 32 }),
   cyl(0, HY - 0.05, 0, 7.4, 0.1, { mat: 'tiles', color: '#d6d0e4', sides: 32 }),
@@ -135,7 +136,7 @@ add(
   ent('mover', 31, EY, -6.5, { size: [3, 0.5, 3], path: [[31, EY, -6.5], [31, UP, -6.5]], speed: 2.1, wait: 1.3, mat: 'murk', id: 'piston1' }),
   ent('mover', 37, UP, -6.5, { size: [3, 0.5, 3], path: [[37, UP, -6.5], [37, EY, -6.5]], speed: 1.7, wait: 1.1, mat: 'murk', id: 'piston2' }),
   ent('glooper', 38.5, EY, 7.5, { group: 'piston' }),
-  ent('checkpoint', 34.2, UP, -10.2, { yaw: PI, id: 'cp2' }),
+  ent('checkpoint', 32.6, UP, -10.4, { yaw: PI, id: 'cp2', radius: 2.4 }),
   ent('murk-turret', 38, UP, -22.4, { group: 'piston', aggro: 20 }),
   ent('glooper', 22, UP, -14.5, { group: 'piston' }),
   ent('glooper', 30.5, UP, -20.5, { group: 'piston' }),
@@ -144,8 +145,8 @@ add(
   ent('switch', 34, UP + 5, -19, { id: 'sw-shutter', yaw: 0, targets: ['g-shutter'] }),
   ent('pearl-trail', 32.4, UP + 5, -16.6, { to: [35.6, UP + 5, -16.6], count: 3 }),
   ent('gate', 17, UP, -23.9, { id: 'g-shutter', size: [3.6, 3.4, 0.4] }),
-  ent('sponge', 17, UP - 2.2, -25.4, { size: [2.2, 2.2, 2.2], id: 'sp1' }),
-  ent('sponge', 17, UP - 2.2, -28.6, { size: [2.2, 2.2, 2.2], id: 'sp2' }),
+  ent('sponge', 17, UP - 1.6, -25.4, { size: [2.2, 2.2, 2.2], id: 'sp1' }),   // small top 0.9 m under the deck: inkable from the doorway
+  ent('sponge', 17, UP - 1.6, -28.6, { size: [2.2, 2.2, 2.2], id: 'sp2' }),
   // coolant loop
   ent('checkpoint', 14.2, UP, -32.4, { yaw: -PI / 2, id: 'cp3' }),
   ent('buzzdrone', 6, UP, -36, { alt: 4.4, group: 'loop', patrol: [[10, UP, -36], [0, UP, -38]] }),
@@ -156,13 +157,13 @@ add(
   ent('pearl-trail', 12, UP + 1.6, -41.8, { to: [12, UP + 1.6, -40.2], count: 2 }),
   ent('ink-rail', -3, UP + 0.7, -37, { id: 'rail-loop', points: [[-3, UP + 0.7, -37], [-14, UP + 2, -38], [-25, UP + 3.4, -31], [-32, HY + 0.4, -20], [-34.6, HY + 0.8, -9], [-34, HY + 0.7, -3.5]] }),
   ent('pearl-trail', -15, UP + 2.5, -37.2, { to: [-24, UP + 3.8, -31.8], count: 4, arc: 0.3 }),
-  ent('launchpad', 3, UP, -42, { id: 'pad-pylon', target: [-11, HY + 2, -20] }),
-  ent('postcard', -11, HY + 2, -20.6, { id: 'w4-2-postcard', title: 'A Crayon Drawing', text: 'This is me and my dad at the beach. The sun is orange. The sea is blue. The sand is yellow. Everything has a colour and it is my favourite.' }),
+  ent('launchpad', 3, UP, -42, { id: 'pad-pylon', target: [-10.3, HY + 2, -19.2] }),
+  ent('postcard', -9.8, HY + 2, -21, { id: 'w4-2-postcard', title: 'A Crayon Drawing', text: 'This is me and my dad at the beach. The sun is orange. The sea is blue. The sand is yellow. Everything has a colour and it is my favourite.' }),
   ent('pearl-trail', -12.2, HY + 2, -19, { to: [-9.8, HY + 2, -19], count: 3 }),
-  ent('launchpad', -11.6, HY + 2, -21.3, { id: 'pad-west', target: [-34, HY, -5] }),
+  ent('launchpad', -11.5, HY + 2, -21.2, { id: 'pad-west', target: [-33.5, HY, 2.2] }),
   // west gallery + heart bridge
   ent('trigger', -34, HY, -3, { size: [12, 3, 6], dialogue: 'w4-2.heart' }),
-  ent('checkpoint', -31, HY, 4, { yaw: PI / 2, id: 'cp4' }),
+  ent('checkpoint', -33.2, HY, 1.2, { yaw: PI / 2, id: 'cp4', radius: 2.4 }),
   ent('spring', -38, HY, 6, { power: 17 }),
   ent('pearl-trail', -38, HY + 6.5, 6, { to: [-38, HY + 8.5, 6], count: 3 }),
   ent('crate', -38.5, HY, -6.5, { pearls: 3 }),
@@ -181,7 +182,7 @@ add(
   ent('murk-turret', -18, HY, -10, { group: 'heart', aggro: 20 }),
   ent('murk-turret', -12, HY, 9.5, { group: 'heart', aggro: 20 }),
   ent('bomblob', -25, HY + 1, 9.5, { group: 'heart', aggro: 22 }),
-  ent('murk-barrier', -8.1, HY, 0, { yaw: PI / 2, size: [5, 4, 0.4], group: 'heart', id: 'bar-heart' }),
+  ent('murk-barrier', -8.1, HY, 0, { yaw: PI / 2, size: [9.5, 4, 0.4], group: 'heart', id: 'bar-heart' }),   // wider than the bridge: a jump round its end would land on the Heart
   ent('pearl', -19, HY, -4.6), ent('pearl', -17.6, HY, -3.4),
   ent('prism-core', 0, HY + 0.45, 0, { id: 'core' }),
 );
@@ -222,8 +223,8 @@ add(
   // piston hall
   D('neon-sign', 35, EY, 9.6, { text: 'PISTON HALL', color: '#3fb6ff', height: 3, pole: true, yaw: PI }),
   D('lamp', 41.2, EY, 9.2, { yaw: -PI * 0.75 }), D('lamp', 28.8, EY, -4.2, { yaw: PI / 4 }),
-  D('vat', 40.2, EY, -3.2, { radius: 1, height: 2.2, glow: '#3fb6ff' }), D('barrel', 29, EY, 8.6),
-  D('neon-sign', 34, UP, -15.45, { text: 'DANGER HIGH PRESSURE', color: '#ff5a5a', height: 3.4 }),
+  D('vat', 40.2, EY, -3.2, { radius: 1, height: 2.2, glow: '#3fb6ff' }), D('barrel', 40.4, EY, 8.2),
+  D('neon-sign', 31.45, UP, -18, { yaw: -PI / 2, text: 'DANGER HIGH PRESSURE', color: '#ff5a5a', height: 5.4, scale: 0.6 }),
   D('lamp', 16.6, UP, -8.6, { yaw: PI / 4 }), D('lamp', 39.4, UP, -8.8, { yaw: -PI / 4, light: '#9fd8ff' }),
   D('crate-stack', 38.4, UP, -14, { count: 3, yaw: 0.6 }), D('barrel', 17, UP, -18, { variant: 'toxic' }), D('barrel', 17.6, UP, -19, { variant: 'toxic' }),
   D('antenna', 35.6, UP + 5, -20, { height: 2.4, variant: 'radar' }), D('speaker-tower', 24, UP, -23.3, { height: 2.6, color: '#3fb6ff' }),

@@ -51,6 +51,7 @@ export class Bucketeer extends Boss {
     this.dripT = 0;
     this.firstValve = true;
     this.defeatDuration = 5.2;
+    this.defeatCamDist = 13; this.defeatCamHeight = 3.5;
     this.defeatBooms = 3.8;
     this.armorHint = 'Shoot the four glowing ink valves on the Bucketeer\'s rim!';
     this.target = new THREE.Vector3();
@@ -591,7 +592,7 @@ export class Bucketeer extends Boss {
     this.handle.rotation.x = Math.sin(t * 1.4) * 0.12 - this.tilt.x * 0.8;
     for (const a of this.arms) {
       a.rotor.rotation.y = this.rotorSpin * (a === this.arms[1] || a === this.arms[3] ? -1 : 1);
-      a.fold.rotation.x = -this.armFold * 1.25;
+      a.fold.rotation.x = this.armFold * 1.25;   // fold DOWN into landing legs (up, they hid the core from the tower)
       a.disc.material.opacity = clamp(this.rotorSpeed / 30, 0, 1) * 0.16;
     }
     for (const l of this.lids) l.piv.rotation.z = -l.s * this.lidOpen * 1.9;

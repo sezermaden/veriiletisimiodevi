@@ -70,8 +70,9 @@ const brushes = [
   block(6.5, -95, 3, 3, 0, 3, steel('#4a5163')),                       // sniper tower
   block(-4.5, -96.5, 1, 2.6, 0, 1.1, conc('#d6d0c6')),
   // ---------------- Vat D (climb + rim walk) ----------------
-  ...vatRing(0, -110, 8, 2.4, -3, 7, { color: '#b9c2cf', sides: 24 }),
-  cyl(0, 2.2, -110, 8.08, 0.35, { mat: 'metal', color: '#2b3142', paint: false, sides: 24 }),
+  ...vatRing(0, -110, 8, 2.4, -3, 7, { color: '#b9c2cf', sides: 24, rim: false }),
+  ...vatRing(0, -110, 8, 2.48, 7, RIM, { color: '#ffc53a', sides: 24, rim: false }),   // flush rim cap: an overhanging lip would stop the climb
+  cyl(0, 2.2, -110, 8.08, 0.35, { mat: 'metal', color: '#2b3142', paint: false, sides: 24, collide: false }),   // visual band only (climb face)
   block(-9.2, -110, 2.4, 4, -3, 6.5, steel('#51596b')),                 // maintenance ledge (postcard)
   block(0, -119, 3, 2.4, RIM - 0.4, 0.4, steel('#f2b134')),             // launch balcony
   // ---------------- Serpent terrace ----------------
@@ -118,10 +119,10 @@ add(
   ent('glooper', -4.5, 0, -57, { group: 'b', aggro: 20 }),
   ent('glooper', 4, 0, -58.5, { group: 'b', aggro: 20 }),
   ent('bomblob', 0, 0, -61, { group: 'b', aggro: 22 }),
-  ent('checkpoint', 7.4, 0, -55.4, { yaw: PI, id: 'cp1' }),
+  ent('checkpoint', 1.4, 0, -55.2, { yaw: PI, id: 'cp1', radius: 2.4 }),
   ent('pearl-trail', -8.4, 0, -55, { to: [-8.4, 0, -61], count: 3 }),
   // Vat C
-  ent('trigger', 0, 0, -61.5, { size: [8, 3, 2], hint: 'Ink the platform to power it, then ride it across!', hintTime: 5 }),
+  ent('trigger', 0, 0, -61.5, { size: [8, 3, 2], hint: 'The ink-powered platform runs while you ride it. Hop on and hold still!', hintTime: 5 }),
   ent('sludge-pool', 0, 0.3, -76, { radius: 10.9 }),
   ent('mover', 0, CW, -69.4, { size: [3, 0.5, 3], path: [[0, CW, -69.4], [0, CW, -82.6]], speed: 2.4, activate: 'ink', return: true, mat: 'metal', id: 'moverC' }),
   ent('pearl-trail', 0, CW, -71.5, { to: [0, CW, -80.5], count: 5 }),
@@ -129,7 +130,7 @@ add(
   ent('buzzdrone', 4, CW, -79, { alt: 5.6, group: 'c', patrol: [[5, CW, -80], [2, CW, -72]] }),
   ent('snipe-eel', 6.5, 3, -95, { group: 'c', aggro: 32 }),
   // F3 + Vat D
-  ent('checkpoint', -6.4, 0, -92, { yaw: PI, id: 'cp2' }),
+  ent('checkpoint', -1.4, 0, -91.2, { yaw: PI, id: 'cp2', radius: 2.4 }),
   ent('trigger', 0, 0, -97.5, { size: [12, 3, 3], objective: 'Climb the vat and clear its rim', hint: 'Paint the vat wall, then swim up it with {swim}.', hintTime: 5 }),
   ent('crate', 8.2, 0, -91.2, { pearls: 3 }),
   ent('sludge-pool', 0, 6.3, -110, { radius: 5.5 }),
@@ -138,6 +139,8 @@ add(
   ent('glooper', 6.8, RIM, -110, { group: 'rim' }),
   ent('murk-pod', -4.8, RIM, -114.8, { group: 'rim', max: 2, interval: 5 }),
   ent('murk-barrier', 0, RIM, -117.9, { size: [3, 3, 0.4], group: 'rim', id: 'bar-rim' }),
+  // energy fence along the terrace's front: a squid leap off the rim would otherwise skip the rim crew
+  ent('murk-barrier', 0, TY, -126.05, { size: [24.3, 4, 0.4], group: 'rim', id: 'bar-terrace' }),
   ent('pearl', 4.8, RIM, -105.2), ent('pearl', 6.8, RIM, -107), ent('pearl', 4.8, RIM, -114.8), ent('pearl', -4.8, RIM, -105.2),
   ent('launchpad', 0, RIM, -119.2, { id: 'pad-terrace', target: [0, TY, -128.6] }),
   // maintenance ledge (hidden, behind Vat D)
@@ -148,7 +151,7 @@ add(
   ent('pearl', -5.6, 4.5, 8.6),
   // Serpent terrace
   ent('trigger', 0, TY, -128.5, { size: [22, 3, 4], dialogue: 'w3-3.pa', objective: 'Clear the terrace and crack the Prism Capsule' }),
-  ent('checkpoint', 8.6, TY, -127.6, { yaw: PI, id: 'cp3' }),
+  ent('checkpoint', 2.0, TY, -129.6, { yaw: PI, id: 'cp3', radius: 2.4 }),
   ent('murk-pod', -8, TY, -134.4, { group: 'final', max: 2, interval: 5 }),
   ent('murk-pod', 8, TY, -135.6, { group: 'final', max: 2, interval: 5.5 }),
   ent('shield-glooper', -2.5, TY, -135.4, { group: 'final' }),
@@ -177,15 +180,15 @@ add(
   // F2
   D('lamp', -9.4, 0, -54, { yaw: PI * 0.75 }), D('lamp', 9.4, 0, -62, { yaw: -PI / 4 }),
   D('barrel', -9.2, 0, -61.6, { variant: 'toxic' }), D('barrel', -8.5, 0, -62, { variant: 'toxic' }), D('crate-stack', 8.6, 0, -58.4, { count: 3, yaw: 1.1 }),
-  D('neon-sign', 3.4, 0, -62.2, { text: 'VAT C', color: '#8be04a', height: 2.2, pole: true }),
+  D('neon-sign', 6.4, 0, -61.6, { text: 'VAT C', color: '#8be04a', height: 3.4, pole: true, yaw: -0.35 }),
   D('railing', 2.15, CW, -66.5, { yaw: -PI / 2, length: 2, color: '#f2b134' }), D('railing', -2.15, CW, -66.5, { yaw: PI / 2, length: 2, color: '#f2b134' }),
   // F3 + Vat D
   D('lamp', -9.4, 0, -90, { yaw: PI * 0.75 }), D('lamp', 9.4, 0, -97.8, { yaw: -PI / 4, light: '#c8ffb0' }),
   D('neon-sign', -8.2, 0, -98.2, { text: 'NO SQUIDS', color: '#ff5a3a', height: 2.6, pole: true, yaw: 0.3 }),
   D('barrel', 8.8, 0, -97.4), D('barrel', 9.2, 0, -96.4, { variant: 'toxic' }), D('crate-stack', -8.6, 0, -97.2, { count: 2 }),
-  D('neon-sign', 0, 0, -101.95, { text: 'VAT D', color: '#ffc53a', height: 4.2 }),
-  D('graffiti', 0, 0, -101.9, { style: 'arrow', size: 2.4, height: 1.6, color: '#8be04a', color2: '#ffffff', yaw: 0 }),
-  D('antenna', 6, RIM, -113.6, { height: 2.4 }), D('lamp', -7.2, RIM, -106.6, { yaw: -PI / 4 }), D('lamp', 7.2, RIM, -106.6, { yaw: PI / 4 }),
+  D('neon-sign', -4.6, 0, -99.2, { text: 'VAT D', color: '#ffc53a', height: 3.4, pole: true, yaw: 0.25 }),
+  D('graffiti', 3.6, 0, -102.62, { style: 'arrow', size: 2, height: 1.4, color: '#8be04a', color2: '#ffffff', yaw: 0.46 }),
+  D('antenna', 6.64, RIM, -113.98, { height: 2.4 }), D('lamp', -7.2, RIM, -106.6, { yaw: -PI / 4 }), D('lamp', 7.2, RIM, -106.6, { yaw: PI / 4 }),
   D('railing', 0, RIM, -120.1, { length: 3, color: '#f2b134' }),
   D('pipe', -9.2, 3.5, -112, { length: 2.2, radius: 0.28, height: 0.5, color: '#ff7ab8' }), D('lamp', -8.6, 3.5, -108.4, { yaw: -PI / 2, light: '#ffb3e6' }),
   // terrace

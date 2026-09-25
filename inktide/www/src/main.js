@@ -37,6 +37,7 @@ async function boot() {
   if (params0.get('q')) { const { settings } = await import('./engine/settings.js'); settings.data.video.quality = params0.get('q'); }
   const app = new App();
   app.host = { IS_XBOX, IN_SHELL, CAN_QUIT };
+  if (params0.get('render') === '0') app.renderer.enabled = false;
   progress(0.6);
   const params = new URLSearchParams(location.search);
   let ui = null;

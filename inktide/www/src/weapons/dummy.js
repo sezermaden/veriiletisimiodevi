@@ -11,6 +11,7 @@ import { charMat } from '../actors/materials.js';
 const _v = new THREE.Vector3();
 const UP = new THREE.Vector3(0, 1, 0);
 const POPUPS = 5;
+const AXES = ['x', 'y'];
 
 function textCanvas(w, h) {
   const c = document.createElement('canvas');
@@ -238,7 +239,7 @@ export class TargetDummy extends Actor {
   render(dt) {
     const d = Math.min(dt, 0.05);
     // spring wobble
-    for (const a of ['x', 'y']) {
+    for (const a of AXES) {
       this.wobV[a] += (-this.wob[a] * 90 - this.wobV[a] * 7) * d;
       this.wob[a] += this.wobV[a] * d;
       this.wob[a] = THREE.MathUtils.clamp(this.wob[a], -0.9, 0.9);

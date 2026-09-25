@@ -9,6 +9,7 @@ for (const id of ids) {
   const before = h.errors.length;
   const res = await h.page.evaluate(async (id) => {
     const g = __game;
+    g.save.setFlag('seenPrologue');      // the prologue comic waits for input on a fresh save
     let mode = null;
     try { const ui = await import('/src/ui/boot-ui.js'); mode = await ui.modeFor?.(g, id); } catch { /* sandbox fallback */ }
     const s = await g.startSession({ stageId: id, mode, lockPointer: false });

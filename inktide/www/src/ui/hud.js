@@ -127,6 +127,7 @@ export class Hud {
     }
     void dir;
     this.inkAlpha = 1;
+    this._inkDirty = true;
   }
 
   clearScreenInk() {
@@ -160,38 +161,45 @@ export class Hud {
     if (!p) return;
     const input = S.input;
     if (input && input.lastDevice !== this._lastDevice) { this.refreshKit(); if (this.hintT > 0 && this._hintSrc) this.hint(this._hintSrc, this.hintT); }
-    const color = S.ink.color(p.team);
-    const css = `#${color.getHexString()}`;
-    this.root.style.setProperty('--ink-hero', css);
-    document.documentElement.style.setProperty('--ink-hero', css);
-    document.documentElement.style.setProperty('--ink-murk', `#${S.ink.color(p.enemyTeam).getHexString()}`);
+    // team colours → CSS tokens, only when they change (no per-frame string churn / style recalc)
+    const color = S.ink.color(p.team), enemy = S.ink.color(p.enemyTeam);
+    const key = color.getHex() * 16777216 + enemy.getHex();
+    if (key !== this._colorKey) {
+      this._colorKey = key;
+      this._css = `#${color.getHexString()}`;
+      this.root.style.setProperty('--ink-hero', this._css);
+      document.documentElement.style.setProperty('--ink-hero', this._css);
+      document.documentElement.style.setProperty('--ink-murk', `#${enemy.getHexString()}`);
+    }
+    const css = this._css;
 
-    // ink tank: shown while firing, low or swimming
+    // ink tank: shown while firing, low or swimming (DOM writes only when a value changes)
+    const W = this._w || (this._w = {});
+    const set = (k, v, fn) => { if (W[k] !== v) { W[k] = v; fn(v); } };
     const frac = p.ink / p.inkMax;
-    this.el.tankFill.style.height = `${frac * 100}%`;
-    this.el.tank.classList.toggle('show', p.alive && (p.kit.main.firing || frac < 0.99 || p.form === 'squid'));
-    this.el.lowink.classList.toggle('show', p.lowInkT > 0 && p.alive);
-    this.el.cross.classList.toggle('hidden', !p.alive || p.form === 'squid' || p.frozen);
-    this.el.cross.classList.toggle('charging', p.kit.main.charge > 0);
-    this.el.cross.querySelector('.ring').style.transform = p.kit.main.charge > 0 ? `scale(${1.3 - p.kit.main.charge * 0.35})` : '';
+    set('tank', Math.round(frac * 200), (v) => { this.el.tankFill.style.height = `${v / 2}%`; });
+    set('tankShow', p.alive && (p.kit.main.firing || frac < 0.99 || p.form === 'squid'), (v) => this.el.tank.classList.toggle('show', v));
+    set('low', p.lowInkT > 0 && p.alive, (v) => this.el.lowink.classList.toggle('show', v));
+    set('crossHidden', !p.alive || p.form === 'squid' || p.frozen, (v) => this.el.cross.classList.toggle('hidden', v));
+    const ch = p.kit.main.charge;
+    set('charging', ch > 0, (v) => this.el.cross.classList.toggle('charging', v));
+    set('chargeScale', Math.round(ch * 50), (v) => { (this._ring || (this._ring = this.el.cross.querySelector('.ring'))).style.transform = v > 0 ? `scale(${1.3 - (v / 50) * 0.35})` : ''; });
 
     // special gauge
     const sp = p.special;
-    this.el.arc.setAttribute('stroke', css);
-    this.el.arc.setAttribute('stroke-dashoffset', String(314.16 * (1 - sp / 100)));
-    this.el.specialPct.textContent = sp >= 100 ? 'READY' : `${Math.floor(sp)}%`;
-    this.el.special.classList.toggle('ready', sp >= 100);
-    this.el.subSlot.classList.toggle('blocked', !!p.kit.sub && p.ink < p.kit.sub.cost);
-    this.el.spSlot.classList.toggle('blocked', sp < 100);
-
-    this.el.pearls.textContent = String(S.pearls ?? 0);
+    set('arcColor', css, (v) => this.el.arc.setAttribute('stroke', v));
+    set('arc', Math.round(sp * 4), (v) => this.el.arc.setAttribute('stroke-dashoffset', String(314.16 * (1 - v / 400))));
+    set('spText', sp >= 100 ? 'READY' : `${Math.floor(sp)}%`, (v) => { this.el.specialPct.textContent = v; });
+    set('spReady', sp >= 100, (v) => { this.el.special.classList.toggle('ready', v); this.el.spSlot.classList.toggle('blocked', !v); });
+    set('subBlocked', !!p.kit.sub && p.ink < p.kit.sub.cost, (v) => this.el.subSlot.classList.toggle('blocked', v));
+    set('pearls', S.pearls ?? 0, (v) => { this.el.pearls.textContent = String(v); });
 
     // screen ink fades as health regenerates
     const hpFrac = p.alive ? p.hp / p.maxHp : 1;
     const target = p.alive ? Math.min(1, (1 - hpFrac) * 1.4) : 0;
     this.inkAlpha += (target - this.inkAlpha) * Math.min(1, dt * 3);
-    this.el.ink.style.opacity = this.inkAlpha.toFixed(3);
-    if (this.inkAlpha < 0.02 && hpFrac >= 1) this.clearScreenInk();
+    set('inkAlpha', Math.round(this.inkAlpha * 100), (v) => { this.el.ink.style.opacity = String(v / 100); });
+    if (this.inkAlpha < 0.02 && hpFrac >= 1 && this._inkDirty !== false) { this.clearScreenInk(); this._inkDirty = false; }
 
     if (this.hintT > 0) { this.hintT -= dt; if (this.hintT <= 0) this.el.hint.classList.add('hidden'); }
 

@@ -247,7 +247,8 @@ export class StoryMode {
     const S = this.session;
     S.player.invulnerable = Math.max(S.player.invulnerable, 99);
     this.director.hold('bossdown', ['freeze', 'pause']);
-    this._slowmo = 1.3;
+    // the boss already played its own slow-motion kill; only add ours when it did not
+    if (!e?.slowmo && !(S.timeScale < 1)) this._slowmo = 1.3;
     S.flash?.('#ffffff', 0.7);
     S.audio?.duck?.(0.25, 2);
     this.director.wait(1.6).then(() => this.complete({ reason: 'boss', ...e }));

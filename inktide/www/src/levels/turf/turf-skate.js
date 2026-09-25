@@ -94,7 +94,6 @@ export default turfArena({
     D('palm', -34, 0, 20.5), D('palm', -26, 0, 21), D('bush', -30, 0, 21.2),
     D('lamp', -17.5, 2.4, 15.2), D('lamp', -9.8, 0, -21.2),
     D('bench', -28, 0, -21, { yaw: 0 }), D('cone', -12.5, 0, -12.5), D('cone', -11.5, 0, -12),
-    D('flag', -34.6, 1, -5.6, { height: 4 }), D('flag', -34.6, 1, 5.6, { height: 4 }),
     D('antenna', -22, 2.4, 15.2, { height: 2.5 }),
   ],
 });

@@ -19,7 +19,7 @@ const FALLBACK = {
   'w1-3': { title: 'Crane Climb', blurb: 'Paint your way up the giant harbour cranes to reach the core.' },
   'w1-boss': { title: 'The Grinder', blurb: 'A roller tank is flattening the docks. Stop it cold.' },
   'w2-1': { title: 'Rooftop Rush', blurb: 'Race across the Coral Heights rooftops as the sun goes down.' },
-  'w2-2': { title: 'Skatepark Sprawl', blurb: 'Grind ink rails through a skatepark overrun by Murk Corps.' },
+  'w2-2': { title: 'Skatepark Sprawl', blurb: 'Bounce, bowl and half-pipe through a skatepark overrun by Murk Corps.' },
   'w2-3': { title: 'Neon Gardens', blurb: 'Sponges, launch pads and glowing hedges under the neon signs.' },
   'w2-boss': { title: 'The Bucketeer', blurb: 'A flying bucket mech is sloshing Murk all over the Heights.' },
   'w3-1': { title: 'Sludge Lines', blurb: 'Ride the refinery conveyors without dropping into the sludge.' },
@@ -32,8 +32,8 @@ const FALLBACK = {
 };
 
 export const TURF_ARENAS = [
-  { id: 'turf-pier', name: 'Pier Nine', blurb: 'Long wooden piers, container cover and a crane in the middle. Watch the flanks over the water.' },
-  { id: 'turf-skate', name: 'Skate Canyon', blurb: 'Bowls, half-pipes and ink rails. Fast lanes reward swimmers.' },
+  { id: 'turf-pier', name: 'Pier Nine', blurb: 'Long wooden piers over open water, stacked container cover and a raised centre deck. Watch the flanks.' },
+  { id: 'turf-skate', name: 'Skate Canyon', blurb: 'Bowls, funboxes and raised decks. Fast lanes reward swimmers.' },
   { id: 'turf-refinery', name: 'Refinery Row', blurb: 'Tight pipe corridors around a raised central vat. Great for bombs.' },
 ];
 

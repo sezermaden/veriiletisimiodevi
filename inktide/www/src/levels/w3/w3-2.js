@@ -80,16 +80,16 @@ const brushes = [
   ...hpipe('z', -143.15, -151.85, -17, MY, 0.9, { color: '#7a5bd0', every: 3.5 }),
   ...hpipe('x', -20, -12, -157, MY, 0.55, { color: '#4f9a6a', every: 3 }),           // row 3 low cover
   ...hpipe('x', -9, -3, -162, MY, 0.55, { color: '#c77d3a', every: 3 }),
-  cyl(5, MY, -160, 1.8, 4.5, { mat: 'metal', color: '#b9c2cf', sides: 18 }),          // Snipe Eel perch
-  cyl(5, MY + 4.5, -160, 1.95, 0.2, { mat: 'metal', color: '#ffc53a', sides: 18 }),
+  cyl(5, MY, -160, 1.8, 4.5, { mat: 'metal', color: '#b9c2cf', sides: 18, paint: false }),   // Snipe Eel perch (unpaintable: a leap off it would clear the exit wall)
+  cyl(5, MY + 4.5, -160, 1.95, 0.2, { mat: 'metal', color: '#ffc53a', sides: 18, paint: false }),
   block(-24, -139, 3, 3, MY, 1.1, { mat: 'container', color: '#c83a5a' }),            // dead-end stash
   block(-25.6, -145.4, 2, 2, MY, 1.0, steel('#4a5163')),                            // turret plinth
   // ---------------- Tank 9 plaza ----------------
   ...catwalk(-1, -172.2, 3, -165.8, MY, { every: 3 }),
   ...island(1, -180, 16, 16, MY, { color: '#5f6b7c', capColor: '#c3c8d2' }),
-  cyl(1, -2.8, -194, 6, 10 + 2.8, { mat: 'metal', color: '#b9c2cf', sides: 28 }),     // lower tank → ledge at 10
+  cyl(1, -2.8, -194, 7, 10 + 2.8, { mat: 'metal', color: '#b9c2cf', sides: 28 }),     // lower tank → 2.5 m ledge at 10 (wide enough to paint the upper tank to its rim)
   cyl(1, 10, -194, 4.5, TOP - 10, { mat: 'metal', color: '#8d93a6', sides: 24 }),     // upper tank → roof at 16
-  cyl(1, 6.2, -194, 6.12, 0.3, { mat: 'metal', color: '#2b3142', sides: 28, paint: false }),
+  cyl(1, 6.2, -194, 7.12, 0.3, { mat: 'metal', color: '#2b3142', sides: 28, paint: false, collide: false }),   // visual band only: a solid lip would stop the climb
   cyl(1, TOP, -194, 3.2, 0.05, { mat: 'tiles', color: '#ffc53a', sides: 24 }),
   block(1, -199.8, 3, 2.6, TOP - 0.4, 0.4, steel('#f2b134')),                        // launch balcony
   // ---------------- capsule platform ----------------
@@ -124,9 +124,9 @@ add(
   ent('buzzdrone', 0, 2.5, -46, { alt: 4, group: 'bridge', patrol: [[-3, 2.5, -46], [3, 2.5, -50]] }),
   ent('buzzdrone', 0, 2.5, -61, { alt: 4.6, group: 'bridge', patrol: [[3, 2.5, -61], [-3, 2.5, -57]] }),
   // Tank 1
-  ent('checkpoint', 3.2, 2.5, -74.4, { yaw: PI, id: 'cp1' }),
+  ent('checkpoint', 1.3, 2.5, -74.6, { yaw: PI, id: 'cp1', radius: 2.4 }),
   ent('trigger', 0, 2.5, -76.5, { size: [10, 3, 4], dialogue: 'w3-2.rail', objective: 'Ride the rail through the pipe works' }),
-  ent('ink-rail', 0, 3.15, -79.6, { id: 'rail1', points: [[0, 3.15, -79.6], [-2.5, 3.4, -85], [-8.5, 4.2, -91.5], [-16.5, 5.1, -95.5], [-24, 5.4, -102], [-26.5, 4.8, -111], [-23.5, 4.1, -119], [-16, 3.7, -124], [-10.5, 3.55, -126.6]] }),
+  ent('ink-rail', 0, 3.15, -79.6, { id: 'rail1', points: [[0, 3.15, -79.6], [-2.5, 3.4, -85], [-8.5, 4.2, -91.5], [-16.5, 5.1, -95.5], [-24, 5.4, -102], [-26.5, 4.8, -111], [-22.5, 4.2, -117.5], [-16, 3.8, -121.6], [-12.6, 3.6, -125.6]] }),
   ent('launchpad', 3.4, 2.5, -80.2, { id: 'pad-secret', target: [18, 6, -93] }),
   ent('pearl-trail', -12, 5.8, -93.8, { to: [-22, 6.3, -99.5], count: 4, arc: 0.4 }),
   // secret valve island
@@ -134,7 +134,7 @@ add(
   ent('pearl-trail', 16, 6, -92, { to: [20, 6, -92], count: 3 }),
   ent('launchpad', 16.6, 6, -95.8, { id: 'pad-back', target: [-7, MY, -129.5] }),
   // junction C
-  ent('checkpoint', -13.6, MY, -128, { yaw: PI, id: 'cp2' }),
+  ent('checkpoint', -9.4, MY, -129.4, { yaw: PI, id: 'cp2', radius: 2.4 }),
   ent('crate', -5.2, MY, -126.2, { pearls: 2 }),
   ent('trigger', -10, MY, -134, { size: [12, 3, 2.5], dialogue: 'w3-2.lost', objective: 'Find a way through the pipe maze' }),
   // maze row 1 (→ east)
@@ -159,10 +159,10 @@ add(
   ent('glooper', -2, MY, -159, { group: 'maze', yaw: -PI / 2 }),
   ent('murk-barrier', 1, MY, -166.15, { size: [6, 4.2, 0.4], group: 'maze', id: 'bar-maze' }),
   // Tank 9
-  ent('checkpoint', 5.6, MY, -175.4, { yaw: PI, id: 'cp3' }),
+  ent('checkpoint', 2.4, MY, -174.6, { yaw: PI, id: 'cp3', radius: 2.4 }),
   ent('trigger', 1, MY, -174, { size: [14, 3, 3], objective: 'Climb Tank 9 and launch to the Prism Capsule', hint: 'Paint the tank as high as you can, then swim up. Rest on the ledge!', hintTime: 6 }),
-  ent('pearl-trail', -2.6, 10, -189.2, { to: [4.6, 10, -189.2], count: 4, arc: 0 }),
-  ent('checkpoint', 2.6, TOP, -190.8, { yaw: PI, id: 'cp4' }),
+  ent('pearl-trail', -2.6, 10, -188.3, { to: [4.6, 10, -188.3], count: 4, arc: 0 }),
+  ent('checkpoint', 2.6, TOP, -190.8, { yaw: PI, id: 'cp4', radius: 2.4 }),
   ent('murk-pod', -1.4, TOP, -195.8, { group: 'top', max: 2, interval: 5 }),
   ent('shield-glooper', 3, TOP, -196, { group: 'top' }),
   ent('buzzdrone', 1, TOP, -194, { alt: 3.4, group: 'top' }),
@@ -218,7 +218,7 @@ add(
   D('vat', -21, MY, -163.6, { radius: 1.1, height: 2.2, glow: '#8be04a' }), D('vat', 6.2, MY, -155, { radius: 1, height: 2, glow: '#b58cff' }),
   D('speaker-tower', -26.6, MY, -141.6, { height: 2.2, color: '#8be04a', yaw: PI / 2 }),
   // Tank 9 plaza
-  D('neon-sign', 1, MY, -187.9, { text: 'TANK 9', color: '#ffc53a', height: 2.6 }),
+  D('neon-sign', -4.4, MY, -186.2, { text: 'TANK 9', color: '#ffc53a', height: 3.4, pole: true, yaw: 0.3 }),
   D('lamp', -6.4, MY, -173, { yaw: PI * 0.75 }), D('lamp', 8.4, MY, -173, { yaw: -PI * 0.75 }),
   D('lamp', -6.4, MY, -187, { yaw: PI / 4 }), D('lamp', 8.4, MY, -187, { yaw: -PI / 4 }),
   D('barrel', -5.8, MY, -178, { variant: 'toxic' }), D('barrel', -6.2, MY, -179, { variant: 'toxic' }), D('crate-stack', 7.4, MY, -181, { count: 3, yaw: 1.2 }),
@@ -257,7 +257,7 @@ export default {
   route: [
     [0, 0, 8], [0, 0, 0], [0, 0, -6], [0, 1.85, -9, 'climb'], [0, 0, -12], [0, 2.96, -18, 'climb'], [0, 0, -22],
     [0, 3.7, -27.5, 'climb'], [0, 2.5, -33], [0, 2.5, -50], [0, 2.5, -70], [0, 2.5, -79],
-    [-10.5, MY, -127, 'rail'], [-10, MY, -133], [-4, MY, -139], [-1, MY + 2.03, -139, 'climb'], [4.5, MY, -139],
+    [-9.5, MY, -130.5, 'rail'], [-10, MY, -133], [-4, MY, -139], [-1, MY + 2.03, -139, 'climb'], [4.5, MY, -139],
     [5, MY, -147], [-3.5, MY, -147], [-6, MY + 2.4, -147, 'climb'], [-9, MY, -147], [-15, MY, -147],
     [-17, MY + 1.66, -147, 'climb'], [-20, MY, -147], [-25, MY, -148], [-25, MY, -155], [-11, MY, -155],
     [-3, MY, -159.5], [1, MY, -165], [1, MY, -170], [1, MY, -180], [1, MY, -186.5], [1, 10, -188.8, 'climb'],

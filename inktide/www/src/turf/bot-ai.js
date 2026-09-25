@@ -43,7 +43,8 @@ const UP = new THREE.Vector3(0, 1, 0);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const CLIMB_CHECK = [0.25, 0.6, 0.92];
 const SIDES = [-0.4, 0.4];
-const JUMP_PROBE = [1.2, 2.4, 3.4];
+const JUMP_PROBE = [1.2, 2.4, 3.4];                 // kid jump ≈ 3.5 m long
+const LEAP_PROBE = [1.5, 3, 4.5, 6, 7.5, 8.5];      // squid leap out of ink ≈ 8 m long
 
 export class BotBrain {
   constructor(bot, mode, difficulty = 'normal') {
@@ -361,14 +362,15 @@ export class BotBrain {
 
   /**
    * Would a jump (or a dualies dodge roll) along `dir` land on something? Samples the ground under
-   * the arc (kid jump ≈ 3.5 m long). Keeps bots from hopping off piers and gangways mid-fight.
+   * the arc (a squid leap from our ink carries much further). Keeps bots from hopping off piers and
+   * gangways mid-fight.
    */
   safeJump(dir) {
     const p = this.p, level = this.S.level;
     _j.set(dir.x, 0, dir.z);
     if (_j.lengthSq() < 1e-4) { _j.set(p.velocity.x, 0, p.velocity.z); if (_j.lengthSq() < 1e-4) return true; }
     _j.normalize();
-    for (const d of JUMP_PROBE) {
+    for (const d of (p.submerged ? LEAP_PROBE : JUMP_PROBE)) {
       _jp.copy(p.position).addScaledVector(_j, d).setY(p.position.y + 1.2);
       const g = level.raycast(_jp, DOWN, 5, { staticOnly: true });
       if (!g || g.point.y < level.killY + 1.2 || g.normal.y < 0.5) return false;

@@ -182,6 +182,7 @@ export class InkStorm extends Special {
 
   constructor(w, stats) {
     super(w, stats);
+    this.seeds = new Set();          // seeds in flight (freed in dispose() if the session ends first)
     this.unhook = addPoseHook(w.model, (dt, s, m) => this.pose(dt, s, m));
   }
 
@@ -217,6 +218,7 @@ export class InkStorm extends Special {
     const burst = (pos) => {
       if (spawned) return;
       spawned = true;
+      this.seeds.delete(seed);
       seed.geometry.dispose(); seed.material.dispose();
       const g = S.level.raycast(_p.copy(pos).setY(pos.y + 0.5), DOWN, 30, { staticOnly: true });
       const gy = g ? g.point.y : pos.y - 2;
@@ -234,7 +236,7 @@ export class InkStorm extends Special {
       onHit: (p, hit) => burst(hit.point),
       onExpire: (p) => burst(p.pos),
     });
-    if (!seedP) { seed.geometry.dispose(); seed.material.dispose(); }
+    if (seedP) this.seeds.add(seed); else { seed.geometry.dispose(); seed.material.dispose(); }
     sfx(w, 'storm_throw', { volume: 0.7 });
   }
 
@@ -247,7 +249,11 @@ export class InkStorm extends Special {
     off.elbow.rotation.set(THREE.MathUtils.lerp(-1.4, -0.1, k), 0, 0);
   }
 
-  dispose() { this.unhook?.(); }
+  dispose() {
+    this.unhook?.();
+    for (const m of this.seeds) { m.geometry.dispose(); m.material.dispose(); }
+    this.seeds.clear();
+  }
 }
 
 registerSpecial('ink-storm', InkStorm);

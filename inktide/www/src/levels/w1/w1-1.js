@@ -171,8 +171,8 @@ const entities = [
   D('buoy', 6, -1.6, -50), D('buoy', -6, -1.6, -70, { color: '#f2c230' }), D('buoy', 7, -1.6, -78, { color: '#2fb35a', light: '#ff3030' }),
 
   // ---------------- D ----------------
-  T(0, 0, -81.5, { size: [6, 3, 2], dialogue: 'w1-1.checkpoint' }),
-  ent('checkpoint', 4.2, 0, -84, { id: 'cp1', yaw: PI }),
+  T(0, 0, -76, { size: [6, 3, 2], dialogue: 'w1-1.checkpoint' }),
+  ent('checkpoint', 1.4, 0, -81.8, { id: 'cp1', yaw: PI, radius: 4.5 }),          // spans the whole pier exit
   T(0, 0, -93, { size: [24, 3, 5], dialogue: 'w1-1.climb', objective: 'Climb onto the warehouse roof', hint: 'Paint the wall with {fire}, then hold {swim} to swim up it' }),
   ent('pearl-trail', 0, 0.8, -99.5, { to: [0, 3.8, -99.5], count: 3 }),
   D('graffiti', -5.5, 0.6, -99.95, { text: 'CLIMB!', size: 4.5, color: '#ffd23f', color2: '#ff8a1f' }),
@@ -200,7 +200,7 @@ const entities = [
   ent('pearl-trail', -6, R2, -132, { to: [-6, R2, -140], count: 4 }),
 
   // ---------------- G ----------------
-  ent('checkpoint', 5, 0, -160, { id: 'cp2', yaw: PI }),
+  ent('checkpoint', 1.6, 0, -160.6, { id: 'cp2', yaw: PI, radius: 4 }),           // foot of the fire stairs
   T(0, 0, -160.5, { size: [30, 3, 4], dialogue: 'w1-1.gloopers', objective: 'Splat the Gloopers' }),
   ent('glooper', -6, 0, -175, { group: 'bay', yaw: 0 }),
   ent('glooper', 6, 0, -178, { group: 'bay', yaw: 0.3, patrol: [[6, 0, -178], [10, 0, -168], [3, 0, -172]] }),
@@ -236,7 +236,7 @@ const entities = [
   
   // ---------------- I ----------------
   T(4, 0, -218.6, { size: [8, 3, 3], dialogue: 'w1-1.special', objective: 'Clear the pier', hint: 'Paint turf to charge your special, then press {special}' }),
-  ent('checkpoint', 9, 0, -219.5, { id: 'cp3', yaw: PI }),
+  ent('checkpoint', 4.9, 0, -219.6, { id: 'cp3', yaw: PI, radius: 4 }),          // just through the court gate
   ent('glooper', -6, 0, -228, { group: 'pier', yaw: 0 }),
   ent('glooper', 5, 0, -231, { group: 'pier', yaw: 0, patrol: [[5, 0, -231], [9, 0, -240], [2, 0, -238]] }),
   ent('glooper', 0, 0, -238, { group: 'pier', yaw: 0 }),
@@ -273,7 +273,8 @@ export default {
   brushes,
   preInk: [
     // swim lane "ink road"
-    ...[-45, -48.5, -52, -55.5, -59, -62.5, -66, -69.5, -73, -76.5].map((z, i) => heroInk(i % 2 ? 0.6 : -0.6, 0, z, 1.6)),
+    // (blobs 2.3 m apart so the squid never surfaces between them)
+    ...Array.from({ length: 15 }, (_, i) => heroInk(i % 2 ? 0.4 : -0.4, 0, -44.5 - i * 2.3, 1.7)),
     // a tempting ink runway to the roof edge
     heroInk(0, R1, -119.2, 1.5), heroInk(0, R1, -121.2, 1.3),
     // Murk on roof 2 and the fire stairs

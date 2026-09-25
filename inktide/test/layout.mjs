@@ -5,11 +5,13 @@
 import { launch, report } from './harness.mjs';
 import { walkScreens } from './ui-walk.mjs';
 
-const SHAPES = [[1920, 1080], [2560, 1440], [3840, 2160], [1920, 1200], [2560, 1080]];
+const ALL = [[1920, 1080], [2560, 1440], [3840, 2160], [1920, 1200], [2560, 1080]];
+const only = process.argv.slice(2).map((a) => a.split('x').map(Number)).filter((a) => a.length === 2 && a[0]);
+const SHAPES = only.length ? only : ALL;
 let ok = true;
 for (const [w, hgt] of SHAPES) {
   const h = await launch({ width: w, height: hgt });
-  await h.open('/?q=low', 20);
+  await h.open('/?q=low&render=0', 20);
   const problems = [];
   const screens = await walkScreens(h.page, async (name) => {
     const p = await h.page.evaluate(() => {
@@ -27,8 +29,18 @@ for (const [w, hgt] of SHAPES) {
         const label = (el.innerText || '').trim().slice(0, 24) || el.className;
         if (r.height < hitMin * Math.min(1, scale) - 1) out.push(`"${label}" ${r.height.toFixed(0)}px tall < hit-min`);
         if (r.left < sx || r.top < sy || r.right > W - sx || r.bottom > H - sy) out.push(`"${label}" outside safe area (${r.left.toFixed(0)},${r.top.toFixed(0)},${r.right.toFixed(0)},${r.bottom.toFixed(0)})`);
-        const fs = parseFloat(getComputedStyle(el).fontSize);
-        if ((el.innerText || '').trim() && fs < 20) out.push(`"${label}" text ${fs}px < 20px`);
+        // smallest font among the elements that actually hold visible text inside this focusable
+        let minFs = Infinity;
+        for (const n of [el, ...el.querySelectorAll('*')]) {
+          if (n.closest('.sr-only')) continue;
+          const hasText = [...n.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim());
+          if (!hasText) continue;
+          const cs = getComputedStyle(n);
+          if (cs.visibility === 'hidden' || cs.display === 'none' || parseFloat(cs.opacity) === 0) continue;
+          minFs = Math.min(minFs, parseFloat(cs.fontSize));
+        }
+        // text scales with the viewport (clamp tokens); the rule is 20 px at 1080p
+        if (minFs < 20 * Math.min(1, scale) - 0.5) out.push(`"${label}" text ${minFs}px < 20px`);
         // clipped by an overflow:hidden ancestor (scroll containers are allowed to hide items)
         let a = el.parentElement;
         while (a && a !== document.body) {

@@ -49,6 +49,7 @@ export class Brush extends MainWeapon {
     this.fxT = 0;
     this.sndT = 0;
     this.hitCool = new Map();
+    this._decayHit = (t, a) => { if (t - this._dt <= 0) this.hitCool.delete(a); else this.hitCool.set(a, t - this._dt); };
     this.unhook = addPoseHook(w.model, (dt, s, m) => this.pose(dt, s, m));
   }
 
@@ -77,7 +78,7 @@ export class Brush extends MainWeapon {
     const w = this.w, s = this.s;
     this.cool -= dt;
     this.swipeT = Math.min(1, this.swipeT + dt / 0.16);
-    for (const [a, t] of this.hitCool) { if (t - dt <= 0) this.hitCool.delete(a); else this.hitCool.set(a, t - dt); }
+    if (this.hitCool.size) { this._dt = dt; this.hitCool.forEach(this._decayHit); }
 
     if (ctrl.fire) {
       this.held += dt;

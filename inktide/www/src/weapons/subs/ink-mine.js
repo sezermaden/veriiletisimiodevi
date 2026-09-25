@@ -100,7 +100,7 @@ export class InkMine extends SubWeapon {
   use() {
     const w = this.w, S = w.session, s = this.s;
     const g = S.level.raycast(_p.copy(w.position).setY(w.position.y + 0.4), DOWN, 2.2, { staticOnly: true });
-    if (!g || g.normal.y < 0.5) return false;
+    if (!g || g.normal.y < 0.5) { sfx(w, 'empty', { volume: 0.4 }); return false; }   // mid-air / on a wall: no ink spent
     if (this.device && !this.device.dead) this.device.fizzle();
     this.device = S.addEntity(new MineDevice(S, w, g.point.clone().addScaledVector(g.normal, 0.01), g.normal, s));
     S.ink.paint(g.point, 0.95, w.team, g.normal, { source: w });

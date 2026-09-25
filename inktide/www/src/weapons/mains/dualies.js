@@ -2,9 +2,10 @@
 // to dodge-roll (up to two in a row); after a roll you plant your feet for a moment and fire
 // tighter, faster "turret" shots.
 //
-// The roll needs the Jump edge BEFORE the wielder's own jump code consumes it, so it is polled from
-// the `drivesMovement` getter (the Player reads it right before its movement/jump branch). While
-// rolling the weapon owns the horizontal velocity and the Player only applies gravity.
+// The roll needs the Jump edge BEFORE the wielder's own jump code consumes it: the Player calls
+// preMove() right before its movement/jump branch (with its move intent). Wielders without that
+// hook fall back to polling from the `drivesMovement` getter. While rolling the weapon owns the
+// horizontal velocity and the Player only applies gravity.
 import * as THREE from 'three';
 import { MainWeapon, registerMain, muzzleOf, aimDir } from '../base.js';
 import { makeDualieModel, addPoseHook } from '../models.js';
@@ -77,18 +78,24 @@ export class Dualies extends MainWeapon {
     this.offModel?.traverse((o) => { if (o.userData.inkPart) { o.material.color.set(c); o.material.emissive?.set(c); } });
   }
 
+  /** Called by the Player each fixed step before movement consumes the jump buffer. */
+  preMove(dt, o) {
+    this._hasPreMove = true;
+    this.pollRoll(o);
+  }
+
   get drivesMovement() {
-    this.pollRoll();
+    if (!this._hasPreMove) this.pollRoll(null);      // wielders without the preMove hook
     return this.rollT > 0 || this.turretT > 0;
   }
 
   /** Start a dodge roll if Jump was just pressed while firing with a direction held. */
-  pollRoll() {
+  pollRoll(o) {
     const w = this.w, s = this.s;
     if (!(w.jumpBuffer > 0) || this.rollT > 0 || this.rolls >= s.maxRolls) return;
     if (!this.firing || !w.grounded || w.alive === false) return;
-    wishDir(w, _wish);
-    if (_wish.length() < 0.3) return;
+    if (o?.wish) { if (!(o.wishLen >= 0.3)) return; _wish.copy(o.wish).setY(0); }
+    else { wishDir(w, _wish); if (_wish.length() < 0.3) return; }
     if (w.ink < s.rollInk) { w.onOutOfInk?.(); return; }
     w.useInk(s.rollInk);
     w.jumpBuffer = 0;

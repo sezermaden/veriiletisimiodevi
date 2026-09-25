@@ -65,7 +65,6 @@ export default turfArena({
     D('barrel', -34, 0, -17.5, { variant: 'toxic' }), D('barrel', -33.2, 0, -18, { variant: 'toxic' }), D('barrel', -34.2, 0, 17.8),
     D('lamp', -27.8, 0, -18.6), D('lamp', -6.3, 0, 18.5), D('lamp', -9, 2.4, 15.2),
     D('satellite', -31.5, 0, 17.5, { yaw: PI / 3 }), D('antenna', -34, 0, -12, { height: 5, variant: 'radar' }),
-    D('flag', -34.6, 1, -5.6, { height: 4 }), D('flag', -34.6, 1, 5.6, { height: 4 }),
     D('billboard', -37, 0, 0, { yaw: PI / 2, text: 'REFINERY ROW' }),
     D('speaker-tower', -28.5, 0, 18.3, { yaw: -PI / 2 }),
     D('buoy', -20, -1.4, -23), D('buoy', 14, -1.4, -22.5),

@@ -71,7 +71,6 @@ export default turfArena({
     D('barrel', -34.2, 0, 7.2), D('barrel', -33.4, 0, 7.6, { variant: 'toxic' }),
     D('crate-stack', -34, 0, -8, { count: 2 }),
     D('tire-stack', -22.8, 0, 18.2), D('cone', -23.2, 0, -12.4),
-    D('flag', -34.6, 1, -5.6, { height: 4 }), D('flag', -34.6, 1, 5.6, { height: 4 }),
     D('antenna', -31.5, 2.4, 17.5, { height: 3 }),
     D('buoy', -20, -1.25, -22), D('buoy', 16, -1.25, -10),
   ],

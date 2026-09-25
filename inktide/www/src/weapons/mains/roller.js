@@ -56,6 +56,7 @@ export class Roller extends MainWeapon {
     this.fxT = 0;
     this.sndT = 0;
     this.hitCool = new Map();
+    this._decayHit = (t, a) => { if (t - this._dt <= 0) this.hitCool.delete(a); else this.hitCool.set(a, t - this._dt); };
     this.unhook = addPoseHook(w.model, (dt, s, m) => this.pose(dt, s, m));
   }
 
@@ -86,7 +87,7 @@ export class Roller extends MainWeapon {
 
   update(dt, ctrl) {
     const w = this.w, s = this.s;
-    for (const [a, t] of this.hitCool) { if (t - dt <= 0) this.hitCool.delete(a); else this.hitCool.set(a, t - dt); }
+    if (this.hitCool.size) { this._dt = dt; this.hitCool.forEach(this._decayHit); }
 
     // ground under the drum (keeps it on slopes and stairs)
     this.drumWorld(this.restPhi(false), _drum);
@@ -183,7 +184,7 @@ export class Roller extends MainWeapon {
       if (w.useInk(s.rollInkPerM * segs)) {
         const p = ground.point, n = ground.normal;
         S.ink.paint(p, s.laneR, w.team, n, { source: w });
-        for (const side of [-1, 1]) {
+        for (let side = -1; side <= 1; side += 2) {
           _g.copy(p).addScaledVector(_right, side * 0.3);
           S.ink.paint(_g, s.laneR * 0.78, w.team, n, { source: w });
         }

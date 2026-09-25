@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { SubWeapon, registerSub, muzzleOf, inkExplosion } from '../base.js';
 import { inkMat, charMat } from '../../actors/materials.js';
+import { disposeTree } from '../../engine/dispose.js';
 
 const _m = new THREE.Vector3();
 const _v = new THREE.Vector3();
@@ -39,6 +40,7 @@ export class BurstBomb extends SubWeapon {
     const mesh = bombMesh(color, 'burst');
     const explode = (p, pos, n) => {
       inkExplosion(S, pos, n || _up, w.team, { paintRadius: s.paintRadius, damage: s.damage, dmgRadius: s.dmgRadius, owner: w, sound: 'pop' });
+      disposeTree(mesh);               // the flight mesh is removed from the scene by Projectiles.kill
     };
     S.projectiles.spawn({
       pos: _m, vel: throwVelocity(w, s.speed, s.lift), team: w.team, owner: w, damage: 0, radius: 0.18,
@@ -64,6 +66,14 @@ export class SplashBomb extends SubWeapon {
     S.projectiles.spawn({
       pos: _m, vel: throwVelocity(w, s.speed, s.lift), team: w.team, owner: w, damage: 0, radius: 0.2,
       gravity: 22, life: 6, mesh, fx: false,
+      // a bomb that hits someone in flight glances off and drops at their feet (without `pierce`
+      // Projectiles would kill it on contact: no explosion, mesh never freed)
+      pierce: true,
+      onHit: (p, hit) => {
+        if (!hit.actor || bomb.landed) return;
+        p.vel.set(-p.vel.x * 0.25, Math.max(1.5, -p.vel.y * 0.2), -p.vel.z * 0.25);
+        S.audio?.sfx('clack', { pos: hit.point, volume: 0.4 });
+      },
       onWorld: (p, hit) => {
         // bounce a little off walls, settle on floors
         if (hit.normal.y > 0.6 && p.vel.length() < 6) {
@@ -87,12 +97,13 @@ export class SplashBomb extends SubWeapon {
           if (bomb.t >= s.fuse) {
             inkExplosion(S, bomb.pos, bomb.n, w.team, { paintRadius: s.paintRadius, damage: s.damage, dmgRadius: s.dmgRadius, owner: w });
             S.projectiles.kill(p);
+            disposeTree(mesh);
           }
         } else {
           mesh.rotation.x += dt * 8;
         }
       },
-      onExpire: (p) => inkExplosion(S, p.pos, _up, w.team, { paintRadius: s.paintRadius, damage: s.damage, dmgRadius: s.dmgRadius, owner: w }),
+      onExpire: (p) => { inkExplosion(S, p.pos, _up, w.team, { paintRadius: s.paintRadius, damage: s.damage, dmgRadius: s.dmgRadius, owner: w }); disposeTree(mesh); },
     });
     S.audio?.sfx('throw', { pos: _m, volume: 0.6 });
     return true;

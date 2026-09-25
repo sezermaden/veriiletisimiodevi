@@ -66,6 +66,7 @@ export class Grinder extends Boss {
     this.lean = 0; this.leanV = 0;
     this.smokeT = 0;
     this.defeatDuration = 4.8;
+    this.defeatCamDist = 13; this.defeatCamHeight = 6;
     this.defeatBooms = 3.6;
     this.armorHint = 'The Grinder is armoured! Make it ram a wall, then hit the glowing fuel tank.';
     this._build();

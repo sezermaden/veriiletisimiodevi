@@ -51,6 +51,7 @@ const _w = new THREE.Vector3();
 const _q = new THREE.Quaternion();
 const _hc = new THREE.Vector3();
 const _vel = new THREE.Vector3();
+const _q2v = new THREE.Vector3();
 
 // ---------------------------------------------------------------------------------------------
 // Shared geometry (module cache, flagged cached so disposeTree keeps it)
@@ -185,7 +186,6 @@ export class BossPart {
     this.name = o.name || this.kind;
     this.team = TEAM_MURK;
     this.alive = true;
-    this.prop = true;
     this.isBossPart = true;
     // hit spheres are not bodies: solid boss bodies use level colliders (session._separate skips these)
     this.solid = o.solid ?? false;
@@ -212,6 +212,9 @@ export class BossPart {
     this.open = false;
     session_push(this);
   }
+  /** Armour and closed weak points are props (lock-on specials skip them); an open weak point is a
+   *  combatant, so Missile Barrage & co. can lock onto it like any enemy. */
+  get prop() { return this.kind !== 'weak' || !this.open; }
   setOpen(v) {
     if (this.kind !== 'weak') { this.untargetable = !v; return; }
     this.open = !!v && !this.broken;
@@ -662,6 +665,7 @@ export class Boss extends Entity {
   // ---- per frame ------------------------------------------------------------------------------
   render(dt) {
     this.rt += dt;
+    if (this._camOv) this._stepDefeatCam(dt);
     // slow-motion lasts ~1.2 s of REAL time; never fight the story director's time-stop (0)
     if (this._slowOn) {
       this._slow -= dt;
@@ -709,6 +713,10 @@ export class Boss extends Entity {
     S.camRig?.addTrauma?.(0.9);
     // slow-mo ~1.2 s real time
     if (S.timeScale == null || S.timeScale >= 1) { S.timeScale = 0.3; this._slow = 1.2; this._slowOn = true; }
+    // the fight is won: stray blobs still in the air must not splat the player during the collapse
+    const P = this.player;
+    if (P) P.invulnerable = Math.max(P.invulnerable || 0, (this.defeatDuration ?? 4.2) + 1.5);
+    this._initDefeatCam();
     // the adds flee the scene
     for (const a of this.adds) {
       if (a.dead || a.alive === false) continue;
@@ -744,6 +752,7 @@ export class Boss extends Entity {
     if (this.done) return;
     this.done = true;
     const S = this.S;
+    this.releaseDefeatCam();
     this.removeColliders();
     const c = this.finalBlastAt ? this.finalBlastAt(_v) : this.group.getWorldPosition(_v);
     const g = S.level.raycast(_w.copy(c).setY(c.y + 1), DOWN, 60, { staticOnly: true });
@@ -753,13 +762,62 @@ export class Boss extends Entity {
     S.flash(`#${this.pal.hero.getHexString()}`, 0.5);
     S.shake(c, 1);
     this.onFinalBlast?.();
-    S.events.emit('bossDefeated', { id: this.type, name: this.bossName, boss: this });
+    S.events.emit('bossDefeated', { id: this.type, name: this.bossName, boss: this, slowmo: true });
     const m = S.mode;
     if (!m?.complete || m.kind === 'sandbox') S.hud?.toast(`${this.bossName} defeated!`, 'big');
   }
 
+  // ---- defeat camera --------------------------------------------------------------------------
+  /**
+   * A short cinematic framing of the collapse (the mech's fall off the tower, the bucket's spiral…)
+   * no matter where the player was looking. It holds the rig override only until finishDefeat()
+   * and never touches an override somebody else (the story director) installed meanwhile.
+   * Bosses tune it with defeatCamDist / defeatCamHeight and defeatFocus(out).
+   */
+  defeatFocus(out) { return this.hitCenter(out); }
+
+  _initDefeatCam() {
+    const S = this.S, rig = S.camRig, cam = S.camera;
+    if (!rig || rig.override || this.defeatCam === false) return;
+    const f = this.defeatFocus(_hc);
+    _v.subVectors(cam.position, f).setY(0);
+    if (_v.lengthSq() < 1e-3) _v.set(0, 0, 1);
+    this._dcYaw = Math.atan2(_v.x, _v.z);
+    this._dcBase = f.clone();
+    cam.getWorldDirection(_w);
+    this._camOv = { position: cam.position.clone(), target: cam.position.clone().addScaledVector(_w, 10) };
+    rig.override = this._camOv;
+  }
+
+  _stepDefeatCam(dt) {
+    const S = this.S, ov = this._camOv;
+    if (S.camRig.override !== ov) { this._camOv = null; return; }   // someone else took the camera
+    this._dcYaw += dt * 0.16;
+    if (this.defeatCamPose) this.defeatCamPose(_v);   // scripted framing (the mech's fall)
+    else {
+      const base = this._dcBase, D = this.defeatCamDist ?? 13, H = this.defeatCamHeight ?? 5;
+      _w.set(Math.sin(this._dcYaw), 0, Math.cos(this._dcYaw));
+      _q2v.copy(_w).multiplyScalar(D).setY(H);
+      const len = _q2v.length();
+      _q2v.divideScalar(len);
+      // stay on this side of any wall between the boss and the camera
+      const hit = S.level.raycast(base, _q2v, len + 0.6, { staticOnly: true });
+      _v.copy(base).addScaledVector(_q2v, hit ? Math.max(3, hit.distance - 0.6) : len);
+    }
+    const k = 1 - Math.exp(-2.4 * dt);
+    ov.position.lerp(_v, k);
+    ov.target.lerp(this.defeatFocus(_hc), 1 - Math.exp(-5 * dt));
+  }
+
+  releaseDefeatCam() {
+    const rig = this.S.camRig;
+    if (this._camOv && rig?.override === this._camOv) rig.override = null;
+    this._camOv = null;
+  }
+
   // ---- teardown -------------------------------------------------------------------------------
   dispose() {
+    this.releaseDefeatCam();
     for (const off of this._offs) off();
     for (const p of this.parts) p.dispose();
     this.removeColliders();

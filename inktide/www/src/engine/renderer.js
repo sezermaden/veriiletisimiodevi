@@ -161,6 +161,7 @@ export class Renderer {
   }
 
   render() {
+    if (this.enabled === false) return;   // DOM-only layout tests (?render=0)
     this.composer.render();
   }
 }

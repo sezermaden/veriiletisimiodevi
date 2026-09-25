@@ -49,10 +49,11 @@ const brushes = [
   block(4.6, -29, 1, 3.2, 0, 1.1, conc('#d6d0c6')),
   block(-6.5, -29.5, 1, 2.6, 0, 1.1, conc('#d6d0c6')),
   // intake building façade with the barrier doorway
-  block(-7.5, -35, 9, 2, 0, 5.6, brick()),
-  block(7.5, -35, 9, 2, 0, 5.6, brick()),
-  block(0, -35, 6, 2, 4.3, 1.3, brick()),
-  block(0, -35.3, 24.6, 2.6, 5.6, 0.45, conc('#9aa0aa')),
+  // (unpaintable, like every wall framing a Murk barrier: no climbing over the fight)
+  block(-7.5, -35, 9, 2, 0, 5.6, brick({ paint: false })),
+  block(7.5, -35, 9, 2, 0, 5.6, brick({ paint: false })),
+  block(0, -35, 6, 2, 4.3, 1.3, brick({ paint: false })),
+  block(0, -35.3, 24.6, 2.6, 5.6, 0.45, conc('#9aa0aa', { paint: false })),
   // ---------------- landing (CP1) ----------------
   ...island(0, -41.5, 10, 11, 0, { color: '#5f6b7c', cap: 'tiles', capColor: '#cfd3dc' }),
   // ---------------- Line 1 hall ----------------
@@ -71,9 +72,9 @@ const brushes = [
   block(-3.8, -122.6, 1, 2.4, 0, 1.1, conc('#d6d0c6')),
   block(-6.4, -128.2, 2.4, 2.4, 0, 2.2, steel('#4a5163')),                              // control cabinet
   // gallery gate frame
-  block(-5.5, -130.6, 5, 1.2, 0, 5.4, brick()),
-  block(5.5, -130.6, 5, 1.2, 0, 5.4, brick()),
-  block(0, -130.6, 6, 1.2, 4.3, 1.1, brick()),
+  block(-5.5, -130.6, 5, 1.2, 0, 5.4, brick({ paint: false })),
+  block(5.5, -130.6, 5, 1.2, 0, 5.4, brick({ paint: false })),
+  block(0, -130.6, 6, 1.2, 4.3, 1.1, brick({ paint: false })),
   // ---------------- steam gallery ----------------
   ...island(0, -143.2, 10, 25, 0, { color: '#5f6b7c', cap: 'asphalt', capColor: '#a9aeb8' }),
   block(-5.8, -143.2, 1.6, 24, -2.8, 7.8, brick({ color: '#806257' })),                      // gallery walls (climb)
@@ -95,13 +96,13 @@ const brushes = [
   block(9.5, -164.5, 1, 3, 0, 1.1, conc('#d6d0c6')),
   block(-9, -178, 3, 1, 0, 1.1, conc('#d6d0c6')),
   // north wall with the barrier doorway
-  block(-9, -185.5, 12, 1.2, -2.8, 7.3, brick()),
-  block(9, -185.5, 12, 1.2, -2.8, 7.3, brick()),
-  block(0, -185.5, 6, 1.2, 4.3, 0.2, brick()),
+  block(-9, -185.5, 12, 1.2, -2.8, 7.3, brick({ paint: false })),
+  block(9, -185.5, 12, 1.2, -2.8, 7.3, brick({ paint: false })),
+  block(0, -185.5, 6, 1.2, 4.3, 0.2, brick({ paint: false })),
   // passage + gate, capsule platform
   ...island(0, -189, 8, 7, 0, { color: '#5f6b7c', cap: 'tiles', capColor: '#d6dae2' }),
-  block(-3.6, -189, 0.8, 6.4, 0, 4.2, brick({ color: '#7a5e54' })),
-  block(3.6, -189, 0.8, 6.4, 0, 4.2, brick({ color: '#7a5e54' })),
+  block(-3.6, -189, 0.8, 6.4, 0, 4.2, brick({ color: '#7a5e54', paint: false })),   // no climbing round the capsule gate
+  block(3.6, -189, 0.8, 6.4, 0, 4.2, brick({ color: '#7a5e54', paint: false })),
   ...island(0, -199, 18, 13, 0, { color: '#5f6b7c', cap: 'tiles', capColor: '#e2e5ec' }),
   cyl(0, 0, -200, 3, 0.4, { mat: 'tiles', color: '#ffc53a', sides: 24 }),
   ...tank(-6.5, -202.5, 1.6, 0, 5, { color: '#b9c2cf' }),
@@ -141,7 +142,7 @@ add(
 );
 // Landing + Line 1 hall
 add(
-  ent('checkpoint', 2.8, 0, -39.4, { yaw: PI, id: 'cp1' }),
+  ent('checkpoint', 1.4, 0, -40, { yaw: PI, id: 'cp1', radius: 2.4 }),
   ent('trigger', 0, 0, -44.5, { size: [10, 3, 2.5], dialogue: 'w3-1.conveyor', objective: 'Ride Line 1 and shut it down' }),
   ent('conveyor', 0, 0, -57, { dir: '-z', size: [3, 20], speed: 3.2, id: 'b1' }),
   ent('pearl-trail', 0, 0.2, -50, { to: [0, 0.2, -64], count: 6 }),
@@ -158,16 +159,17 @@ add(
   ent('pearl-trail', -5.5, 3.8, -90.6, { to: [-3.5, 3.8, -90.6], count: 3 }),
   ent('conveyor', 0, 0, -107, { dir: '+z', size: [3.5, 25], speed: 5.2, cargo: 3, id: 'b3', stopOn: 'switch:sw-line1' }),
   // Control deck
+  ent('trigger', 0, 0, -120.8, { size: [16, 3, 2], objective: 'Clear the control deck crew to open the Steam Works' }),
   ent('shield-glooper', 0, 0, -122.5, { group: 'line1', aggro: 26 }),
   ent('glooper', -4.5, 0, -127, { group: 'line1', aggro: 24 }),
   ent('glooper', 5, 0, -126.5, { group: 'line1', aggro: 24 }),
-  ent('checkpoint', 6.4, 0, -123.5, { yaw: PI, id: 'cp2' }),
+  ent('checkpoint', -1.5, 0, -121.2, { yaw: PI, id: 'cp2', radius: 2.4 }),
   ent('murk-barrier', 0, 0, -130.6, { size: [6, 4.3, 0.4], group: 'line1', id: 'bar-line1' }),
   ent('pearl', -6.4, 2.2, -128.2), ent('pearl', 6.8, 0, -128.8),
 );
 // Steam gallery
 add(
-  ent('trigger', 0, 0, -132.6, { size: [9, 3, 2], dialogue: 'w3-1.vent', hint: 'Wait for the steam to stop, then dash through!' }),
+  ent('trigger', 0, 0, -132.6, { size: [9, 3, 2], dialogue: 'w3-1.vent', objective: 'Dash through the Steam Gallery', hint: 'Wait for the steam to stop, then dash through!' }),
   ent('steam-vent', -3.5, 0, -137, { radius: 1.25, period: 3.2, on: 1.3, warn: 0.7, offset: 0 }),
   ent('steam-vent', 3.5, 0, -143, { radius: 1.25, period: 3.2, on: 1.3, warn: 0.7, offset: 1.05 }),
   ent('steam-vent', 0, 0, -149, { radius: 1.25, period: 3.2, on: 1.3, warn: 0.7, offset: 2.1 }),
@@ -188,7 +190,7 @@ const ring = [
 ];
 ring.forEach((b, i) => add(ent('conveyor', ...b.pos, { dir: b.dir, size: b.size, speed: 2.4, cargo: 2, stopOn: 'switch:sw-main', id: 'main' + i })));
 add(
-  ent('checkpoint', 3.2, 0, -161.2, { yaw: PI, id: 'cp3' }),
+  ent('checkpoint', 1.4, 0, -161, { yaw: PI, id: 'cp3', radius: 2.4 }),
   ent('trigger', 0, 0, -161, { size: [8, 3, 3], objective: 'Clear the Main Line crew, then stop the line from the tower' }),
   ent('bomblob', -5, 1.5, -161.5, { group: 'main', aggro: 20 }),
   ent('murk-pod', -11.5, 1.4, -168, { group: 'main', max: 2, interval: 5, aggro: 18 }),
@@ -248,7 +250,7 @@ add(
   D('barrel', 10.5, 1, -56.5, { variant: 'toxic' }), D('crate-stack', 9.2, 1, -63, { count: 3, yaw: 1.2 }),
   D('speaker-tower', -4.2, 0, -68.2, { height: 2.8, color: '#b58cff' }),
   D('cone', 4.2, 0, -76.6), D('lamp', 4.4, 0, -67.8, { yaw: -PI / 2, light: '#c8ffb0' }),
-  D('neon-sign', -4.5, 0, -89.95, { text: 'LINE 1 CTRL', color: '#ffc53a', height: 2.6 }),
+  D('neon-sign', -2.95, 0, -91.5, { yaw: PI / 2, text: 'LINE 1 CTRL', color: '#ffc53a', height: 4.6, scale: 0.55 }),
   D('railing', -4.5, 3.8, -92.9, { length: 3, color: '#f2b134' }),
   D('lamp', 6.4, 0, -84.4, { yaw: -PI * 0.75 }), D('barrel', 6.2, 0, -93.6), D('barrel', 5.4, 0, -93.8, { variant: 'toxic' }),
   D('buoy', -8, SL, -66, { color: '#8be04a' }), D('buoy', 8.5, SL, -95, { color: '#6a2bd9', light: '#ff3030' }), D('buoy', -7, SL, -112),
@@ -271,7 +273,7 @@ add(
   D('lamp', 4.4, 0, -154.6, { yaw: -PI * 0.75, light: '#ffb070' }), D('lamp', -4.4, 0, -134, { yaw: PI / 4, light: '#ffb070' }),
   D('speaker-tower', -4.2, 0, -154.6, { height: 2.4, color: '#ff7a3a' }),
   // main line
-  D('neon-sign', 0, 0, -168.95, { text: 'MAIN LINE', color: '#8be04a', height: 3.6 }),
+  D('neon-sign', -3.05, 0, -172, { yaw: -PI / 2, text: 'MAIN LINE', color: '#8be04a', height: 3.4 }),
   D('antenna', -2, 5.25, -174.2, { height: 2.6 }), D('satellite', 2.2, 5.25, -174.6, { yaw: PI }),
   D('lamp', -14.2, 0, -160.2, { yaw: PI * 0.75 }), D('lamp', 14.2, 0, -160.2, { yaw: -PI * 0.75 }),
   D('lamp', -14.2, 0, -184.2, { yaw: PI / 4 }), D('lamp', 14.2, 0, -168, { yaw: -PI / 2 }),

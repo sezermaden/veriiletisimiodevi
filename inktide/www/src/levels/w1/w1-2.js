@@ -14,7 +14,7 @@
 import { block, box, cyl, ramp, prism, container, ent, murk } from '../kit.js';
 import { PI, D, SCENERY, pier, quay, bollards, containerStack, fishingBoat, cargoShip, farWarehouses } from './docks-kit.js';
 
-const DOCK = 3.4;
+const DOCK = 2.7;            // two sponge steps (1.0 → 1.9) → a kid jump onto the dock
 const T = (x, y, z, o) => ent('trigger', x, y, z, o);
 const GRATE = { mat: 'grate', color: '#ffffff' };
 
@@ -66,7 +66,7 @@ const brushes = [
   box(-16, 0, -34.5, 16, DOCK, -33.9, GRATE),                          // loading-dock wall (grate: no climbing)
   ...[-14, -9.5, -5, 5, 9.5, 14].map((x) => block(x, -33.78, 0.36, 0.24, 0, DOCK, SCENERY({ mat: 'metal', color: '#f2c230' }))),
   box(-16, DOCK - 0.32, -33.9, 16, DOCK, -33.66, SCENERY({ mat: 'metal', color: '#f2c230' })),
-  box(-1.9, -0.02, -34.4, 1.9, 0.02, -30.4, { mat: 'concrete', color: '#f2c230', collide: false }),   // sponge pad marking
+  box(-1.9, -0.02, -33.9, 1.9, 0.02, -27.4, { mat: 'concrete', color: '#f2c230', collide: false }),   // sponge pad marking
 
   // ---------------- C: Dock 4 ----------------
   block(0, -43.25, 32, 17.5, 0, DOCK, { mat: 'concrete', color: '#d6cfc4' }),
@@ -143,8 +143,11 @@ const entities = [
   ent('glooper', -6, 0, -15.6, { group: 'amb', yaw: 0 }),
   ent('glooper', 8.5, 0, -23.2, { group: 'amb', yaw: 0.3 }),
   ent('pearl-trail', -12, 0, -10, { to: [-12, 0, -22], count: 5 }),
-  T(0, 0, -27.5, { size: [26, 3, 3], dialogue: 'w1-2.sponge', objective: 'Puff up the sponge and climb onto the dock', hint: 'Shoot the sponge to inflate it, then jump on' }),
-  ent('sponge', 0, 0, -32.3, { id: 'sponge-dock', size: [3, 2.6, 3] }),
+  T(0, 0, -24.5, { size: [26, 3, 3], dialogue: 'w1-2.sponge', objective: 'Puff up the sponges and climb onto the dock', hint: 'Shoot both sponges to puff them up, then hop up them like stairs' }),
+  // two sponge steps: full tops at 1.0 and 1.9, dock at 2.7 (every rise is a kid jump, and a
+  // player who falls back off the dock can always climb again)
+  ent('sponge', 0, 0, -29, { id: 'sponge-step', size: [2.6, 1.0, 2.6] }),
+  ent('sponge', 0, 0, -32.3, { id: 'sponge-dock', size: [3, 1.9, 3] }),
   ent('pearl', 0, DOCK, -35.3), ent('pearl', -1, DOCK, -35.3), ent('pearl', 1, DOCK, -35.3),
   D('graffiti', -9, 0.5, -33.85, { text: 'DOCK 4', size: 4.5, color: '#ffd23f', color2: '#ff8a1f' }),
   D('graffiti', 9, 0.4, -33.85, { style: 'squid', size: 3, color: '#2fd6ff', color2: '#ff5fa8' }),
@@ -267,8 +270,8 @@ export default {
   ],
   entities,
   route: [
-    [0, 0, 9], [0, 0, -4], [1.5, 0, -16], [-2, 0, -28], [0, 0, -30.5], [0, DOCK, -36, 'mover'],                     // 'mover' = sponge-assisted
-    [0, DOCK, -50], [0, DOCK, -53], [0, 0, -62], [3.5, 0, -80], [0, 0, -91.5], [0, 0, -107, 'mover'],
+    [0, 0, 9], [0, 0, -4], [1.5, 0, -16], [-2, 0, -26], [0, 0, -27.2], [0, DOCK, -36, 'mover'],                     // 'mover' = sponge-assisted
+    [0, DOCK, -50], [0, DOCK, -53], [0, 0, -62], [3.5, 0, -78], [5.5, 0, -86], [0, 0, -91.5], [0, 0, -107, 'mover'],
     [0, 0, -148], [0, 0, -161], [0, 0, -175], [2, 0, -186], [0, 0, -199], [0, 0, -210], [0, 0, -219],
   ],
 };

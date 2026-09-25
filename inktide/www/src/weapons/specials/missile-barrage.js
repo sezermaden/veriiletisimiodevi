@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { Special, registerSpecial, muzzleOf } from '../base.js';
 import { makeMissileModel, makeMissilePodModel, reticleTexture, addPoseHook } from '../models.js';
 import { isCombatant, blast, noCharge, sfx, UP, DOWN } from '../mains/shared.js';
+import { disposeTree } from '../../engine/dispose.js';
 
 const _hc = new THREE.Vector3();
 const _d = new THREE.Vector3();
@@ -24,12 +25,13 @@ function bezier(out, p0, p1, p2, p3, t) {
 export class MissileBarrage extends Special {
   static defaults = {
     range: 45, viewCos: 0.45, maxTargets: 4, lockTime: 0.8, perTarget: 2, salvoGap: 0.07,
-    damage: 70, radius: 2.4, paintRadius: 2.5, noTargetCount: 6,
+    damage: 52, radius: 2.3, paintRadius: 2.5, noTargetCount: 6,
   };
 
   constructor(w, stats) {
     super(w, stats);
     this.reticles = [];
+    this.flying = new Set();
     this.pod = null;
     this.podK = 0;
     this.unhook = addPoseHook(w.model, (dt, s, m) => this.pose(dt, s, m));
@@ -124,7 +126,10 @@ export class MissileBarrage extends Special {
     r.position.set(_hc.x, _hc.y + (a.hitHeight ?? 1.2) * 0.5 + 0.9, _hc.z);
     const k = ud.locked ? Math.min(1, (this.t - (ud.lockAt || 0)) / 0.25) : 0;
     const sc = THREE.MathUtils.lerp(2.6, 1.0, 1 - (1 - k) * (1 - k)) * (this.phase === 'lock' ? 1 : 0.9 + Math.sin(this.t * 30) * 0.1);
-    r.scale.setScalar(sc);
+    // keep a readable size on screen for far targets (≈ constant angular size beyond ~14 m)
+    const cam = this.w.session.camera;
+    const far = cam ? Math.max(1, r.position.distanceTo(cam.position) * 0.07) : 1;
+    r.scale.setScalar(sc * far);
     r.material.rotation = (1 - k) * 2.2 + this.t * 1.5;
     r.material.opacity = Math.min(1, k * 1.5);
   }
@@ -190,7 +195,8 @@ export class MissileBarrage extends Special {
       exploded = true;
       this.inFlight--;
       noCharge(w, () => blast(S, pos, normal || UP, w.team, { owner: w, damage: s.damage, radius: s.radius, paintRadius: s.paintRadius, kind: 'special', sound: 'boom' }));
-      mesh.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+      this.flying.delete(mesh);
+      disposeTree(mesh);
     };
     const proj = S.projectiles.spawn({
       pos: p0, vel: _d.subVectors(p1, p0).normalize().multiplyScalar(8), team: w.team, owner: w,
@@ -222,9 +228,10 @@ export class MissileBarrage extends Special {
     if (!proj) {                                                  // projectile pool full
       exploded = true;
       this.inFlight--;
-      mesh.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+      disposeTree(mesh);
       return;
     }
+    this.flying.add(mesh);                                        // freed in dispose() if the session ends mid-flight
     S.fx.puff(p0, '#ffffff', 0.5, 0.4, _d.set(0, 1.5, 0), 2, 0.6);
     S.fx.burst(p0, UP, color, 5, 3, { size: 0.05 });
     sfx(w, 'missile_launch', { volume: 0.55, throttle: 0.03 });
@@ -241,7 +248,7 @@ export class MissileBarrage extends Special {
     this.phase = 'done';
     if (this.pod) {
       this.pod.parent?.remove(this.pod);
-      this.pod.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+      disposeTree(this.pod);
       this.pod = null;
     }
     if (this.w.model?.pack) this.w.model.pack.visible = true;
@@ -276,6 +283,8 @@ export class MissileBarrage extends Special {
     this.unhook?.();
     if (this.active) this.end();
     this.clearReticles();
+    for (const m of this.flying) disposeTree(m);
+    this.flying.clear();
   }
 }
 

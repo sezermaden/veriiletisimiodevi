@@ -475,8 +475,9 @@ export function makeJetpackModel(color) {
 export function makeCloudModel(color) {
   const g = new THREE.Group();
   const c = new THREE.Color(color);
-  const top = new THREE.MeshStandardMaterial({ color: c.clone().lerp(new THREE.Color('#ffffff'), 0.3), roughness: 0.95, emissive: c, emissiveIntensity: 0.22, transparent: true, opacity: 0.97 });
-  const under = new THREE.MeshStandardMaterial({ color: c.clone().multiplyScalar(0.5), roughness: 0.9, emissive: c, emissiveIntensity: 0.3, transparent: true, opacity: 0.97 });
+  // opaque: 17 overlapping puffs as a transparent pass cost a lot of overdraw for an invisible 3 %
+  const top = new THREE.MeshStandardMaterial({ color: c.clone().lerp(new THREE.Color('#ffffff'), 0.3), roughness: 0.95, emissive: c, emissiveIntensity: 0.22 });
+  const under = new THREE.MeshStandardMaterial({ color: c.clone().multiplyScalar(0.5), roughness: 0.9, emissive: c, emissiveIntensity: 0.3 });
   top.userData.inkTint = 0.45; under.userData.inkTint = -0.45;
   const geo = new THREE.IcosahedronGeometry(1, 2);
   const puffs = [];
@@ -509,28 +510,33 @@ export function makeCloudModel(color) {
 }
 
 let _reticleTex = null;
-/** Lock-on reticle texture (white; tint with SpriteMaterial.color). */
+/** Lock-on reticle texture: white strokes on a dark outline (tint with SpriteMaterial.color — the
+ *  outline stays dark, so the reticle reads on bright walls and on the team's own ink alike). */
 export function reticleTexture() {
   if (_reticleTex) return _reticleTex;
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const x = c.getContext('2d');
   x.translate(64, 64);
-  x.strokeStyle = '#ffffff';
   x.lineCap = 'round';
-  x.lineWidth = 7;
-  x.beginPath(); x.arc(0, 0, 38, 0, Math.PI * 2); x.stroke();
-  x.lineWidth = 9;
-  for (let i = 0; i < 4; i++) {
-    x.save();
-    x.rotate((i * Math.PI) / 2 + Math.PI / 4);
-    x.beginPath(); x.moveTo(0, -60); x.lineTo(0, -46); x.stroke();
-    x.restore();
-  }
-  x.fillStyle = '#ffffff';
-  x.beginPath(); x.arc(0, 0, 7, 0, Math.PI * 2); x.fill();
+  const shape = (col, grow) => {
+    x.strokeStyle = col; x.fillStyle = col;
+    x.lineWidth = 7 + grow;
+    x.beginPath(); x.arc(0, 0, 38, 0, Math.PI * 2); x.stroke();
+    x.lineWidth = 9 + grow;
+    for (let i = 0; i < 4; i++) {
+      x.save();
+      x.rotate((i * Math.PI) / 2 + Math.PI / 4);
+      x.beginPath(); x.moveTo(0, -55); x.lineTo(0, -45); x.stroke();
+      x.restore();
+    }
+    x.beginPath(); x.arc(0, 0, 7 + grow / 2, 0, Math.PI * 2); x.fill();
+  };
+  shape('rgba(18,20,34,0.85)', 6);
+  shape('#ffffff', 0);
   _reticleTex = new THREE.CanvasTexture(c);
   _reticleTex.colorSpace = THREE.SRGBColorSpace;
+  _reticleTex.userData.cached = true;      // module-wide: disposeTree() must not free it
   return _reticleTex;
 }
 
@@ -549,6 +555,7 @@ export function glowTexture() {
   x.fillRect(0, 0, 64, 64);
   _glowTex = new THREE.CanvasTexture(c);
   _glowTex.colorSpace = THREE.SRGBColorSpace;
+  _glowTex.userData.cached = true;
   return _glowTex;
 }
 

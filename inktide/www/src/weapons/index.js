@@ -3,7 +3,9 @@
 // Beyond the wielder contract in weapons/base.js, some weapons read a few optional fields so AI
 // bots can drive them like the player does:
 //   jumpBuffer (s)      Twin Dualies dodge roll — set > 0 while firing with a move direction
-//   botMove {x, z}      world-space move intent (dodge roll direction, Ink Jet flight)
+//                       (the Player passes its move intent to main.preMove(); wielders without
+//                       that hook fall back to botMove)
+//   botMove {x, z}      world-space move intent (Ink Jet flight, dodge-roll fallback)
 //   botFire (bool)      trigger while flying the Ink Jet (the main weapon is blocked then);
 //                       turf/bot.js sets it every step (Ink Jet also falls back to bot.input)
 //   onOutOfInk()        called when a shot/roll can't be paid for

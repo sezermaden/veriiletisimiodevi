@@ -6,7 +6,7 @@
 //      away from walls (knee-height probes) and drop points next to a void (water / kill plane);
 //   2. merge near-duplicates (face borders);
 //   3. connect neighbours (≤ 2.35 m apart): WALK when the ground between is continuous (flat or a
-//      ramp) and the knee-height line is clear, JUMP for steps ≤ 0.95 m, one-way DROP off ledges,
+//      ramp) and the knee-height line is clear, JUMP for steps ≤ 1.1 m, one-way DROP off ledges,
 //      one-way CLIMB up a paintable vertical wall (bots paint it, then swim up);
 //   4. label connected components from both bases; mark nodes inside each base zone.
 // Paths: A* with live costs (enemy ink is slow, the enemy base is off-limits), cached briefly.
@@ -227,14 +227,14 @@ export class NavGraph {
         }
         const lx = this.px[lo], ly = this.py[lo], lz = this.pz[lo];
         const hx = this.px[hi], hy = this.py[hi], hz = this.pz[hi];
-        if (ady >= 0.25 && ady <= 0.95) {
+        if (ady >= 0.25 && ady <= 1.1) {
           // step: jump up, walk off to come down
           if (clear(lx, hy + 0.7, lz, hx, hy + 0.7, hz) && clear(lx, ly + 0.3, lz, lx, hy + 1.3, lz)) {
             add(lo, hi, JUMP, len + 0.6); add(hi, lo, DROP, len);
           }
           return;
         }
-        if (ady > 0.95 && ady <= 7.5) {
+        if (ady > 1.1 && ady <= 7.5) {
           // ledge: drop down one way (the fall path must be clear)
           if (clear(hx, hy + 0.5, hz, lx, hy + 0.5, lz) && clear(lx, hy + 0.5, lz, lx, ly + 0.3, lz)) add(hi, lo, DROP, len + 0.3);
           // wall between them that can be inked and climbed in squid form

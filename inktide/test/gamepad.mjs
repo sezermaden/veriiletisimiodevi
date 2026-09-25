@@ -4,9 +4,18 @@ import { launch, report } from './harness.mjs';
 import { walkScreens } from './ui-walk.mjs';
 
 const h = await launch({ width: 1920, height: 1080 });
-await h.open('/?q=low', 20);
+await h.open('/?q=low&render=0', 20);
 const bad = [];
+const NEG = process.argv.includes('--negative');   // negative control: plant an unreachable item
 const screens = await walkScreens(h.page, async (name) => {
+  if (NEG && /MainMenu/.test(name)) {
+    // negative control: simulate a broken navigation layer (vertical moves ignored) — the graph
+    // must then report the lower menu items as unreachable
+    await h.page.evaluate(() => {
+      const f = __game.ui.top.focus, orig = f.move.bind(f);
+      f.move = (dir) => (dir === 'up' || dir === 'down' ? false : orig(dir));
+    });
+  }
   const r = await h.page.evaluate(() => {
     const f = __game.ui.top.focus;
     const items = f.items.slice();

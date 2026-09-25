@@ -110,7 +110,12 @@ export class BaseBarriers {
       push.normalize();
       p.velocity.x = push.x * 7; p.velocity.z = push.z * 7;
       if (p.grounded) p.velocity.y = 4;
-      p.damage(130 * dt, { source: null, team: enemyBase, kind: 'barrier', dir: push.clone() });
+      // 130 HP/s, dealt in 0.1 s ticks (per-step damage would fire the hurt SFX / rumble 60× a second)
+      p._barrierT = (p._barrierT || 0) - dt;
+      if (p._barrierT <= 0) {
+        p._barrierT = 0.1;
+        p.damage(13, { source: null, team: enemyBase, kind: 'barrier', dir: push.clone() });
+      }
       if (this.hitT <= 0) {
         this.hitT = 0.3;
         this.S.fx.burst(p.hitCenter(new THREE.Vector3()), push, this.S.ink.color(enemyBase), 10, 5);

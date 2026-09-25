@@ -114,6 +114,7 @@ export class Serpent extends Boss {
     this.cellsBroken = 0;
     this.circleAng = 0; this.circleBeamT = 0; this.rearK = 0;
     this.defeatDuration = 5.0;
+    this.defeatCamDist = 17; this.defeatCamHeight = 4;
     this.defeatBooms = 3.8;
     this.armorHint = 'Its armour is too thick! Shoot the glowing green cells on its back.';
     this.segPos = []; this.sArr = [];

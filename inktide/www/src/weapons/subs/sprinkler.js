@@ -6,6 +6,7 @@ import { SubWeapon, registerSub, muzzleOf } from '../base.js';
 import { Entity } from '../../entities/base.js';
 import { makeSprinklerModel } from '../models.js';
 import { sfx, UP } from '../mains/shared.js';
+import { disposeTree } from '../../engine/dispose.js';
 
 const _m = new THREE.Vector3();
 const _v = new THREE.Vector3();
@@ -120,7 +121,7 @@ export class Sprinkler extends SubWeapon {
     speed: 7.5, damage: 20, paintRadius: 0.55,
   };
 
-  constructor(w, stats) { super(w, stats); this.device = null; }
+  constructor(w, stats) { super(w, stats); this.device = null; this.flying = new Set(); }
 
   use() {
     const w = this.w, S = w.session, s = this.s;
@@ -133,11 +134,14 @@ export class Sprinkler extends SubWeapon {
     _v.normalize().multiplyScalar(s.throwSpeed);
     _v.x += w.velocity.x * 0.5; _v.z += w.velocity.z * 0.5;
     const spinAxis = new THREE.Vector3(Math.random() - 0.5, 0.3, Math.random() - 0.5).normalize();
-    S.projectiles.spawn({
+    const proj = S.projectiles.spawn({
       pos: _m, vel: _v, team: w.team, owner: w, damage: 0, radius: 0.16, gravity: 24, life: 4, mesh,
       ignoreActors: true, fx: false,
       onStep: (p, dt) => { mesh.rotateOnAxis(spinAxis, dt * 14); },
       onHit: (p, hit) => {
+        // the flight mesh is removed from the scene by Projectiles.kill; free it here
+        this.flying.delete(mesh);
+        disposeTree(mesh);
         if (!hit.normal) return;
         if (this.device && !this.device.dead) this.device.pop();
         const pos = _p.copy(hit.point).addScaledVector(hit.normal, 0.01);
@@ -146,16 +150,20 @@ export class Sprinkler extends SubWeapon {
         S.fx.burst(hit.point, hit.normal, color, 8, 3, { size: 0.05 });
         S.fx.ring(hit.point, hit.normal, color, 0.8, 0.3);
         S.audio?.sfx('sprinkler_stick', { pos: hit.point, volume: 0.55 });
-        // disposing the flight mesh: it is removed from the scene by Projectiles.kill
-        mesh.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
       },
-      onExpire: () => mesh.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }),
+      onExpire: () => { this.flying.delete(mesh); disposeTree(mesh); },
     });
+    if (!proj) { disposeTree(mesh); return false; }          // projectile pool full: keep the ink
+    this.flying.add(mesh);
     sfx(w, 'throw', { volume: 0.6 });
     return true;
   }
 
-  dispose() { if (this.device && !this.device.dead) this.device.remove(); }
+  dispose() {
+    if (this.device && !this.device.dead) this.device.remove();
+    for (const m of this.flying) disposeTree(m);     // session ended mid-throw
+    this.flying.clear();
+  }
 }
 
 registerSub('sprinkler', Sprinkler);
