@@ -168,7 +168,8 @@ export class Level {
     let best = null;
     const hit = this.bvh.raycastFirst(_ray, THREE.DoubleSide, 0, far);
     if (hit && hit.distance <= far) {
-      const faceId = this.triFace[hit.faceIndex];
+      // MeshBVH reorders the triangle index; vertices never move, so map through vertex a
+      const faceId = this.triFace[Math.floor(hit.face.a / 3)];
       const n = hit.face.normal.clone();
       best = { point: hit.point.clone(), normal: n, distance: hit.distance, faceId, face: this.ink.faces[faceId], dynamic: null };
     }
@@ -231,7 +232,7 @@ export class Level {
           else tri.getNormal(n);
           _seg.start.addScaledVector(n, depth);
           _seg.end.addScaledVector(n, depth);
-          const faceId = triMap ? triMap[triIndex] : -1;
+          const faceId = triMap ? triMap[Math.floor(bvh.geometry.index.array[triIndex * 3] / 3)] : -1;
           if (n.y > 0.55) {
             contacts.ground = true;
             if (n.y > bestGround) { bestGround = n.y; contacts.groundNormal.copy(n); contacts.groundFace = faceId; if (dyn) contacts.dynamic = dyn; }
