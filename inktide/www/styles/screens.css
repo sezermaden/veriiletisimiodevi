@@ -1,0 +1,5 @@
+/* Menu screens (filled in by the UI layer). */
+.screen { position: fixed; inset: 0; opacity: 0; transition: opacity 220ms ease; }
+.screen.in { opacity: 1; }
+.screen.out { opacity: 0; pointer-events: none; }
+.screen.under { visibility: hidden; }
