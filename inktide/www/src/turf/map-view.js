@@ -5,7 +5,7 @@
 // beacons. With the map open, D-pad / arrows pick a teammate or the base and Interact / A jumps.
 import * as THREE from 'three';
 
-const _v = new THREE.Vector3();
+const BASE_OPT = Object.freeze({ kind: 'base', label: 'BASE' });
 
 export class MapView {
   constructor(session, mode) {
@@ -69,6 +69,11 @@ export class MapView {
     this.foot = el.querySelector('.tm-foot');
     this.imageData = this.img.createImageData(this.W, this.H);
     this.rendered = false;
+    // per-frame scratch (drawMarks runs every frame while the map is open)
+    this._P = { x: 0, y: 0 };
+    this.teamCss = {};
+    for (const t of [1, 2]) this.teamCss[t] = `#${session.ink.color(t).getHexString()}`;
+    this._opts = [];
   }
 
   /** World (x, z) → canvas pixels. */
@@ -83,15 +88,18 @@ export class MapView {
     this.open = v;
     this.el.classList.toggle('hidden', !v);
     this.S.audio?.sfx('turf_map', { open: v, volume: 0.5 });
-    if (v) { this.refreshT = 0; this.sel = -1; }
+    if (v) { this.refreshT = 0; this.sel = -1; this._pad = undefined; this._footSel = undefined; }
   }
 
   /** Super-jump destinations: base first, then living teammates. */
   options() {
-    const out = [{ kind: 'base', label: 'BASE' }];
+    const out = this._opts;
+    out.length = 0;
+    out.push(BASE_OPT);
     for (const a of this.mode.teamOf(this.S.player.team)) {
       if (a === this.S.player || !a.alive || a.flying) continue;
-      out.push({ kind: 'mate', actor: a, label: a.name });
+      const o = a._mapOpt || (a._mapOpt = { kind: 'mate', actor: a, label: a.name });
+      out.push(o);
     }
     return out;
   }
@@ -115,10 +123,13 @@ export class MapView {
     this.drawMarks();
     const input = this.S.input;
     const pad = input.lastDevice === 'gamepad';
-    this.help.textContent = pad ? 'D-Pad choose · A jump' : '←/→ choose · E jump';
+    if (this._pad !== pad) { this._pad = pad; this.help.textContent = pad ? 'D-Pad choose · A jump' : '←/→ choose · E jump'; }
     const s = this.selected();
-    this.foot.textContent = s ? `SUPER JUMP → ${s.label}` : 'SUPER JUMP';
-    this.foot.classList.toggle('armed', !!s);
+    if (this._footSel !== s) {
+      this._footSel = s;
+      this.foot.textContent = s ? `SUPER JUMP → ${s.label}` : 'SUPER JUMP';
+      this.foot.classList.toggle('armed', !!s);
+    }
   }
 
   renderMap() {
@@ -154,9 +165,10 @@ export class MapView {
   drawMarks() {
     const c = this.marks, S = this.S, mode = this.mode;
     c.clearRect(0, 0, this.W, this.H);
-    const P = { x: 0, y: 0 };
+    const P = this._P;
     const t = performance.now() * 0.001;
-    const col = (team) => `#${S.ink.color(team).getHexString()}`;
+    const css = this.teamCss;
+    const col = (team) => css[team] || '#ffffff';
     // super-jump beacons in flight
     for (const j of mode.jumps?.list || []) {
       this.toPx(j.to.x, j.to.z, P);
@@ -164,7 +176,6 @@ export class MapView {
       c.beginPath(); c.arc(P.x, P.y, 8 + ((t * 2) % 1) * 10, 0, Math.PI * 2); c.stroke();
     }
     // base selection ring
-    const opts = this.options();
     const sel = this.selected();
     const bp = mode.basePos(S.player.team);
     this.toPx(bp.x, bp.z, P);
@@ -194,7 +205,6 @@ export class MapView {
         if (selected) this.ring(c, P, true, '#ffffff', t, a.name);
       }
     }
-    void opts;
   }
 
   dot(c, P, fill, r, stroke) {
@@ -225,4 +235,3 @@ export class MapView {
     if (this.S.level.group.parent === this.scene) this.S.scene.add(this.S.level.group);
   }
 }
-void _v;

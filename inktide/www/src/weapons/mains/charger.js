@@ -36,14 +36,14 @@ export class Charger extends MainWeapon {
     this.fullFlash = 0;
     this.shotFade = 0;
     const S = w.session, color = S.ink.color(w.team);
-    this.laser = new Beam(S.scene, color, 0.012, 0.55);
-    this.laserGlow = new Beam(S.scene, color, 0.035, 0.18);
-    this.dot = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+    this.laser = new Beam(S.scene, color, 0.012, 0.55, false);
+    this.laserGlow = new Beam(S.scene, color, 0.035, 0.18, false);
+    this.dot = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color, transparent: true, depthWrite: false, toneMapped: false }));
     this.dot.visible = false;
     this.dot.renderOrder = 4;
     S.scene.add(this.dot);
     this.tracer = new Beam(S.scene, '#ffffff', 0.03, 0.9);
-    this.tracerGlow = new Beam(S.scene, color, 0.12, 0.5);
+    this.tracerGlow = new Beam(S.scene, color, 0.12, 0.5, false);
     this.loop = new LoopSound(S.audio, 'charge');
     this.unhook = addPoseHook(w.model, (dt, s, m) => this.pose(dt, s, m));
     this._laserFrom = new THREE.Vector3();
@@ -126,7 +126,7 @@ export class Charger extends MainWeapon {
     this.laserGlow.mat.opacity = 0.08 + this.chg * 0.14 + this.fullFlash * 0.3;
     this.dot.visible = !!(hit || ah);
     this.dot.position.copy(_e).addScaledVector(_d, -0.05);
-    this.dot.scale.setScalar((0.22 + this.chg * 0.2) * pulse);
+    this.dot.scale.setScalar((0.3 + this.chg * 0.25) * pulse);
   }
 
   fire() {

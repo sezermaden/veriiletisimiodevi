@@ -39,12 +39,17 @@ export class SandboxMode {
 
   checkpoint(pos, yaw) { this.session?.setCheckpoint(pos, yaw); }
 
-  /** Dialogue in sandbox: show each line briefly as a toast and resolve right away. */
-  dialogue(idOrLines) {
-    const lines = Array.isArray(idOrLines) ? idOrLines : (idOrLines?.lines || []);
-    const first = lines.find((l) => l && l.text);
-    if (first) this.session?.hud?.toast(String(first.text).replace(/[{}*]/g, ''), 'normal');
-    return Promise.resolve();
+  /**
+   * Dialogue in sandbox: show the first line as a toast and resolve right away. Ids from
+   * story/script.js (NPCs and triggers in test rooms use them) resolve through its resolveLines.
+   */
+  async dialogue(idOrLines) {
+    let lines = Array.isArray(idOrLines) ? idOrLines : idOrLines?.lines;
+    if (!lines && typeof idOrLines === 'string') {
+      try { lines = (await import('../../story/script.js')).resolveLines?.(idOrLines)?.lines; } catch { lines = null; }
+    }
+    const first = (lines || []).find((l) => l && l.text);
+    if (first && this.session) this.session.hud?.toast(String(first.text).replace(/[{}*]/g, ''), 'normal');
   }
 
   async cutscene(fn) {

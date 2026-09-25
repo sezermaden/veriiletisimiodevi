@@ -20,6 +20,21 @@ function tryImport(path) {
   return modCache.get(path);
 }
 
+/**
+ * Subtitle size classes + the --ink-hero / --ink-murk tokens for the menus. During play the HUD
+ * drives those tokens from the session's real team colours (Turf Clash uses its own pairs), and
+ * they stay behind after the session ends — so every return to the menus re-applies the palette.
+ */
+function applyUiSettings() {
+  const size = settings.get('gameplay.subtitleSize') || 'medium';
+  document.body.classList.toggle('subs-small', size === 'small');
+  document.body.classList.toggle('subs-large', size === 'large');
+  const c = settings.inkColors();
+  const root = document.documentElement.style;
+  root.setProperty('--ink-hero', c.hero);
+  root.setProperty('--ink-murk', c.murk);
+}
+
 let installed = false;
 /** One-time wiring of the UI layer into the app. Safe to call repeatedly. */
 export function install(app) {
@@ -27,17 +42,8 @@ export function install(app) {
   installed = true;
   app.onPause = () => app.ui.push(new PauseScreen(app));
   setHome((a) => showMainMenu(a));
-  const apply = () => {
-    const size = settings.get('gameplay.subtitleSize') || 'medium';
-    document.body.classList.toggle('subs-small', size === 'small');
-    document.body.classList.toggle('subs-large', size === 'large');
-    const c = settings.inkColors();
-    const root = document.documentElement.style;
-    root.setProperty('--ink-hero', c.hero);
-    root.setProperty('--ink-murk', c.murk);
-  };
-  apply();
-  settings.onChange((p) => { if (p.startsWith('gameplay') || p === '*') apply(); });
+  applyUiSettings();
+  settings.onChange((p) => { if (p.startsWith('gameplay') || p === '*') applyUiSettings(); });
 }
 
 /** The mode object for a stage: story (w*), turf (turf-*), else sandbox. Missing modules fall back. */
@@ -102,6 +108,7 @@ export async function startStage(app, stageId, opts = {}) {
 export function ensureMenuScene(app) {
   if (!app.menuScene) new MenuScene(app);   // registers itself as app.menuScene
   else if (!app.session) app.menuScene.show();
+  if (!app.session) applyUiSettings();       // take the menu tokens back from the last session's HUD
   return app.menuScene;
 }
 

@@ -147,9 +147,11 @@ export class Projectiles {
       if (worldHit) {
         if (p.onWorld && p.onWorld(p, worldHit)) { continue; }
         p.pos.copy(worldHit.point);
-        if (p.paint && ink) ink.paint(worldHit.point, p.paint.radius, p.team, worldHit.normal, { source: p.owner });
+        // the directly-hit moving collider gets the real projectile (with damage) below, so the
+        // splat notification must skip it to avoid a second, damage-less stand-in hit
+        if (p.paint && ink) { S.level._skipDynamic = worldHit.dynamic; ink.paint(worldHit.point, p.paint.radius, p.team, worldHit.normal, { source: p.owner }); S.level._skipDynamic = null; }
         if (p.splash) this._splash(p, worldHit.point);
-        if (!p.paint) worldHit.dynamic?.owner?.onInkHit?.(p, worldHit);   // painted hits notify via ink.onSplat
+        worldHit.dynamic?.owner?.onInkHit?.(p, worldHit);
         if (p.onHit) p.onHit(p, worldHit);
         this._impactFx(p, worldHit.point, worldHit.normal, false);
         this.kill(p);

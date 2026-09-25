@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import { Dialogue, storyRoot } from './dialogue.js';
 import { Screen } from '../ui/screens.js';
 import { TEAM_HERO } from '../ink/ink-system.js';
+import { SUB_INFO, SPECIAL_INFO } from '../weapons/base.js';
 
 export const EASE = {
   linear: (t) => t,
@@ -33,6 +34,13 @@ export function heroInkHex(session) {
   try { return '#' + session.ink.color(session.player?.team ?? TEAM_HERO).getHexString(); } catch { return '#ff8a1f'; }
 }
 
+/** Names of the equipped kit for {kitName} / {subName} / {specialName} in dialogue text. */
+export function kitVars(session) {
+  const def = session.player?.kit?.def;
+  if (!def) return null;
+  return { kitName: def.name, subName: SUB_INFO[def.sub]?.name, specialName: SPECIAL_INFO[def.special]?.name };
+}
+
 export class Director {
   constructor(session) {
     this.session = session;
@@ -42,7 +50,7 @@ export class Director {
     this.time = 0;
     this.disposed = false;
     this.dialogue = new Dialogue({
-      parent: this.root, audio: session.audio, input: session.input, ink: () => heroInkHex(session),
+      parent: this.root, audio: session.audio, input: session.input, ink: () => heroInkHex(session), vars: () => kitVars(session),
       onLine: (line) => { this.speaking = line.who; },
       onEnd: () => { this.speaking = null; },
     });
@@ -322,6 +330,14 @@ class DirectorDriver extends Screen {
   }
 
   onBack() { /* never pops itself on B/Esc */ }
+
+  /** Popped (quit to menu, ui.clear on a new session): tear the director down with it, so its
+   *  dialogue box, holds and cutscene models don't outlive the session. directorFor() makes a
+   *  fresh one if the same session needs it again. */
+  onExit() {
+    if (!this.director.disposed) this.director.dispose();
+    if (this.session.__storyDirector === this.director) this.session.__storyDirector = null;
+  }
 }
 
 /** The session's director: the StoryMode's, or a self-driving one created on demand. */

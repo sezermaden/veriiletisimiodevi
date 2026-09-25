@@ -97,6 +97,7 @@ export class TurfBot extends Entity {
       inp.move.x = inp.move.y = 0;
       inp.fire = inp.swim = false;
     }
+    p.botFire = inp.fire;              // specials that block the main weapon (Ink Jet) read this
     p.swimToggled = inp.swim;          // honour the swim-toggle setting path in Player.step
     p.step(dt, inp, this.aimYaw);
     if (p.alive && !p.submerged && !p.frozen) this.separate();

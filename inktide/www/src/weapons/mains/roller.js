@@ -187,7 +187,6 @@ export class Roller extends MainWeapon {
           _g.copy(p).addScaledVector(_right, side * 0.3);
           S.ink.paint(_g, s.laneR * 0.78, w.team, n, { source: w });
         }
-        ground.dynamic?.owner?.onInkHit?.({ team: w.team, owner: w, damage: 0, vel: _fwd.clone(), paint: { radius: s.laneR }, pos: p.clone() }, ground);
       } else {
         w.onOutOfInk?.();
       }

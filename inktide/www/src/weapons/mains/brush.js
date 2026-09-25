@@ -139,7 +139,6 @@ export class Brush extends MainWeapon {
       this.paintAcc = 0;
       if (w.useInk(s.runInkPerM * d)) {
         S.ink.paint(g.point, s.laneR * (0.9 + Math.random() * 0.2), w.team, g.normal, { source: w });
-        g.dynamic?.owner?.onInkHit?.({ team: w.team, owner: w, damage: 0, vel: _fwd.clone(), paint: { radius: s.laneR }, pos: g.point.clone() }, g);
       } else w.onOutOfInk?.();
     }
     const speed = Math.hypot(w.velocity.x, w.velocity.z);

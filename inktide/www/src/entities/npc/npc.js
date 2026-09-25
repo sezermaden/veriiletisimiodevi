@@ -75,8 +75,8 @@ class Npc extends Entity {
         away.normalize();
         const side = new THREE.Vector3(away.z, 0, -away.x);
         const h = this.model.height || 1.5;
-        const cam = pp.clone().addScaledVector(away, 1.9).addScaledVector(side, 0.85).setY(pp.y + Math.max(1.5, h * 0.95));
-        const tgt = np.clone().setY(np.y + h * 0.72).addScaledVector(side, -0.15);
+        const cam = pp.clone().addScaledVector(away, 1.5).addScaledVector(side, 1.45).setY(pp.y + Math.max(1.65, h * 1.05));
+        const tgt = np.clone().lerp(pp, 0.28).setY(np.y + Math.max(0.8, h * 0.62));
         await cs.camera(cam, tgt, 0.55, 'out');
         await cs.say(this._lines());
       } else {
@@ -96,7 +96,7 @@ class Npc extends Entity {
     const busy = dir?.busy || false;
     // talk on Interact (edge read per frame)
     if (this.near && !this.talkingNow && !busy && pl.alive && !pl.frozen && S.input.justPressed('interact') && !(dir?.dialogue?.recentlyEnded?.())) {
-      this.talk();
+      this.talk().catch((e) => { console.error('npc talk', e); this.talkingNow = false; });
     }
     // turn toward the player while near / talking
     let want = 0;

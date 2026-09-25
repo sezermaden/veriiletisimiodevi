@@ -1,7 +1,8 @@
 // Turf Clash arena: SKATE CANYON (heights). A walled skatepark at dusk: a sunken centre bowl you can
 // cross (down one wall, up the other) or skirt along the flank strips, a raised deck with a
 // quarter-pipe ramp on each side (high ground; its other faces are climbable), funboxes, a
-// kicker, grind rails, a wall-ride along the canyon wall and neon everywhere. Point-symmetric.
+// kicker, grind rails, a wall-ride along the canyon wall, a storm-drain grate (can't be inked) and
+// neon everywhere. Point-symmetric.
 import { block, box, ramp } from '../kit.js';
 import { turfArena, D } from '../../turf/arena-kit.js';
 
@@ -9,13 +10,9 @@ const PI = Math.PI;
 const conc = (o = {}) => ({ mat: 'concrete', color: '#f4f0f6', ...o });
 const WALL = { mat: 'plaster', color: '#f3c9e4', paint: false };
 const SCENERY = (o) => ({ collide: false, paint: false, castShadow: false, ...o });
-/** Visual-only rooftops around the park (the arena sits on a tower block at dusk). */
+/** The tower block the rooftop park sits on (visual only). */
 const skyline = [
   box(-37, -40, -24, 37, -3.1, 24, SCENERY({ mat: 'brick', color: '#c795b4' })),
-  box(-64, -40, -50, -44, -12, -16, SCENERY({ mat: 'plaster', color: '#9aa8e0' })),
-  box(-62, -40, 12, -44, -15, 40, SCENERY({ mat: 'brick', color: '#d39aa8' })),
-  box(44, -40, -40, 64, -14, -10, SCENERY({ mat: 'brick', color: '#d39aa8' })),
-  box(44, -40, 14, 62, -11, 48, SCENERY({ mat: 'plaster', color: '#9aa8e0' })),
 ];
 
 /** Grind rail: a thin bar on two posts (jump over it or duck behind it). */
@@ -61,7 +58,9 @@ export default turfArena({
     block(-18.5, 0, 19, 44, -1, 1, conc()),                                    // x -28..-9
     block(-31.5, -14, 7, 16, -1, 1, conc()),                                   // behind the pad
     block(-31.5, 14, 7, 16, -1, 1, conc()),
-    block(0, -14, 18, 16, -1, 1, conc({ color: '#eee8f2' })),                  // south strip x ±9
+    box(-9, -1, -18.5, 9, 0, -6, conc({ color: '#eee8f2' })),                   // south strip x ±9
+    box(-9, -1, -22, 2, 0, -18.5, conc({ color: '#eee8f2' })),
+    box(2, -1, -22, 9, 0, -18.5, { mat: 'grate', color: '#c9d2dc' }),         // storm-drain grate (no ink)
     // bowl walls (quarter pipes down to the bowl floor)
     ramp(-9, -1.5, -6, -5.5, 0, 6, '-x', conc({ color: '#b8dcff' })),
     ramp(-9, -1.5, -6, 9, 0, -2.6, '-z', conc({ color: '#b8dcff' })),

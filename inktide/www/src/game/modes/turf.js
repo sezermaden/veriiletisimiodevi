@@ -9,7 +9,7 @@
 //   test hooks: mode.timeLeft = 5 (jump to the end), mode.phase, mode.stats, mode.nav.stats
 import * as THREE from 'three';
 import { TEAM_HERO, TEAM_MURK } from '../../ink/ink-system.js';
-import { TURF_PALETTES } from '../../engine/settings.js';
+import { TURF_PALETTES, INK_PALETTES, settings } from '../../engine/settings.js';
 import { save } from '../../engine/save.js';
 import { KITS, MAINS } from '../../weapons/base.js';
 import { NavGraph } from '../../turf/nav.js';
@@ -30,7 +30,6 @@ const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math
 const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
 const _hc = new THREE.Vector3();
-const UP = new THREE.Vector3(0, 1, 0);
 
 export class TurfMode {
   constructor(app, stageId, opts = {}) {
@@ -62,7 +61,9 @@ export class TurfMode {
     const S = session, def = S.level.def, P = S.player;
 
     // ---- team colours ----
-    const pal = this.opts.palette || TURF_PALETTES[Math.floor(Math.random() * TURF_PALETTES.length)];
+    // random team pair per match; the colour-blind setting always gets its yellow/blue pair
+    const cb = settings.get('gameplay.inkPalette') === 'colorblind' ? { a: INK_PALETTES.colorblind.hero, b: INK_PALETTES.colorblind.murk } : null;
+    const pal = this.opts.palette || cb || TURF_PALETTES[Math.floor(Math.random() * TURF_PALETTES.length)];
     this.colors = { a: pal.a, b: pal.b };
     S.ink.setTeamColors(pal.a, pal.b);
     this.css = { a: pal.a, b: pal.b };
@@ -354,6 +355,14 @@ export class TurfMode {
       p.kit.special?.end?.();
       p.frozen = true;
       p.velocity.set(0, Math.min(0, p.velocity.y), 0);
+      // the splatted come back quietly at their base: no drop-in splash / spawn ink / SFX over the
+      // judging, and no lingering "dead" vignette on the player's screen
+      if (!p.alive) {
+        const s = this.spawnFor(p);
+        p.spawn(_v.fromArray(s.pos), s.yaw);
+        p.invulnerable = 0;
+        if (p === S.player) { S.camRig.snap(p); S.hud.clearScreenInk?.(); }
+      }
     }
     S.projectiles.clear();
     this.result = this._score();
@@ -466,6 +475,7 @@ export class TurfMode {
       case 'overhead':
         if (this.phaseT >= OVERHEAD) {
           this._setPhase('judges');
+          this.judges.group.visible = true;
           this.overlay.caption('');
           this.judges.drumroll();
           S.audio?.sfx('turf_drumroll', { volume: 0.9, dur: JUDGE_DRUM });
@@ -524,6 +534,7 @@ export class TurfMode {
     this.camOverride = { position: this.ovFrom.position.clone(), target: this.ovFrom.target.clone() };
     S.camRig.override = this.camOverride;
     S.hud.show(false);
+    this.judges.group.visible = false;      // the booth canopy would sit in the middle of the shot
     this.overlay.caption('JUDGING…', 'judging');
     S.audio?.sfx('whoosh', { volume: 0.6 });
     this._setPhase('overhead');
@@ -586,8 +597,16 @@ export class TurfMode {
       const k = Math.min(1, this.phaseT / JUDGE_END);
       this.camOverride.position.copy(this._judgeCam0).lerp(this.camOverride.target, k * 0.25);
     }
-    // HUD scoreboard
-    if (this.phase === 'play' || this.phase === 'ready') S.hud.turf(this.timeLeft, this._roster(TEAM_HERO), this._roster(TEAM_MURK));
+    // HUD scoreboard: only touch the DOM when the shown second or someone's alive state changes
+    if (this.phase === 'play' || this.phase === 'ready') {
+      const sec = Math.floor(this.timeLeft);
+      let mask = 0;
+      for (let i = 0; i < this.allPlayers.length; i++) if (this.allPlayers[i].alive) mask |= 1 << i;
+      if (sec !== this._hudSec || mask !== this._hudMask) {
+        this._hudSec = sec; this._hudMask = mask;
+        S.hud.turf(this.timeLeft, this._roster(TEAM_HERO), this._roster(TEAM_MURK));
+      }
+    }
     // map
     this.map.setOpen(this.mapHeld && this.phase === 'play' && S.player.alive && !this.jumps.isJumping(S.player));
     this.map.update(dt);
@@ -633,4 +652,3 @@ export class TurfMode {
   }
 }
 
-void UP;

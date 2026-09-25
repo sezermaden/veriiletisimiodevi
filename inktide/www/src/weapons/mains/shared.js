@@ -123,10 +123,11 @@ const BEAM_GEO = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true).translate(0, 0.
 const _Y = new THREE.Vector3(0, 1, 0);
 /** A glowing additive line segment (laser sights, shot tracers). */
 export class Beam {
-  constructor(scene, color, radius = 0.02, opacity = 0.8) {
+  constructor(scene, color, radius = 0.02, opacity = 0.8, additive = true) {
     this.scene = scene;
     this.radius = radius;
-    this.mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    // additive reads as light on dark backgrounds; normal blending keeps team colour on bright ones
+    this.mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: false, toneMapped: false });
     this.mesh = new THREE.Mesh(BEAM_GEO, this.mat);
     this.mesh.frustumCulled = false;
     this.mesh.visible = false;

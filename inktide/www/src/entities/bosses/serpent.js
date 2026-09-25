@@ -11,7 +11,7 @@
 //   { type: 'boss-serpent', pos (arena centre), vats: [[x,y,z]…], vatR, sludgeY, seaY, ring }
 import * as THREE from 'three';
 import { registerEntity } from '../base.js';
-import { Boss, Beam, G, UP, DOWN, TEAM_MURK, clamp, lerp, smooth, easeOut, hash01 } from './common.js';
+import { Boss, Beam, G, UP, DOWN, TEAM_MURK, clamp, lerp, smooth, easeOut, hash01, mergeStatic } from './common.js';
 
 const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
@@ -28,7 +28,7 @@ const _hc = new THREE.Vector3();
 const SEGS = 14;
 const SPACING = 1.55;
 const CAP = 1024;
-const CELL_HP = [0, 140, 175, 175];
+const CELL_HP = [0, 140, 175, 210];
 const WEAK = [null, [3, 7, 11], [5, 9, 13], [2, 6, 10]];
 const PH = [null,
   { arc: 11, rise: 1.0, beams: 1, aim: 0.95, sweep: 0.85, rest: 1.3 },
@@ -227,6 +227,7 @@ export class Serpent extends Boss {
       if (i % 4 === 0) this.anchors.push(g);
     }
     this.anchors.push(head);
+    mergeStatic(this, root);
 
     // ---- per-vat sludge surfaces (animated, bubble when the serpent is about to surface) ----
     const sludge = this.sludgeMat = this.own(new THREE.MeshStandardMaterial({ color: P.ink.clone().multiplyScalar(0.55), emissive: P.ink, emissiveIntensity: 0.35, roughness: 0.15, metalness: 0.1 }));
@@ -443,7 +444,8 @@ export class Serpent extends Boss {
     this._updateBody();
     this._contact();
     const st = this.state;
-    const expose = st === 'arc' || st === 'dive' || (this._onCircle && (st === 'circle' || st === 'beam-aim' || st === 'beam-fire'));
+    if (st === 'surface' || st === 'circle') this._cellLock = false;
+    const expose = !this._cellLock && (st === 'arc' || st === 'dive' || (this._onCircle && (st === 'circle' || st === 'beam-aim' || st === 'beam-fire')));
     for (const sg of this.segs) if (sg.part && sg.weakPhase === this.phase) sg.part.setOpen(expose && sg.visible && !sg.part.broken);
   }
 
@@ -679,6 +681,7 @@ export class Serpent extends Boss {
     });
     // the current flight carries on; the new cells open on the next surfacing (or circling)
     this._chained = true;
+    this._cellLock = true;
   }
 
   // ---------------------------------------------------------------------------------------------

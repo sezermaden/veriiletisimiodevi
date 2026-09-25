@@ -4,6 +4,7 @@ import { UiScreen, promptBar, heading, tabBar, settingRow, handleRowInput, confi
 import { settings, INK_PALETTES } from '../engine/settings.js';
 import { REBINDABLE, ACTION_LABELS, keyName, padName } from '../engine/game-input.js';
 import { audio } from '../engine/audio.js';
+import { PRISTINE_SETTINGS } from './defaults.js';
 
 const TABS = ['AUDIO', 'CONTROLS', 'VIDEO', 'GAMEPLAY'];
 const SECTION = ['audio', 'controls', 'video', 'gameplay'];
@@ -146,7 +147,8 @@ export class OptionsScreen extends UiScreen {
   async resetSection(section, title) {
     const ok = await confirmDialog(this.app, { title, text: 'This cannot be undone.', yes: 'Reset', no: 'Cancel', danger: true });
     if (!ok) return;
-    settings.reset(section);
+    // per-key set from a pristine snapshot (fires every listener, persists; see ui/defaults.js)
+    for (const [k, v] of Object.entries(PRISTINE_SETTINGS[section] || {})) settings.set(`${section}.${k}`, structuredClone(v));
     audio.sfx('ui_equip', { volume: 0.5 });
     const keep = this.focus.current?.querySelector('.row-label')?.textContent;
     this.renderTab();

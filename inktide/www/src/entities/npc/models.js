@@ -80,6 +80,7 @@ function stripeTexture(a = '#f4f4f4', b = '#16141f', n = 14) {
 
 const _v = new THREE.Vector3();
 const _q = new THREE.Quaternion();
+const _e = new THREE.Euler();
 const lerp = (a, b, t) => a + (b - a) * t;
 
 // ---------------------------------------------------------------------------------------------
@@ -173,7 +174,7 @@ class NpcBase {
       const dx = this.lookTarget.x - _v.x, dz = this.lookTarget.z - _v.z, dy = this.lookTarget.y - _v.y;
       const ry = this.root.getWorldQuaternion(_q);
       const worldYaw = Math.atan2(dx, dz);
-      const rootYaw = new THREE.Euler().setFromQuaternion(ry, 'YXZ').y;
+      const rootYaw = _e.setFromQuaternion(ry, 'YXZ').y;
       yaw = Math.atan2(Math.sin(worldYaw - rootYaw), Math.cos(worldYaw - rootYaw));
       yaw = Math.max(-0.9, Math.min(0.9, yaw));
       pitch = Math.max(-0.4, Math.min(0.4, -Math.atan2(dy, Math.hypot(dx, dz)) * 0.6));

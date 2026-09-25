@@ -65,7 +65,10 @@ export class PauseScreen extends UiScreen {
     const obj = s.hud?.el?.objective?.textContent || '';
     this.$('.pc-obj').textContent = obj;
     this.$('.pc-obj').hidden = !obj;
-    this.$('.pc-time').textContent = fmtTime(s.time || 0);
+    // Turf Clash counts down: show the match clock rather than the time played
+    const left = s.mode?.kind === 'turf' || /^turf-/.test(this.stageId) ? s.mode?.timeLeft : null;
+    this.$('.pc-time').textContent = fmtTime(left != null ? Math.max(0, left) : (s.time || 0));
+    this.$('.pc-time').previousElementSibling.textContent = left != null ? 'Time left' : 'Time';
     this.$('.pc-pearls').textContent = String(s.pearls || 0);
   }
 
@@ -103,7 +106,10 @@ export class PauseScreen extends UiScreen {
       const ok = await confirmDialog(app, { title: 'Restart from checkpoint?', text: 'You will respawn at the last checkpoint you reached.', yes: 'Restart', no: 'Cancel' });
       if (!ok || !app.session) return;
       this.resume();
-      app.session.respawnPlayer();
+      const S = app.session, P = S.player;
+      // a splatted player is already on the respawn timer, a frozen one is in a cutscene/dialogue,
+      // and a super-jumping one belongs to the jump system: respawning now would fight those
+      if (P?.alive && !P.frozen && !S.mode?.jumps?.isJumping?.(P)) S.respawnPlayer();
     } else if (id === 'controls') app.ui.push(new ControlsCardScreen(app));
     else if (id === 'options') app.ui.push(new OptionsScreen(app, { inGame: true }));
     else if (id === 'quit') {

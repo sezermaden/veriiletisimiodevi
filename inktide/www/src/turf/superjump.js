@@ -3,7 +3,6 @@
 // high arc and lands with a splash that inks the ground. Used by the player (map + Interact) and
 // by bots (regroup after respawn).
 import * as THREE from 'three';
-import { disposeTree } from '../engine/dispose.js';
 
 const PREP = 0.55, FLY = 1.15;
 const UP = new THREE.Vector3(0, 1, 0);
@@ -27,7 +26,10 @@ export class SuperJumps {
     this.list = [];
   }
 
-  isJumping(actor) { return this.list.some((j) => j.actor === actor); }
+  isJumping(actor) {
+    for (let i = 0; i < this.list.length; i++) if (this.list[i].actor === actor) return true;
+    return false;
+  }
 
   /**
    * @param {Player} actor
@@ -134,6 +136,5 @@ export class SuperJumps {
 
   dispose() {
     for (let i = this.list.length - 1; i >= 0; i--) this._end(i, false);
-    void disposeTree;
   }
 }

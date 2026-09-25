@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import { registerEntity } from '../base.js';
 import {
   Boss, G, UP, TEAM_MURK, clamp, lerp, smooth, easeOut, angleDiff, turnToward, emblemTexture, hazardTexture,
-  chevronTexture, canvasTex,
+  chevronTexture, canvasTex, mergeStatic,
 } from './common.js';
 import { Pilot } from './pilots.js';
 
@@ -231,6 +231,7 @@ export class Grinder extends Boss {
     // explosion anchors for the defeat sequence
     this.anchors.push(this.tankG, this.turret, this.cab, this.roller, this.stacks[0], this.stacks[1], this.body);
     this.model.traverse((o) => { if (o.isMesh && o.material === glass) o.castShadow = false; });
+    mergeStatic(this, this.model);
   }
 
   // ---------------------------------------------------------------------------------------------

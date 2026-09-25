@@ -43,8 +43,14 @@ export default function testBosses() {
     return def;
   }
   if (which === 'grinder') {
-    brushes.push(cyl(-10, 0, -8, 1.2, 5), cyl(10, 0, -8, 1.2, 5));
-    def.entities.push(ent('boss-grinder', 0, 0, -10, { yaw: 0, arena: { center: [0, 0, 0], half: [30, 30] } }));
+    // a 38 m walled yard like 1-B, with two pillars to ram
+    brushes.push(
+      box(-20, 0, -20, 20, 3, -19, { mat: 'metal' }), box(-20, 0, 19, 20, 3, 20, { mat: 'metal' }),
+      box(-20, 0, -19, -19, 3, 19, { mat: 'metal' }), box(19, 0, -19, 20, 3, 19, { mat: 'metal' }),
+      cyl(-10, 0, -7, 1.25, 5), cyl(10, 0, 7, 1.25, 5),
+    );
+    def.spawn = { pos: [0, 0, 14], yaw: PI };
+    def.entities.push(ent('boss-grinder', 0, 0, -8, { yaw: 0, arena: { center: [0, 0, 0], half: [19, 19] } }));
   } else if (which === 'bucketeer') {
     brushes.push(block(0, 0, 5, 5, 0, 5.5, { mat: 'brick' }));
     def.entities.push(ent('boss-bucketeer', 0, 0, 0, { yaw: 0, arena: { center: [0, 0, 0], radius: 12 }, tower: [0, 5.5, 0] }));

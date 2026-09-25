@@ -6,12 +6,12 @@ import * as THREE from 'three';
 import { G } from './common.js';
 
 /** Try entities/npc makeNpcModel(who) → { obj, handle } or null. */
-export async function tryNpcModel(who) {
+export async function tryNpcModel(who, session = null) {
   try {
     const m = await import('../npc/index.js');
     const f = m.makeNpcModel || m.default?.makeNpcModel;
     if (typeof f !== 'function') return null;
-    const r = f(who);
+    const r = f(who, { session });
     const obj = r?.isObject3D ? r : (r?.root || r?.group || r?.object || r?.model || null);
     if (!obj?.isObject3D) return null;
     return { obj, handle: r };
@@ -37,8 +37,9 @@ export class Pilot {
     this.fallback.root.scale.setScalar(height / this.fallback.h);
     this.npc = null;
     this._npcUpdateOk = true;
-    tryNpcModel(who).then((r) => {
-      if (!r || this.disposed) return;
+    tryNpcModel(who, boss.session).then((r) => {
+      if (!r) return;
+      if (this.disposed) { r.handle?.dispose?.(); return; }
       const box = new THREE.Box3().setFromObject(r.obj);
       const h = Math.max(0.01, box.max.y - box.min.y);
       // the cockpit shows head + shoulders: scale so the whole model is ~1.6× the fallback bust
@@ -56,8 +57,13 @@ export class Pilot {
     this.t += dt;
     this.mood = mood;
     if (this.npc) {
-      if (this._npcUpdateOk && typeof this.npc.handle?.update === 'function') {
-        try { this.npc.handle.update(dt, { talking: mood === 'angry' || mood === 'panic', mood }); } catch { this._npcUpdateOk = false; }
+      const h = this.npc.handle;
+      if (mood !== this._npcMood) {
+        this._npcMood = mood;
+        try { h?.setMood?.(mood === 'panic' ? 'shock' : mood === 'idle' ? null : mood); } catch { /* optional */ }
+      }
+      if (this._npcUpdateOk && typeof h?.update === 'function') {
+        try { h.update(dt, { talking: mood === 'angry' || mood === 'panic', mood }); } catch { this._npcUpdateOk = false; }
       }
       const r = this.npc.obj;
       r.rotation.z = mood === 'panic' ? Math.sin(this.t * 22) * 0.12 : Math.sin(this.t * 1.3) * 0.03;
@@ -66,7 +72,10 @@ export class Pilot {
     this.fallback.update(this.t, dt, mood);
   }
 
-  dispose() { this.disposed = true; }
+  dispose() {
+    this.disposed = true;
+    try { this.npc?.handle?.dispose?.(); } catch { /* ignore */ }
+  }
 }
 
 // ---------------------------------------------------------------------------------------------

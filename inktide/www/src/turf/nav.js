@@ -277,22 +277,25 @@ export class NavGraph {
     this.eStart[n] = k;
 
     // ---- 4. reachability from both bases (walk graph, directed) ----
-    this.reach = new Uint8Array(n);   // bit 1: reachable from Alpha base, bit 2: from Bravo base
+    // (this.reach stays unset while flooding so nearest() can still seed from any node)
+    this.reach = null;
+    const reach = new Uint8Array(n);   // bit 1: reachable from Alpha base, bit 2: from Bravo base
     const B = this.S.level.def.bases || {};
     for (const [bit, pos] of [[1, B.alpha], [2, B.bravo]]) {
       if (!pos) continue;
       const s = this.nearest(_a.fromArray(pos), 4);
       if (s < 0) continue;
       const q = [s];
-      this.reach[s] |= bit;
+      reach[s] |= bit;
       while (q.length) {
         const i = q.pop();
         for (let e = this.eStart[i]; e < this.eStart[i + 1]; e++) {
           const j = this.eTo[e];
-          if (!(this.reach[j] & bit)) { this.reach[j] |= bit; q.push(j); }
+          if (!(reach[j] & bit)) { reach[j] |= bit; q.push(j); }
         }
       }
     }
+    this.reach = reach;
 
     // A* scratch
     this.g = new Float32Array(n);
@@ -335,11 +338,16 @@ export class NavGraph {
     }
   }
 
-  /** Closest node to a position (vertical distance weighted ×2.5); -1 if none within maxDist. */
+  /**
+   * Closest node to a position (vertical distance weighted ×2.5); -1 if none within maxDist.
+   * Nodes no base can reach (e.g. floor sampled inside a solid block) are never returned: snapping
+   * onto one makes every path from there fail.
+   */
   nearest(pos, maxDist = 3, team = 0) {
     let best = -1, bd = maxDist * maxDist;
+    const reach = this.reach;
     this._near(pos.x, pos.z, maxDist, (i) => {
-      if (team && !(this.reach[i] & team)) return;
+      if (reach && (team ? !(reach[i] & team) : !reach[i])) return;
       const dx = this.px[i] - pos.x, dz = this.pz[i] - pos.z, dy = (this.py[i] - pos.y) * 2.5;
       const d = dx * dx + dz * dz + dy * dy;
       if (d < bd) { bd = d; best = i; }
@@ -348,6 +356,14 @@ export class NavGraph {
   }
 
   pos(i, out) { return out.set(this.px[i], this.py[i], this.pz[i]); }
+
+  /** Fraction (0..1) of the floor within r of node i that `team` owns. */
+  inkFrac(i, r, team) {
+    const f = this.face[i];
+    if (f < 0) return 0;
+    _p.set(this.px[i], this.py[i], this.pz[i]);
+    return this.ink.inkFraction(f, _p, r, team);
+  }
 
   /** Is node i on the given team's ink right now? */
   inkAt(i) {

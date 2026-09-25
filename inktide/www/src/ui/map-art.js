@@ -76,7 +76,8 @@ export function mapSVG() {
   }
   w2 += `<ellipse class="m-bowl" cx="480" cy="440" rx="44" ry="26"/><ellipse class="m-bowl-in" cx="480" cy="440" rx="26" ry="14"/>`;
   for (let i = 0; i < 22; i++) w2 += `<circle class="m-tree" cx="${f(250 + R() * 520)}" cy="${f(120 + R() * 360)}" r="${f(7 + R() * 7)}"/>`;
-  w2 += `<text class="m-label" x="250" y="80">CORAL HEIGHTS</text>`;
+  // right of the world banner (top-left of the map box), which otherwise covers it in the World 2 view
+  w2 += `<text class="m-label" x="560" y="74">CORAL HEIGHTS</text>`;
 
   // ---- world 3: Murk Refinery ----
   let w3 = '';

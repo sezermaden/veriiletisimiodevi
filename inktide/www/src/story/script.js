@@ -11,7 +11,8 @@
 //
 // A line is { who, text, mood? }. Moods: happy, laugh, angry, sad, shock, smug, worried,
 // determined (anything else = neutral). Text may contain control tokens {fire} {swim} {jump} {sub}
-// {special} {interact} (rendered as button prompts) and *emphasis*.
+// {special} {interact} (rendered as button prompts), {kitName} {subName} {specialName} (the equipped
+// kit's names, filled in by the in-game director) and *emphasis*.
 // DIALOGUE entries written as { radio: true, lines } play as non-blocking radio chatter (the player
 // keeps control and lines auto-advance); plain arrays are conversations (the world pauses).
 
@@ -350,11 +351,11 @@ export const STAGE_META = {
 export const DIALOGUE = {
   // ---- 1-1 First Splash (tutorial) ----
   'w1-1.move': [
-    brine('First things first. Walk with WASD or the left stick. Look around with the mouse or the right stick.'),
+    brine('First things first. Walk with the left stick or your movement keys, and look around with the right stick or the mouse.'),
     brine('Jump with {jump}. Squidkin kids are bouncy. It\'s a whole thing.'),
   ],
   'w1-1.shoot': [
-    brine('That\'s your Splash Blaster. Hold {fire} to paint. The ground, the walls: everything you ink is yours.'),
+    brine('That\'s your {kitName}. Hold {fire} to paint. The ground, the walls: everything you ink is yours.'),
     pix('Aim with the crosshair! And don\'t worry about waste. There\'s no such thing as too much ink.', 'happy'),
   ],
   'w1-1.swim': [
@@ -372,10 +373,10 @@ export const DIALOGUE = {
     pix('Crosshair on target, hold {fire}, and stay out of their goop!'),
   ],
   'w1-1.sub': [
-    brine('Your kit comes with a Burst Bomb. Throw it with {sub}. It costs a big gulp of ink, so pick your moment.'),
+    brine('Your sub weapon is the {subName}. Use it with {sub}. It costs a big gulp of ink, so pick your moment.'),
   ],
   'w1-1.special': [
-    pix('Every bit of turf you paint charges your special. When the gauge is full, hit {special} for a Tidal Slam!', 'happy'),
+    pix('Every bit of turf you paint charges your special. When the gauge is full, hit {special} to unleash your {specialName}!', 'happy'),
     pix('Warning: extremely cool.', 'smug'),
   ],
   'w1-1.checkpoint': radio(pix('That flag is a checkpoint! Touch it, and if you get splatted you\'ll pop back right there.')),

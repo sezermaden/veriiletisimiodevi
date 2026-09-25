@@ -15,6 +15,7 @@
 // (slow-mo, hero-ink explosions, collapse hook, 'bossDefeated').
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Entity, spawnEntity } from '../base.js';
 import { TEAM_HERO, TEAM_MURK } from '../../ink/ink-system.js';
 import { charMat } from '../../actors/materials.js';
@@ -183,6 +184,8 @@ export class BossPart {
     this.alive = true;
     this.prop = true;
     this.isBossPart = true;
+    // hit spheres are not bodies: solid boss bodies use level colliders (session._separate skips these)
+    this.solid = o.solid ?? false;
     this.hitRadius = o.radius ?? 0.6;
     this.hitHeight = o.height ?? 0.4;
     this.anchor = o.anchor || boss.group;
@@ -196,6 +199,7 @@ export class BossPart {
     this.broken = false;
     this.flash = 0;
     this.mats = o.mats || [];       // emissive materials that pulse/flash with this part
+    for (const m of this.mats) if (!m.userData.baseColor) m.userData.baseColor = m.color.clone();
     this.glow = o.glow || null;     // optional glow sprite
     this.glowSize = o.glowSize ?? 1;
     this.baseGlow = o.baseGlow ?? 2.3;
@@ -757,6 +761,54 @@ export class Boss extends Entity {
     super.dispose();
     disposeTree(this.group);
   }
+}
+
+/**
+ * Draw-call diet: for every node under `root`, merge its direct child meshes that share a material
+ * (and shadow flags) into one mesh, baking their local transforms. Nodes (the animated joints) are
+ * untouched, so animation keeps working. Skips invisible meshes (colliders), meshes with children
+ * and anything flagged userData.noMerge. Returns the number of meshes removed.
+ */
+export function mergeStatic(boss, root) {
+  const nodes = [];
+  root.traverse((o) => { if (!o.isMesh && !o.isSprite) nodes.push(o); });
+  let removed = 0;
+  for (const node of nodes) {
+    const buckets = new Map();
+    for (const c of node.children) {
+      if (!c.isMesh || c.isInstancedMesh || !c.visible || c.userData.noMerge || c.children.length || Array.isArray(c.material)) continue;
+      const g = c.geometry;
+      const sig = Object.keys(g.attributes).sort().join(',');
+      const key = `${c.material.uuid}|${g.index ? 'i' : 'n'}|${sig}|${c.castShadow ? 1 : 0}${c.receiveShadow ? 1 : 0}`;
+      let list = buckets.get(key);
+      if (!list) buckets.set(key, (list = []));
+      list.push(c);
+    }
+    for (const list of buckets.values()) {
+      if (list.length < 2) continue;
+      const geos = list.map((c) => { c.updateMatrix(); return c.geometry.clone().applyMatrix4(c.matrix); });
+      const merged = mergeGeometries(geos, false);
+      for (const g of geos) g.dispose();
+      if (!merged) continue;
+      boss.own(merged);
+      const m = new THREE.Mesh(merged, list[0].material);
+      m.castShadow = list[0].castShadow;
+      m.receiveShadow = list[0].receiveShadow;
+      m.renderOrder = list[0].renderOrder;
+      node.add(m);
+      for (const c of list) node.remove(c);
+      removed += list.length - 1;
+    }
+  }
+  // tiny bits (rivets, teeth, studs) don't need to cast shadows
+  root.updateMatrixWorld(true);
+  root.traverse((o) => {
+    if (!o.isMesh || !o.castShadow) return;
+    if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+    const s = o.getWorldScale(_w);
+    if (o.geometry.boundingSphere.radius * Math.max(s.x, s.y, s.z) < 0.22) o.castShadow = false;
+  });
+  return removed;
 }
 
 export const INVISIBLE = new THREE.MeshBasicMaterial({ visible: false });

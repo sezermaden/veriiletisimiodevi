@@ -63,6 +63,7 @@ export class MainMenuScreen extends UiScreen {
 
   onResume() {
     this.app.menuScene?.setShot('menu');
+    try { audio.playMusic('menu'); } catch { /* optional */ }
     this.refresh();
   }
 

@@ -18,7 +18,7 @@ function padChip(i) {
 const keyChip = (c) => `<span class="kbd">${esc(keyName(c))}</span>`;
 
 export class ControlsCardScreen extends UiScreen {
-  constructor(app) { super(app, { className: 'controls-card', blocksGame: true }); }
+  constructor(app) { super(app, { className: 'controls-card' + (app.session ? ' in-game' : ''), blocksGame: true }); }
 
   build() {
     this.el.innerHTML = `
@@ -29,8 +29,11 @@ export class ControlsCardScreen extends UiScreen {
           <div class="cc-rows"></div>
         </div>
         <div class="cc-actions"><div class="btn cc-back">Back</div><div class="btn cc-rebind">Rebind controls…</div></div>
-        <footer class="cc-foot">${promptBar([['ui_accept', 'Select'], ['ui_back', 'Back']])}</footer>
+        <footer class="cc-foot">${promptBar([['ui_accept', 'Select'], ['ui_up,ui_down', 'Scroll'], ['ui_back', 'Back']])}</footer>
       </div>`;
+    this.body = this.$('.cc-body');
+    this.scrollHint = this.$('.cc-foot .pb-item[data-act="ui_up"]');
+    this.body.addEventListener('scroll', () => this.updateScroll(), { passive: true });
     this.renderRows();
     this.button(this.$('.cc-back'), () => this.onBack(), { autofocus: true, silent: true });
     this.button(this.$('.cc-rebind'), async () => {
@@ -39,7 +42,36 @@ export class ControlsCardScreen extends UiScreen {
     });
   }
 
-  onResume() { this.renderRows(); }
+  onEnter() { requestAnimationFrame(() => this.updateScroll()); }
+  onResume() { this.renderRows(); this.updateScroll(); }
+
+  /** The two buttons sit side by side, so up/down (d-pad, arrows, left stick) scroll the card:
+   *  on a 720p screen the last rows are below the fold and a pad user has no other way to them. */
+  handleInput(input) {
+    const d = input.navPressed();
+    if (d !== 'up' && d !== 'down') return false;
+    const b = this.body;
+    if (b.scrollHeight - b.clientHeight > 2) {
+      b.scrollBy({ top: (d === 'down' ? 1 : -1) * Math.max(60, b.clientHeight * 0.45), behavior: 'smooth' });
+      audio.sfx('ui_move', { volume: 0.3 });
+    }
+    return true;
+  }
+
+  update(dt) {
+    super.update(dt);
+    // right stick: smooth continuous scroll
+    const ry = this.input.stick?.ry || 0;
+    if (Math.abs(ry) > 0.3) this.body.scrollTop += ry * 900 * Math.min(dt, 0.05);
+  }
+
+  updateScroll() {
+    const b = this.body;
+    if (!b) return;
+    const max = b.scrollHeight - b.clientHeight;
+    b.classList.toggle('more', max > 2 && b.scrollTop < max - 2);
+    if (this.scrollHint) this.scrollHint.hidden = max <= 2;
+  }
 
   renderRows() {
     const b = this.input.bindings;

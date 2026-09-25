@@ -13,9 +13,9 @@ import { TEAM_HERO } from '../ink/ink-system.js';
 import { WALK, JUMP, CLIMB, DROP } from './nav.js';
 
 export const DIFFICULTY = {
-  easy: { react: 0.85, aimErr: 0.24, track: 0.6, turn: 4, fireCone: 0.14, sight: 18, subChance: 0.1, specialDelay: [5, 10], strafe: 0.3, retreatHp: 0.2, jump: 0, superJump: 0, engage: 0.75, dodge: 0 },
-  normal: { react: 0.5, aimErr: 0.15, track: 1.0, turn: 7, fireCone: 0.1, sight: 26, subChance: 0.3, specialDelay: [1.5, 5], strafe: 0.75, retreatHp: 0.32, jump: 0.06, superJump: 0.2, engage: 0.9, dodge: 0.15 },
-  hard: { react: 0.22, aimErr: 0.05, track: 2.4, turn: 11, fireCone: 0.075, sight: 33, subChance: 0.5, specialDelay: [0.4, 2.5], strafe: 1, retreatHp: 0.36, jump: 0.14, superJump: 0.4, engage: 1.15, dodge: 0.35 },
+  easy: { errFloor: 0.55, chargeErr: 1.6, react: 0.85, aimErr: 0.24, track: 0.6, turn: 4, fireCone: 0.14, sight: 18, subChance: 0.1, specialDelay: [5, 10], strafe: 0.3, retreatHp: 0.2, jump: 0, superJump: 0, engage: 0.75, dodge: 0, evade: 0.3 },
+  normal: { errFloor: 0.45, chargeErr: 1.35, react: 0.5, aimErr: 0.16, track: 1.0, turn: 7, fireCone: 0.1, sight: 26, subChance: 0.3, specialDelay: [1.5, 5], strafe: 0.75, retreatHp: 0.32, jump: 0.06, superJump: 0.2, engage: 0.9, dodge: 0.15, evade: 0.65 },
+  hard: { errFloor: 0.3, chargeErr: 1.1, react: 0.22, aimErr: 0.05, track: 2.4, turn: 11, fireCone: 0.075, sight: 33, subChance: 0.5, specialDelay: [0.4, 2.5], strafe: 1, retreatHp: 0.36, jump: 0.14, superJump: 0.4, engage: 1.15, dodge: 0.35, evade: 0.9 },
 };
 
 // per weapon class: preferred fight distance, paint aim distance, fire style
@@ -36,10 +36,13 @@ const _e = new THREE.Vector3();
 const _t = new THREE.Vector3();
 const _hc = new THREE.Vector3();
 const _q = new THREE.Vector3();
+const _j = new THREE.Vector3();
+const _jp = new THREE.Vector3();
 const DOWN = new THREE.Vector3(0, -1, 0);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const CLIMB_CHECK = [0.25, 0.6, 0.92];
 const SIDES = [-0.4, 0.4];
+const JUMP_PROBE = [1.2, 2.4, 3.4];
 
 export class BotBrain {
   constructor(bot, mode, difficulty = 'normal') {
@@ -103,6 +106,13 @@ export class BotBrain {
     this.nudge = new THREE.Vector3();
     this.nudgeT = 0;
     this.climbAim = false;
+    this.climbActive = false;     // stepClimb ran this step (edge guard / stuck checks)
+    this.pathDrop = false;        // followPath is steering along a DROP edge this step
+    this.evadeT = 0;              // running from an incoming missile barrage
+    this.holdFireT = 0;
+    this.evadeDir = new THREE.Vector3();
+    this.evadeFrom = null;
+    this.evadeSeenT = -9;
     this.travelled = 0;
     this._prevPos = new THREE.Vector3();
     this.debug = { goals: 0, paths: 0, pathFails: 0, stuck: 0, climbs: 0, climbFails: 0, subs: 0, specials: 0, superJumps: 0 };
@@ -113,6 +123,7 @@ export class BotBrain {
   reset() {
     this.path = null; this.hasGoal = false; this.target = null; this.climb = null;
     this.state = 'regroup'; this.stateT = 0; this.stuckT = 0; this.progT = 0;
+    this.evadeT = 0; this.nudgeT = 0; this.throwT = 0;
     this.specialWait = rnd(...this.D.specialDelay);
     this.lastPos.copy(this.p.position); this._prevPos.copy(this.p.position);
     this.aimDir.set(this.sign, 0, 0);
@@ -146,10 +157,14 @@ export class BotBrain {
     this.dodgeT -= dt;
     this.throwT -= dt;
     this.nudgeT -= dt;
+    this.evadeT -= dt;
 
     // default aim: where we are going
     let aiming = false;
     this.climbAim = false;
+    this.climbActive = false;
+    this.climbSwim = false;
+    this.pathDrop = false;
     const special = p.kit.special;
     if (this.state === 'fight' && this.target) aiming = this.stepFight(dt);
     else if (this.state === 'special') aiming = this.stepSpecial(dt, special);
@@ -159,7 +174,16 @@ export class BotBrain {
     if (this.climbAim) aiming = true;
     if (this.throwT > 0) { this.aimWant.copy(this.throwWant); aiming = true; this.swim = false; this.fire = false; }
     if (this.nudgeT > 0) this.move.copy(this.nudge);
+    if (this.evadeT > 0 && this.state !== 'special' && !this.climbActive) {
+      // missiles are tracking us: keep moving sideways (swim if we can), no shooting
+      if (this.evadeT < 1.3 && !this.evadeFlipped) { this.evadeFlipped = true; if (Math.random() < 0.5) this.evadeDir.negate(); }
+      this.move.copy(this.evadeDir);
+      this.fire = false;
+      this.swim = p.grounded && p.groundInk === p.team;
+      aiming = false;
+    }
 
+    if (this.holdFireT > 0) { this.holdFireT -= dt; this.fire = false; }
     if (this.move.lengthSq() > 1) this.move.normalize();
     this.edgeGuard();
     if (!aiming) {
@@ -234,6 +258,23 @@ export class BotBrain {
       this.target = null;
     }
 
+    // ---- incoming missile barrage (reticle over our head): run sideways until it lands ----
+    if (this.evadeT <= 0 && S.time - this.evadeSeenT > 3.5) {
+      for (const a of mode.teamOf(p.enemyTeam)) {
+        const sp = a.kit?.special;
+        if (!sp?.active || !Array.isArray(sp.targets) || !sp.targets.includes(p)) continue;
+        this.evadeSeenT = S.time;
+        if (Math.random() >= (D.evade ?? 0.5)) break;
+        _v.set(p.position.x - a.position.x, 0, p.position.z - a.position.z);
+        if (_v.lengthSq() < 1e-4) _v.set(this.sign, 0, 0);
+        _v.normalize();
+        this.evadeDir.set(-_v.z, 0, _v.x).multiplyScalar(Math.random() < 0.5 ? -1 : 1).addScaledVector(_v, 0.35).normalize();
+        this.evadeT = 3.2;
+        this.evadeFlipped = false;
+        break;
+      }
+    }
+
     // ---- special ----
     const special = p.kit.special;
     if (this.state === 'special') {
@@ -254,7 +295,8 @@ export class BotBrain {
       const tgt = this.target;
       const engageR = Math.min(sight, p.kit.main.range * 1.5 + 5) * D.engage * (tgt === this.hurtBy && S.time - this.hurtT < 2 ? 1.4 : 1);
       const engage = tgt && tgt.alive && tgt.position.distanceTo(p.position) < engageR;
-      if (engage && inkF > 0.06 && !(this.state === 'regroup' && hpF < 0.5)) {
+      // only fight while the tank holds a useful shot (a dry charger would otherwise stand and stare)
+      if (engage && inkF > 0.06 && p.ink >= this.shotInk() && !(this.state === 'regroup' && hpF < 0.5)) {
         if (hpF < D.retreatHp && tgt.hp / tgt.maxHp > hpF + 0.25) this.setState('regroup');
         else if (this.state !== 'fight') this.setState('fight');
       } else if (this.state === 'regroup' && (hpF < 0.8 || this.stateT < 1.2) && this.stateT < 5) {
@@ -293,9 +335,9 @@ export class BotBrain {
     const moved = Math.hypot(p.position.x - old.x, p.position.z - old.z);
     old.copy(p.position);
     ring.i = (ring.i + 1) % ring.pts.length;
-    const wantsMove = this.lastMove.lengthSq() > 0.2 && !this.climb && this.state !== 'fight';
+    const wantsMove = this.lastMove.lengthSq() > 0.2 && !this.climbActive && this.state !== 'fight' && !p.flying && !(special?.active && special.drivesMovement);
     if (wantsMove && moved < 0.5) this.stuckT += dt; else this.stuckT = Math.max(0, this.stuckT - dt * 2);
-    if (this.stuckT > 0.6 && this.stuckT - dt <= 0.6 && p.grounded) p.jumpBuffer = 0.15;
+    if (this.stuckT > 0.6 && this.stuckT - dt <= 0.6 && p.grounded && this.safeJump(this.lastMove)) p.jumpBuffer = 0.15;
     if (this.stuckT > 1.4 && this.stuckT - dt <= 1.4) { this.path = null; this.noSmoothT = 3; }
     if (this.stuckT > 2.6) {
       this.debug.stuck++;
@@ -316,10 +358,27 @@ export class BotBrain {
     if (this.subCool <= 0 && p.form !== 'squid' && !special?.active) this.maybeSub();
   }
 
+  /**
+   * Would a jump (or a dualies dodge roll) along `dir` land on something? Samples the ground under
+   * the arc (kid jump ≈ 3.5 m long). Keeps bots from hopping off piers and gangways mid-fight.
+   */
+  safeJump(dir) {
+    const p = this.p, level = this.S.level;
+    _j.set(dir.x, 0, dir.z);
+    if (_j.lengthSq() < 1e-4) { _j.set(p.velocity.x, 0, p.velocity.z); if (_j.lengthSq() < 1e-4) return true; }
+    _j.normalize();
+    for (const d of JUMP_PROBE) {
+      _jp.copy(p.position).addScaledVector(_j, d).setY(p.position.y + 1.2);
+      const g = level.raycast(_jp, DOWN, 5, { staticOnly: true });
+      if (!g || g.point.y < level.killY + 1.2 || g.normal.y < 0.5) return false;
+    }
+    return true;
+  }
+
   /** Never walk or swim off into a void (water / kill plane) unless the path says drop. */
   edgeGuard() {
     const p = this.p;
-    if (this.climb || this.dropEdge || !p.grounded || this.move.lengthSq() < 0.01) return;
+    if (this.climbSwim || !p.grounded || this.move.lengthSq() < 0.01) return;
     const hs = Math.hypot(p.velocity.x, p.velocity.z);
     const look = 0.55 + hs * 0.17;
     const level = this.S.level;
@@ -329,11 +388,20 @@ export class BotBrain {
       else if (hs > 1.5) _v.set(p.velocity.x, 0, p.velocity.z); else break;
       _v.normalize();
       _t.copy(p.position).addScaledVector(_v, look).setY(p.position.y + 0.6);
-      const g = level.raycast(_t, DOWN, 3.4, { staticOnly: true });
-      if (g && g.point.y > level.killY + 1.2 && g.normal.y > 0.5) continue;
+      let g = level.raycast(_t, DOWN, this.pathDrop ? 8.5 : 3.4, { staticOnly: true });
+      if (g && g.point.y > level.killY + 1.2 && g.normal.y > 0.5) {
+        // a ledge: at this speed, where do we come down? (a high drop carries us further out)
+        const drop = p.position.y - g.point.y;
+        if (drop < 0.8) continue;
+        const reach = Math.max(hs, 2) * Math.sqrt((2 * drop) / 24) + 0.35;
+        _t.copy(p.position).addScaledVector(_v, look + reach).setY(p.position.y + 0.6);
+        g = level.raycast(_t, DOWN, drop + 3, { staticOnly: true });
+        if (g && g.point.y > level.killY + 1.2 && g.normal.y > 0.5) continue;
+      }
       const along = this.move.dot(_v);
       if (along > 0) this.move.addScaledVector(_v, -along);
       this.move.addScaledVector(_v, -0.7);
+      if (this.evadeT > 0 && this.evadeDir.dot(_v) > 0) this.evadeDir.negate();
       this.ledgeT = 0.3;
       this.guardT = (this.guardT || 0) + 1 / 60;
       this.debug.edge = (this.debug.edge || 0) + 1;
@@ -346,6 +414,7 @@ export class BotBrain {
     if (s === this.state) return;
     this.state = s;
     this.stateT = 0;
+    this.climb = null;          // a half-done climb must not outlive the state that started it
     if (s === 'paint' && this.goalKind !== 'paint') this.hasGoal = false;
     if (s !== 'fight') this.releaseT = 0;
   }
@@ -421,12 +490,17 @@ export class BotBrain {
   pickRefillGoal() {
     // nearest own-ink node (sampled around us), else back toward the base
     const nav = this.nav, p = this.p;
+    const onOwn = p.grounded && p.groundInk === p.team;
     let best = -1, bd = Infinity;
     nav._near(p.position.x, p.position.z, 14, (i) => {
       if (!(nav.reach[i] & this.teamBit)) return;
       if (nav.inkAt(i) !== p.team) return;
       const d = Math.hypot(nav.px[i] - p.position.x, nav.pz[i] - p.position.z) + Math.abs(nav.py[i] - p.position.y) * 2;
-      if (d < bd) { bd = d; best = i; }
+      if (d >= bd) return;
+      // standing right on it without being in our ink = the rim of a splat: look for a real pool
+      if (!onOwn && d < 0.9) return;
+      if (nav.inkFrac(i, 0.8, p.team) < 0.45) return;
+      bd = d; best = i;
     });
     if (best >= 0) this.setGoal(_q.set(nav.px[best], nav.py[best], nav.pz[best]), 'refill');
     else this.setGoal(this.mode.basePos(p.team), 'refill');
@@ -542,7 +616,8 @@ export class BotBrain {
     const prev = this.pathIdx > 0 ? path[this.pathIdx - 1] : -1;
     const e = prev >= 0 ? nav.edge(prev, n) : -1;
     const kind = e >= 0 ? nav.eKind[e] : WALK;
-    if (kind === CLIMB) return this.stepClimb(dt, e, n);
+    if (kind === CLIMB) { this.climbActive = true; return this.stepClimb(dt, e, n); }
+    this.pathDrop = kind === DROP;
     _v.set(nav.px[n] - p.position.x, 0, nav.pz[n] - p.position.z);
     const dxz = _v.length();
     _v.divideScalar(Math.max(1e-4, dxz));
@@ -553,10 +628,13 @@ export class BotBrain {
       _v.lerp(_e, 0.35).normalize();
     }
     if (kind === JUMP && dxz < 1.9 && p.grounded && nav.py[n] - p.position.y > 0.2) {
-      p.jumpBuffer = 0.15;
+      // the weapon must be idle first, or dualies turn the jump into a dodge roll
+      this.holdFireT = 0.2;
+      if (!p.kit.main.firing) p.jumpBuffer = 0.15;
       this.swim = false;
     }
-    this.move.addScaledVector(_v, speedMul);
+    // step off ledges at a walk so the landing stays close to the waypoint
+    this.move.addScaledVector(_v, kind === DROP && dxz < 2.2 ? speedMul * 0.55 : speedMul);
     return true;
   }
 
@@ -568,12 +646,21 @@ export class BotBrain {
     if (!this.climb || this.climb.e !== e) this.climb = { e, phase: 'approach', t: 0 };
     const c = this.climb;
     c.t += dt;
-    const baseX = w.px + w.nx * 1.7, baseZ = w.pz + w.nz * 1.7;
+    if (c.stand == null) {
+      // stand off the wall where the path's low node is (≤ 1.7 m): that spot is known ground, a
+      // fixed 1.7 m could be out over the water
+      const lo = this.pathIdx > 0 ? this.path[this.pathIdx - 1] : -1;
+      const dLo = lo >= 0 ? (nav.px[lo] - w.px) * w.nx + (nav.pz[lo] - w.pz) * w.nz : 1.2;
+      c.stand = Math.min(1.7, Math.max(0.7, dLo));
+    }
+    const baseX = w.px + w.nx * c.stand, baseZ = w.pz + w.nz * c.stand;
     const failed = () => {
       this.avoid.set(e, S.time + 25);
       this.climb = null;
       this.path = null;
       this.debug.climbFails++;
+      // the goal is up there: pick another one instead of trying every face of the same block
+      if (this.hasGoal && this.goal.y > p.position.y + 1) this.hasGoal = false;
       return false;
     };
     if (c.phase === 'approach') {
@@ -589,7 +676,7 @@ export class BotBrain {
       const h = w.top - p.position.y;
       const k = 0.5 + 0.5 * Math.sin(c.t * 5);
       this.aimWant.set(w.px - w.nx * 0.05, p.position.y + 0.3 + k * Math.max(0.5, h - 0.2), w.pz - w.nz * 0.05);
-      this.weaponFire(p.ink > 4, this.prof.style === 'roll' ? 'fight' : 'paint', this.prof.style === 'roll' ? 4 : 1.7);
+      this.weaponFire(p.ink > 4, 'wall', 4);
       this.climbAim = true;
       // face the wall squarely
       this.move.set(0, 0, 0);
@@ -603,6 +690,7 @@ export class BotBrain {
       return 'aim';
     }
     // swim into the wall and up
+    this.climbSwim = true;
     this.swim = true;
     this.move.set(-w.nx, 0, -w.nz);
     this.aimWant.set(w.px, w.top, w.pz);
@@ -678,7 +766,8 @@ export class BotBrain {
       if (!r) this.move.multiplyScalar(0);
     } else if (!r && this.hasGoal) {
       _v.set(this.goal.x - p.position.x, 0, this.goal.z - p.position.z);
-      if (_v.lengthSq() > 1) this.move.copy(_v.normalize());
+      if (_v.lengthSq() > 0.09) this.move.copy(_v.normalize());
+      else if (this.goalKind === 'refill') this.hasGoal = false;   // the pool got painted over: find another
     }
   }
 
@@ -716,7 +805,7 @@ export class BotBrain {
       this.strafeT -= dt;
       if (this.strafeT <= 0) { this.strafeT = rnd(0.5, 1.4); this.strafeDir = Math.random() < 0.5 ? -1 : 1; }
       if (this.cls !== 'charger' && this.prof.style !== 'roll') this.move.addScaledVector(_e, this.strafeDir * D.strafe * 0.8);
-      if (D.jump > 0 && p.grounded && Math.random() < D.jump * dt * 3) p.jumpBuffer = 0.15;
+      if (D.jump > 0 && p.grounded && Math.random() < D.jump * dt * 3 && this.safeJump(this.move)) p.jumpBuffer = 0.15;
       // dodge: short squid hop in own ink between bursts (hard bots)
       if (D.dodge && p.groundInk === p.team && this.dodgeT < -0.8 && Math.random() < D.dodge * dt) { this.dodgeT = 0.35; }
     }
@@ -733,7 +822,8 @@ export class BotBrain {
     const g = main.s?.gravity ?? 0;
     if (g && tof > straight) _t.y += 0.5 * g * (tof - straight) ** 2 * 0.85;
     if (this.cls === 'slosher' || this.cls === 'roller') _t.y += Math.min(1.5, d * 0.06);
-    const errScale = D.aimErr * Math.max(0.3, 1 - this.trackT * D.track * 0.4);
+    // error shrinks while tracking but never below a floor; long-range one-shot weapons get extra wobble
+    const errScale = D.aimErr * Math.max(D.errFloor ?? 0.4, 1 - this.trackT * D.track * 0.35) * (this.prof.style === 'charge' ? D.chargeErr ?? 1 : 1);
     _t.addScaledVector(this.errV, d * errScale);
     this.aimWant.copy(_t);
     const want = _w.subVectors(_t, this.eye).normalize();
@@ -757,12 +847,40 @@ export class BotBrain {
       const d = _v.length();
       if (d > 4) this.move.copy(_v.normalize()).multiplyScalar(0.8);
     } else {
-      this.followPath(dt);
+      const flying = special?.active && special.drivesMovement;
+      if (!flying) this.followPath(dt);     // waypoints are on the floor: a flyer never "arrives"
       if (this.hasGoal) this.aimWant.copy(this.goal);
       else this.aimWant.copy(p.position).add(_v.set(this.sign * 8, 0, 0));
+      // flying specials (Ink Jet): with nothing to shoot, cruise toward the goal / the front
+      if (flying) {
+        if (this.hasGoal) _v.set(this.goal.x - p.position.x, 0, this.goal.z - p.position.z);
+        if (!this.hasGoal || _v.lengthSq() < 9) _v.set(this.sign * 3, 0, (this.lane - p.position.z) * 0.15);
+        this.move.copy(_v.normalize()).multiplyScalar(0.7);
+        // rain shots on the floor ahead
+        this.aimWant.copy(p.position).addScaledVector(this.move, 9).setY(p.position.y - 5);
+      }
     }
+    if (special?.active && special.drivesMovement) this.overGround();
     this.fire = !!special?.active && this.stateT > 0.2 && !!(t && t.alive || Math.random() < 0.5);
     return true;
+  }
+
+  /** While a special flies us around (Ink Jet), never drift out over water: the landing would be fatal. */
+  overGround() {
+    const p = this.p, level = this.S.level, sp = p.kit.special;
+    const ending = sp.phase === 'land' || (sp.t != null && sp.s?.duration != null && sp.t > sp.s.duration - 1.8);
+    _jp.copy(p.position).addScaledVector(this.move, ending ? 0.5 : 2.5);
+    const g = level.raycast(_jp, DOWN, 60, { staticOnly: true });
+    const here = level.raycast(p.position, DOWN, 60, { staticOnly: true });
+    const safe = (h) => h && h.point.y > level.killY + 1.2 && h.normal.y > 0.5;
+    if (safe(g) && (safe(here) || !ending)) return;
+    // steer to the closest walkable waypoint instead
+    const nav = this.nav;
+    let n = nav.nearest(_jp.set(p.position.x, p.position.y - 5, p.position.z), 10, this.teamBit);
+    if (n < 0) n = nav.nearest(_jp.set(p.position.x, 0, p.position.z), 25, this.teamBit);
+    if (n < 0) { this.move.set(this.sign, 0, 0); return; }
+    this.move.set(nav.px[n] - p.position.x, 0, nav.pz[n] - p.position.z);
+    if (this.move.lengthSq() > 1e-4) this.move.normalize();
   }
 
   wantSpecial(special) {
@@ -842,16 +960,36 @@ export class BotBrain {
     this.errT = rnd(0.35, 0.8);
   }
 
-  /** Weapon-class specific trigger handling. */
+  /** Least ink worth fighting with: one useful shot of the main weapon. */
+  shotInk() {
+    const s = this.p.kit.main.s || {};
+    if (this.cls === 'charger') return (s.fullInk ?? 18) * 0.5;
+    if (this.cls === 'splatling') return (s.inkPerShot ?? 1.1) * 6;
+    if (this.cls === 'roller') return s.flickInk ?? 8;
+    if (this.cls === 'blaster') return 7;
+    return 3;
+  }
+
+  /** Weapon-class specific trigger handling. ctx: 'paint' | 'fight' | 'wall' (inking a wall to climb). */
   weaponFire(want, ctx, dist, onTarget = true) {
     const p = this.p, main = p.kit.main;
     if (!want || p.ink < 1) { this.fire = false; return; }
     const style = this.prof.style;
     if (style === 'charge') {
-      const goal = ctx === 'fight' ? (this.D === DIFFICULTY.easy ? 0.75 : 0.95) : 0.55;
+      // the charge can never pass what the tank can pay for: release at that cap, never hold forever
+      const s = main.s || {};
+      const cap = Math.max(s.minInkFrac ?? 0.3, p.ink / (s.fullInk ?? 18)) - 0.02;
+      const goal = Math.min(ctx === 'fight' ? (this.D === DIFFICULTY.easy ? 0.75 : 0.95) : 0.55, cap);
       if (this.releaseT > 0) { this.fire = false; return; }
-      if ((main.charge || 0) >= goal && onTarget) { this.fire = false; this.releaseT = 0.12; return; }
+      if ((main.charge || 0) >= goal && (onTarget || (cap < 0.9 && (main.charge || 0) >= cap))) { this.fire = false; this.releaseT = 0.12; return; }
       this.fire = true;
+      return;
+    }
+    if (this.cls === 'brush' && (ctx === 'wall' || (ctx === 'fight' && dist > 2.2))) {
+      // brushes only reach walls / distant targets with flicks: tap instead of holding into a dash
+      this.tapT -= 1 / 60;
+      if (this.tapT <= 0) { this.tapT = 0.24; this.fire = true; return; }
+      this.fire = this.tapT > 0.21;
       return;
     }
     if (style === 'spin') {
@@ -861,7 +999,7 @@ export class BotBrain {
       this.fire = true;
       return;
     }
-    if (style === 'roll' && ctx === 'fight' && dist > 2.8) {
+    if (style === 'roll' && (ctx === 'wall' || (ctx === 'fight' && dist > 2.8))) {
       // flick: tap and let the swing finish
       this.tapT -= 1 / 60;
       if (this.tapT <= 0) { this.tapT = 0.5; this.fire = true; return; }

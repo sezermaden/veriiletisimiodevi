@@ -132,9 +132,14 @@ age 6" — the boy who loved colour. The defaults live in `POSTCARDS` (script.js
   `makeNpcModel('dredge' | 'murkwell')` from `entities/npc/models.js`.
 - `session.mode.cutscene(async (cs) => { … })` gives camera moves, letterbox, `cs.say`,
   `cs.spawn(who, pos, yaw)`, `cs.move`, `cs.emote`, `cs.shake`, `cs.fade` (see story/cutscene.js).
+- Dialogue text tokens: `{fire}` `{swim}` `{jump}` `{sub}` `{special}` `{interact}` render as button
+  prompts (shown as `[fire]` in this script); `{kitName}` `{subName}` `{specialName}` are replaced
+  with the equipped kit's names, so the 1-1 tutorial stays correct when it is replayed with another kit.
 - Speaker colours and voices: `SPEAKERS` in script.js (voice = `{ pitch, formant, wave }` for
   `audio.blip`).
-- Music ids requested by the story: `docks`, `heights`, `refinery`, `tower`, `boss`, `finale`.
+- Music ids requested by the story: `docks`, `heights`, `refinery`, `tower`, `boss`, `finale`
+  (stage tracks), `story` (prologue / ending comics), `victory` (one-shot on stage clear),
+  `results` (results screen) and `credits` (credits roll); the post-credits tease plays in silence.
 
 
 ---
@@ -222,12 +227,12 @@ _Every legend starts with a puddle._
 
 `w1-1.move`
 
-- **Commodore Brine**: First things first. Walk with WASD or the left stick. Look around with the mouse or the right stick.
+- **Commodore Brine**: First things first. Walk with the left stick or your movement keys, and look around with the right stick or the mouse.
 - **Commodore Brine**: Jump with [jump]. Squidkin kids are bouncy. It's a whole thing.
 
 `w1-1.shoot`
 
-- **Commodore Brine**: That's your Splash Blaster. Hold [fire] to paint. The ground, the walls: everything you ink is yours.
+- **Commodore Brine**: That's your [kitName]. Hold [fire] to paint. The ground, the walls: everything you ink is yours.
 - **Pix** _(happy)_: Aim with the crosshair! And don't worry about waste. There's no such thing as too much ink.
 
 `w1-1.swim`
@@ -258,11 +263,11 @@ _Every legend starts with a puddle._
 
 `w1-1.sub`
 
-- **Commodore Brine**: Your kit comes with a Burst Bomb. Throw it with [sub]. It costs a big gulp of ink, so pick your moment.
+- **Commodore Brine**: Your sub weapon is the [subName]. Use it with [sub]. It costs a big gulp of ink, so pick your moment.
 
 `w1-1.special`
 
-- **Pix** _(happy)_: Every bit of turf you paint charges your special. When the gauge is full, hit [special] for a Tidal Slam!
+- **Pix** _(happy)_: Every bit of turf you paint charges your special. When the gauge is full, hit [special] to unleash your [specialName]!
 - **Pix** _(smug)_: Warning: extremely cool.
 
 `w1-1.checkpoint` — radio

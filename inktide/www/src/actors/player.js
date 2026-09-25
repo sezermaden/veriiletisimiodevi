@@ -18,6 +18,8 @@ const _b = new THREE.Vector3();
 const _v = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 const _down = new THREE.Vector3(0, -1, 0);
+const _pr = new THREE.Vector3();
+const STEP = 0.46;            // tallest ledge the kid/squid walks up without jumping
 
 export const PLAYER_TUNING = {
   runSpeed: 5.6,
@@ -444,6 +446,7 @@ export class Player {
     // carried by a moving platform
     if (this.grounded && this.contacts.dynamic?.owner?.lastDelta) this.position.add(this.contacts.dynamic.owner.lastDelta);
 
+    const startX = this.position.x, startY = this.position.y, startZ = this.position.z;
     const move = _v.copy(v).multiplyScalar(dt);
     const steps = Math.max(1, Math.ceil(move.length() / (r * 0.6)));
     move.divideScalar(steps);
@@ -457,19 +460,38 @@ export class Player {
       ground = ground || c.ground; wall = wall || c.wall; ceiling = ceiling || c.ceiling;
     }
     const c = this.contacts;
+    // step up small ledges and stair treads: look just past the front of the capsule along the
+    // direction of travel; if there is walkable ground no higher than STEP, rise toward it over a
+    // few steps (smooth for the camera) and keep our momentum
+    let stepping = false;
+    const hsp = Math.hypot(v.x, v.z);
+    if (this.wasGrounded && !this.climbing && hsp > 0.3 && v.y <= 0.5) {
+      const inv = 1 / hsp;
+      const fx = this.position.x + v.x * inv * (r + 0.08), fz = this.position.z + v.z * inv * (r + 0.08);
+      const h = level.raycast(_pr.set(fx, this.position.y + STEP + 0.1, fz), _down, STEP + 0.15);
+      const rise = h && h.normal.y > 0.6 ? h.point.y - this.position.y : 0;
+      if (rise > 0.03 && rise <= STEP) {
+        this.position.y += Math.min(rise, Math.max(0.08, hsp * dt * 1.8));
+        stepping = true;
+        ground = true;
+      }
+    }
     if (ceiling && v.y > 0) v.y = 0;
-    if (wall && !this.climbing) {
+    if (wall && !this.climbing && !stepping) {
       const vn = v.dot(c.wallNormal);
       if (vn < 0) v.addScaledVector(c.wallNormal, -vn);
     }
 
     // ground probe + snap (keeps us glued to ramps and stops slope creep)
     let groundHit = null;
-    if (!noSnap && v.y <= 0.5) {
+    if (!noSnap && !stepping && v.y <= 0.5) {
       const snap = this.wasGrounded ? 0.42 : 0.06;
-      groundHit = level.raycast(_a.copy(this.position).setY(this.position.y + 0.45), _down, 0.45 + snap);
+      groundHit = this._probeGround(this.position.x, this.position.y, this.position.z, r, 0.45, snap);
       if (groundHit && groundHit.normal.y > 0.6) {
-        this.position.y = groundHit.point.y;
+        // rest the capsule's sphere ON the slope (centre r/ny above the hit point), not in it —
+        // snapping the feet to the hit point pushes the sphere into steep ramps and the collision
+        // response then shoves us back downhill every step (the "crawl up 30° ramps" bug)
+        this.position.y = groundHit.point.y + r * (1 / groundHit.normal.y - 1);
         ground = true;
       } else groundHit = null;
     }
@@ -490,6 +512,24 @@ export class Player {
       S.audio?.sfx(this.form === 'squid' ? 'splash' : 'land', { volume: Math.min(0.7, 0.2 + this.landImpact) });
       if (this.groundInk === this.team || S.ink.inkAt(this.groundFace, this.position) === this.team) S.fx.burst(this.position, _up, this.inkColor, 8, 3);
     }
+  }
+
+  /**
+   * Highest walkable ground under the capsule footprint (centre + 4 points at 0.7 r), searched
+   * from `above` metres over the feet down to `below` metres under them. A single centre ray
+   * misses stair treads and ledge lips the sphere is already resting on.
+   */
+  _probeGround(x, y, z, r, above, below) {
+    const level = this.session.level;
+    let best = null;
+    const o = r * 0.95;
+    const P = this._probeOffsets || (this._probeOffsets = [[0, 0], [o, 0], [-o, 0], [0, o], [0, -o]]);
+    for (let i = 0; i < P.length; i++) {
+      const h = level.raycast(_pr.set(x + P[i][0], y + above, z + P[i][1]), _down, above + below);
+      if (!h || h.normal.y < 0.6 || h.point.y > y + 0.05) continue;   // never snap UP onto kerbs
+      if (!best || h.point.y > best.point.y + 1e-4 || (i === 0 && Math.abs(h.point.y - best.point.y) < 1e-4)) best = h;
+    }
+    return best;
   }
 
   /** Per rendered frame: model, swim bump, ripples. */

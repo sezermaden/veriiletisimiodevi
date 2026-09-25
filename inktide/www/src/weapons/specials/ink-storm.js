@@ -181,6 +181,8 @@ export class InkStorm extends Special {
     super.activate();
     this.t = 0;
     this.thrown = false;
+    this.cloud = null;
+    this.seedLive = false;
     sfx(this.w, 'special', { volume: 0.8 });
   }
 
@@ -189,7 +191,9 @@ export class InkStorm extends Special {
   update(dt) {
     this.t += dt;
     if (!this.thrown && this.t >= 0.14) this.throwSeed();
-    if (this.t >= 0.34) this.end();
+    // stay active (so the gauge doesn't refill from our own rain) until the storm has passed
+    if (this.thrown && this.t >= 0.34 && !this.seedLive && (!this.cloud || this.cloud.dead)) this.end();
+    if (this.t > 14) this.end();
   }
 
   throwSeed() {
@@ -214,22 +218,26 @@ export class InkStorm extends Special {
       // don't bury the cloud in a ceiling
       const up = S.level.raycast(_p.set(pos.x, gy + 0.5, pos.z), UP, s.height, { staticOnly: true });
       if (up) at.y = gy + Math.max(2.2, up.distance - 0.4);
-      S.addEntity(new StormCloud(S, w, at, drift, s));
+      this.seedLive = false;
+      if (this.active) this.cloud = S.addEntity(new StormCloud(S, w, at, drift, s));
+      else S.addEntity(new StormCloud(S, w, at, drift, s));
       S.fx.explosion(at, DOWN, color, 1.6);
       S.audio?.sfx('storm_spawn', { pos: at, volume: 0.9 });
     };
-    S.projectiles.spawn({
+    this.seedLive = true;
+    const seedP = S.projectiles.spawn({
       pos: _m, vel: _v, team: w.team, owner: w, damage: 0, radius: 0.2, gravity: 16, life: s.seedTime, mesh: seed, ignoreActors: true, fx: false,
       onStep: (p, dt) => { seed.rotation.x += dt * 9; seed.rotation.y += dt * 5; if (Math.random() < 0.6) S.fx.spray(p.pos, _hc.set(0, -1, 0), color, 1, 0.6, { size: 0.05, life: 0.3 }); },
       onHit: (p, hit) => burst(hit.point),
       onExpire: (p) => burst(p.pos),
     });
+    if (!seedP) { this.seedLive = false; seed.geometry.dispose(); seed.material.dispose(); }
     sfx(w, 'storm_throw', { volume: 0.7 });
   }
 
   /** Off-hand overhead throw. */
   pose(dt, st, m) {
-    if (!this.active || st.hidden || !m.kid.visible) return;
+    if (!this.active || this.t > 0.45 || st.hidden || !m.kid.visible) return;
     const off = m.arms[m.arms[0] === m.gunArm ? 1 : 0];
     const k = Math.min(1, this.t / 0.3);
     off.sh.rotation.set(THREE.MathUtils.lerp(-2.9, -1.0, k * k), 0, 0.2);

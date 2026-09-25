@@ -48,24 +48,24 @@ export class PostcardScreen extends Screen {
     const c = this.card;
     const found = STAGE_ORDER.filter((id) => save.stage(id)?.postcard).length + (this.o.countCurrent ? 1 : 0);
     this.el.innerHTML = `
-      <div class="pc-shade"></div>
-      <div class="pc-wrap">
-        <div class="pc-head">LOST POSTCARD FOUND!</div>
-        <div class="pc-card">
-          <div class="pc-face pc-front">${postcardFrontSVG(c.id || c.title)}
-            <div class="pc-greet"><b>GREETINGS</b><span>FROM TIDEHAVEN</span></div>
-            <div class="pc-title">${esc(c.title || 'Lost Postcard')}</div>
+      <div class="lp-shade"></div>
+      <div class="lp-wrap">
+        <div class="lp-head">LOST POSTCARD FOUND!</div>
+        <div class="lp-card">
+          <div class="lp-face lp-front">${postcardFrontSVG(c.id || c.title)}
+            <div class="lp-greet"><b>GREETINGS</b><span>FROM TIDEHAVEN</span></div>
+            <div class="lp-title">${esc(c.title || 'Lost Postcard')}</div>
           </div>
-          <div class="pc-face pc-back">
-            <div class="pc-msg"><p>${esc(c.text || 'Wish you were here!')}</p><p class="pc-from">— ${esc(c.from || 'a friend')}</p></div>
-            <div class="pc-addr"><div class="pc-stamp"><span>${esc((c.title || 'T')[0])}</span></div><i></i><i></i><i></i></div>
+          <div class="lp-face lp-back">
+            <div class="lp-msg"><p>${esc(c.text || 'Wish you were here!')}</p><p class="lp-from">— ${esc(c.from || 'a friend')}</p></div>
+            <div class="lp-addr"><div class="lp-stamp"><span>${esc((c.title || 'T')[0])}</span></div><i></i><i></i><i></i></div>
           </div>
         </div>
-        <div class="pc-count">${Math.min(found, STAGE_ORDER.length)} / ${STAGE_ORDER.length} postcards collected</div>
-        <div class="pc-btn">Nice!</div>
+        <div class="lp-count">${Math.min(found, STAGE_ORDER.length)} / ${STAGE_ORDER.length} postcards collected</div>
+        <div class="lp-btn">Nice!</div>
       </div>`;
-    this.cardEl = this.el.querySelector('.pc-card');
-    const btn = this.el.querySelector('.pc-btn');
+    this.cardEl = this.el.querySelector('.lp-card');
+    const btn = this.el.querySelector('.lp-btn');
     btn.innerHTML = `${promptHTML(this.app.input, 'ui_accept')} Nice!`;
     this.button(btn, () => this.close(), { autofocus: true });
   }
@@ -78,10 +78,14 @@ export class PostcardScreen extends Screen {
   }
 
   handleInput(input) {
-    if (!this.flipped && (input.justPressed('ui_accept') || input.justPressed('advance'))) {
+    const press = input.justPressed('ui_accept') || input.justPressed('advance');
+    if (!this.flipped && press) {
       this.flipped = true; this.t = 2; this.cardEl.classList.add('flip');
       return true;
     }
+    // the stage keeps the pointer locked, so a mouse click lands on the canvas as 'advance'
+    // (LMB) rather than on the button: let any advance press close the card once it is readable
+    if (this.flipped && press && this.t > 1.6) { this.close(); return true; }
     return false;
   }
 

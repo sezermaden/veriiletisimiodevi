@@ -3,7 +3,7 @@
 //
 //   centre pier (x ±23, z ±6.5) ─ central stack (2.4 m, ramp from each side, climbable flanks)
 //   south pier (Alpha-led flank) / north pier (Bravo-led flank), 5.5 m water channels crossed by
-//   two footbridges each. Container "C1" in front of each base has a ramp (high ground); the
+//   a wooden footbridge and a metal-grate gangway (no ink: you can't swim across it) each. Container "C1" in front of each base has a ramp (high ground); the
 //   flank container "C3" is a climb-only perch; "C2" and crates are cover.
 import { block, box, ramp, container } from '../kit.js';
 import { turfArena, D } from '../../turf/arena-kit.js';
@@ -35,7 +35,7 @@ export default turfArena({
     // south pier (x -23..11, z -19..-12) and its footbridges to the centre pier
     deck(-6, -15.5, 34, 7),
     deck(-12, -9.25, 3.5, 5.5, { color: '#e6cfae' }),
-    deck(-2, 9.25, 3.5, 5.5, { color: '#e6cfae' }),                                 // north channel bridge
+    block(-2, 9.25, 3.5, 5.5, -1.6, 1.6, { mat: 'grate', color: '#c9d2dc' }),     // metal gangway (can't be inked)
     // ramp up the central stack from the Alpha side
     ramp(-8.5, 0, -1.5, -3.5, 2.4, 1.5, '+x', { mat: 'metal', color: '#c9ced8' }),
     // C1: container across the centre lane with a ramp to its roof (Alpha high ground)

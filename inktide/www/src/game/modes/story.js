@@ -86,7 +86,10 @@ export class StoryMode {
   }
 
   update(session, dt) {
-    if (!this._introStarted) { this._introStarted = true; this._runIntro().catch((e) => { console.error(e); this.director.releaseNow('intro'); }); }
+    if (!this._introStarted) {
+      this._introStarted = true;
+      this._runIntro().catch((e) => { console.error('story intro', e); this.director.releaseNow('intro'); this.objective(this.meta.objective); });
+    }
     if (this._slowmo > 0) {
       this._slowmo -= dt;
       if (!this.director.held('time')) session.timeScale = this._slowmo > 0 ? 0.3 : 1;
@@ -105,41 +108,49 @@ export class StoryMode {
     const S = this.session, d = this.director, m = this.meta;
     const cs = new Cutscene(d, { letterbox: true, freezeWorld: true, blendBack: 0 }).begin();
     d.releaseNow('intro');
-    const world = worldOf(this.stageId);
-    // establishing sweep: high and behind → the gameplay camera
-    const gp = d.gameplayPose();
-    const back = gp.pos.clone().sub(gp.target).setY(0);
-    if (back.lengthSq() < 1e-4) back.set(0, 0, 1);
-    back.normalize();
-    const p0 = gp.pos.clone().addScaledVector(back, 5.5).addScaledVector(_up, 3.4);
-    const t0 = S.player.position.clone().addScaledVector(_up, 1.1);
-    cs.cut(p0, t0);
-    const sweep = cs.camera(gp.pos, gp.target, 2.7, 'inOut');
-    this._card = showTitleCard({
-      world: world ? `World ${world.id} · ${world.name}` : '',
-      worldColor: world?.color,
-      num: m.num, title: m.title, subtitle: m.subtitle, boss: !!m.boss, ink: heroInkHex(S),
-    });
-    S.audio?.sfx?.('story_sting', { volume: 0.8 });
-    S.player.model?.emote?.('wave', 1.6);
-    await cs.wait(2.5);
-    this._card.close();
-    await sweep;
-    // intro conversation (a boss stage points the camera at the boss while it talks)
-    if (!this.opts.retry && !this.opts.skipIntro && m.intro?.length && !cs.skipping) {
-      const boss = m.boss ? this.session.entities.find((e) => e.type === m.boss || String(e.type || '').startsWith('boss-')) : null;
-      if (boss) {
-        const bp = new THREE.Vector3();
-        if (boss.hitCenter) boss.hitCenter(bp); else bp.copy(boss.position).addScaledVector(_up, 2);
-        const dir = bp.clone().sub(S.player.position).setY(0).normalize();
-        const cam = S.player.position.clone().addScaledVector(dir, -3.2).addScaledVector(_up, 2.4);
-        await cs.camera(cam, bp, 1.4, 'inOut');
+    // whatever goes wrong in the presentation, the cutscene must end or Kai stays frozen forever
+    try {
+      const world = worldOf(this.stageId);
+      // establishing sweep: high and behind → the gameplay camera
+      const gp = d.gameplayPose();
+      const back = gp.pos.clone().sub(gp.target).setY(0);
+      if (back.lengthSq() < 1e-4) back.set(0, 0, 1);
+      back.normalize();
+      const p0 = gp.pos.clone().addScaledVector(back, 5.5).addScaledVector(_up, 3.4);
+      const t0 = S.player.position.clone().addScaledVector(_up, 1.1);
+      cs.cut(p0, t0);
+      const sweep = cs.camera(gp.pos, gp.target, 2.7, 'inOut');
+      this._card = showTitleCard({
+        world: world ? `World ${world.id} · ${world.name}` : '',
+        worldColor: world?.color,
+        num: m.num, title: m.title, subtitle: m.subtitle, boss: !!m.boss, ink: heroInkHex(S),
+      });
+      S.audio?.sfx?.('story_sting', { volume: 0.8 });
+      S.player.model?.emote?.('wave', 1.6);
+      await cs.wait(2.5);
+      this._card.close();
+      await sweep;
+      // intro conversation (a boss stage points the camera at the boss while it talks)
+      if (!this.opts.retry && !this.opts.skipIntro && m.intro?.length && !cs.skipping) {
+        const boss = m.boss ? this.session.entities.find((e) => e.type === m.boss || String(e.type || '').startsWith('boss-')) : null;
+        if (boss) {
+          const bp = new THREE.Vector3();
+          if (boss.hitCenter) boss.hitCenter(bp); else bp.copy(boss.position).addScaledVector(_up, 2);
+          const dir = bp.clone().sub(S.player.position).setY(0);
+          if (dir.lengthSq() < 1e-4) dir.set(0, 0, -1);
+          dir.normalize();
+          const cam = S.player.position.clone().addScaledVector(dir, -3.2).addScaledVector(_up, 2.4);
+          await cs.camera(cam, bp, 1.4, 'inOut');
+        }
+        await cs.say(m.intro);
+        if (boss && !cs.skipping) await cs.returnCamera(0.8);
       }
-      await cs.say(m.intro);
-      if (boss && !cs.skipping) await cs.returnCamera(0.8);
+    } finally {
+      this._card?.close();
+      d.releaseCam();
+      await cs.end();
     }
-    d.releaseCam();
-    await cs.end();
+    if (this.director.disposed) return;
     this.objective(m.objective);
     S.hud?.toast?.(m.boss ? 'FIGHT!' : 'GO!', 'big');
     S.audio?.sfx?.('go', { volume: 0.7 });
@@ -152,6 +163,9 @@ export class StoryMode {
     if (!this.director) return Promise.resolve({ skipped: true });
     return this.director.say(idOrLines, opts);
   }
+
+  /** Non-blocking radio chatter (bosses and mid-fight banter use this). */
+  radio(idOrLines) { return this.dialogue(idOrLines, { radio: true }); }
 
   objective(text) {
     const S = this.session;
@@ -233,49 +247,90 @@ export class StoryMode {
 
   // ---- stage clear ---------------------------------------------------------------------------
   async complete(info = {}) {
-    if (this.completed) return;
+    // (a disposed director means the stage was quit: never save a clear for it)
+    if (this.completed || !this.director || this.director.disposed) return;
     this.completed = true;
     const S = this.session, d = this.director, m = this.meta, app = this.app;
     this.clearTime = S.time;
     this._slowmo = 0;
     S.timeScale = 1;
     d.dialogue.clear();
-    const result = this._saveResults(info);   // save first: quitting mid-celebration keeps progress
+    let result;
+    try {
+      result = this._saveResults(info);       // save first: quitting mid-celebration keeps progress
+    } catch (e) {
+      console.error('story save', e);
+      result = {
+        stageId: this.stageId, meta: m, world: worldOf(this.stageId), time: this.clearTime, par: m.par || 240, pearls: S.pearls || 0,
+        deaths: this.deaths, postcard: this.postcard, rank: 'C', prevRank: null, newBest: false, bonus: 0, total: save.data.pearls,
+        kit: null, nextId: nextStage(this.stageId), final: this.stageId === 'w4-boss', reason: info.reason || null,
+      };
+    }
     const cs = new Cutscene(d, { letterbox: true, blendBack: 0, freezeWorld: true }).begin();
     d.releaseNow('bossdown');
-    const pl = S.player;
-    pl.invulnerable = 999;
-    if (!pl.alive) S.respawnPlayer();
-    pl.velocity.set(0, 0, 0);
-    S.audio?.stopMusic?.(0.4);
-    S.audio?.sfx?.('victory', { volume: 0.9 });
-    pl.model?.emote?.('cheer', 60);
-    // confetti in the hero ink
-    const ink = S.ink.color(pl.team);
-    let burstT = 0;
-    const center = pl.position.clone();
-    const confetti = d.tween(2.4, (k, dt) => {
-      burstT -= dt || 0;
-      if (burstT <= 0 && k < 1) {
-        burstT = 0.28;
-        const p = center.clone().add(new THREE.Vector3((Math.random() - 0.5) * 3, 2.2 + Math.random(), (Math.random() - 0.5) * 3));
-        S.fx.burst(p, _up, Math.random() < 0.5 ? ink : '#ffffff', 14, 5, { size: 0.07 });
-        S.fx.ring(center.clone().setY(center.y + 0.05), _up, ink, 1.6 + Math.random(), 0.5);
-      }
-    }, { ease: EASE.linear });
-    S.ink.paint(center, 2.4, pl.team, _up, { source: 'level' });
-    // orbit in front of Kai: model faces +Z at yaw 0 → the front is angle = yaw
-    const yaw = pl.yaw;
-    await cs.orbit(center, { radius: (k) => 3.6 - k * 0.9, height: 1.25, from: yaw - 1.1, to: yaw + 0.35, secs: 3.4, lookHeight: 0.95, ease: 'sine', lookSide: 1.15 });
-    await confetti;
-    if (m.outro?.length && !cs.skipping) await cs.say(m.outro);
+    // The celebration is presentation only: if any of it throws, the results screen must still
+    // appear (it is the only way out of a cleared stage).
+    try {
+      const pl = S.player;
+      pl.invulnerable = 999;
+      this._poseForCelebration(pl);
+      S.audio?.playMusic?.('victory');                    // one-shot fanfare (crossfades out the stage track)
+      pl.model?.emote?.('cheer', 60);
+      // confetti in the hero ink
+      const ink = S.ink.color(pl.team);
+      let burstT = 0;
+      const center = pl.position.clone();
+      const confetti = d.tween(2.4, (k, dt) => {
+        burstT -= dt || 0;
+        if (burstT <= 0 && k < 1) {
+          burstT = 0.28;
+          const p = center.clone().add(new THREE.Vector3((Math.random() - 0.5) * 3, 2.2 + Math.random(), (Math.random() - 0.5) * 3));
+          S.fx.burst(p, _up, Math.random() < 0.5 ? ink : '#ffffff', 14, 5, { size: 0.07 });
+          S.fx.ring(center.clone().setY(center.y + 0.05), _up, ink, 1.6 + Math.random(), 0.5);
+        }
+      }, { ease: EASE.linear, skip: () => cs.skipping });
+      S.ink.paint(center, 2.4, pl.team, _up, { source: 'level' });
+      // orbit in front of Kai: model faces +Z at yaw 0 → the front is angle = yaw
+      const yaw = pl.yaw;
+      await cs.orbit(center, { radius: (k) => 3.6 - k * 0.9, height: 1.25, from: yaw - 1.1, to: yaw + 0.35, secs: 3.4, lookHeight: 0.95, ease: 'sine', lookSide: 1.15 });
+      await confetti;
+      if (m.outro?.length && !cs.skipping) await cs.say(m.outro);
+    } catch (e) {
+      console.error('story clear sequence', e);
+    }
+    if (d.disposed || app.session !== S) return;        // quit while celebrating
     cs.letterbox(false);
     S.events.emit('storyComplete', { stageId: this.stageId, result });
-    app.ui.push(new ResultsScreen(app, result, {
-      onContinue: () => this._continue(result),
-      onMap: () => this._toMap(),
-      onRetry: () => this._retry(),
-    }));
+    S.audio?.playMusic?.('results', { fadeIn: 1.5 });
+    try {
+      app.ui.push(new ResultsScreen(app, result, {
+        onContinue: () => this._continue(result),
+        onMap: () => this._toMap(),
+        onRetry: () => this._retry(),
+      }));
+    } catch (e) {
+      // never strand a frozen Kai on a cleared stage: fall back to the map (progress is saved)
+      console.error('story results', e);
+      this._toMap();
+    }
+  }
+
+  /** The celebration freezes the world, so put Kai on their feet first: alive, in kid form, on
+   *  the ground (an airborne or swimming Kai would otherwise hang mid-jump / stay a squid). */
+  _poseForCelebration(pl) {
+    const S = this.session;
+    if (!pl.alive) {
+      S.respawnPlayer();
+      const sp = this.respawnPoint(S);
+      if (sp?.pos) pl.position.copy(sp.pos);
+    }
+    pl.kit?.special?.end?.();
+    if (pl.form !== 'kid' && typeof pl._changeForm === 'function') pl._changeForm('kid');
+    pl.submerged = false;
+    pl.climbing = false;
+    pl.velocity.set(0, 0, 0);
+    const g = S.level?.groundBelow?.(pl.position, 12);
+    if (g && g.normal.y > 0.5) pl.position.y = g.point.y;
   }
 
   _saveResults(info) {

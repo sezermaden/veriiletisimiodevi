@@ -39,6 +39,7 @@ export class MissileBarrage extends Special {
     super.activate();
     const w = this.w, S = w.session, s = this.s;
     this.t = 0;
+    this.inFlight = 0;
     this.phase = 'lock';
     this.queue = [];
     this.launchT = 0;
@@ -108,7 +109,8 @@ export class MissileBarrage extends Special {
       if (!this.queue.length) { this.phase = 'done'; this.t = 0; }
     } else if (this.phase === 'done') {
       for (const r of this.reticles) this.placeReticle(r);
-      if (this.t > 0.35) this.end();
+      // stay active until the volley has landed (no gauge refill from our own missiles)
+      if ((this.t > 0.35 && this.inFlight <= 0) || this.t > 6) this.end();
     }
   }
 
@@ -178,14 +180,16 @@ export class MissileBarrage extends Special {
     const mesh = makeMissileModel(color);
     mesh.position.copy(p0);
     let exploded = false;
+    this.inFlight++;
     let puffT = 0;
     const boom = (pos, normal) => {
       if (exploded) return;
       exploded = true;
+      this.inFlight--;
       blast(S, pos, normal || UP, w.team, { owner: w, damage: s.damage, radius: s.radius, paintRadius: s.paintRadius, kind: 'special', sound: 'boom' });
       mesh.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
     };
-    S.projectiles.spawn({
+    const proj = S.projectiles.spawn({
       pos: p0, vel: _d.subVectors(p1, p0).normalize().multiplyScalar(8), team: w.team, owner: w,
       damage: 0, radius: 0.22, gravity: 0, life: T + 1.2, mesh, fx: false,
       onStep: (p, dt) => {
@@ -212,6 +216,12 @@ export class MissileBarrage extends Special {
       onHit: (p, hit) => boom(hit.point.clone(), hit.actor ? UP : hit.normal),
       onExpire: (p) => boom(p.pos.clone(), UP),
     });
+    if (!proj) {                                                  // projectile pool full
+      exploded = true;
+      this.inFlight--;
+      mesh.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+      return;
+    }
     S.fx.puff(p0, '#ffffff', 0.5, 0.4, _d.set(0, 1.5, 0), 2, 0.6);
     S.fx.burst(p0, UP, color, 5, 3, { size: 0.05 });
     sfx(w, 'missile_launch', { volume: 0.55, throttle: 0.03 });

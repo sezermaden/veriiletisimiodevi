@@ -133,7 +133,11 @@ export class ResultsScreen extends Screen {
     ];
   }
 
-  onEnter() { this.app.audio?.sfx?.('story_splash', { volume: 0.5 }); }
+  onEnter() {
+    this.app.audio?.sfx?.('story_splash', { volume: 0.5 });
+    // free the mouse so the buttons can be clicked (the stage had it pointer-locked)
+    try { this.app.input?.exitPointerLock?.(); } catch { /* not locked */ }
+  }
 
   _row(i) { this.rows[i]?.classList.add('in'); this.app.audio?.sfx?.('story_tick', { volume: 0.6, pitch: 0.8 + i * 0.1 }); }
   _reward(i) { this.rewards[i]?.classList.add('in'); this.app.audio?.sfx?.('coin', { volume: 0.4 }); }

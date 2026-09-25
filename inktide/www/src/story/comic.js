@@ -100,6 +100,10 @@ class ClockScreen extends Screen {
     if (this.opts.overFade && this.app.fadeEl) {
       requestAnimationFrame(() => { this.app.fadeEl.style.transitionDuration = '450ms'; this.app.fadeEl.classList.remove('on'); });
     }
+    // score: a track id, or false for silence (the post-credits tease)
+    const mu = this.opts.music;
+    if (mu === false) this.app.audio?.stopMusic?.(1.5);
+    else if (mu) this.app.audio?.playMusic?.(mu, { fadeIn: 1.5 });
   }
 
   onBack() { /* skipping needs a hold */ }
@@ -112,7 +116,7 @@ export class ComicScreen extends ClockScreen {
    * @param {object} o overFade, ink, className
    */
   constructor(app, panels, o = {}) {
-    super(app, { blocksGame: true, className: 'story-comic' + (o.className ? ' ' + o.className : ''), overFade: !!o.overFade });
+    super(app, { blocksGame: true, className: 'story-comic' + (o.className ? ' ' + o.className : ''), overFade: !!o.overFade, music: o.music });
     this.panels = panels || [];
     this.o = o;
     this.cur = null;
@@ -242,7 +246,7 @@ const MONTAGE = ['rainbow', 'team', 'cores', 'lighthouse', 'wellspring', 'pix', 
 
 export class CreditsScreen extends ClockScreen {
   constructor(app, o = {}) {
-    super(app, { blocksGame: true, className: 'story-credits', overFade: !!o.overFade });
+    super(app, { blocksGame: true, className: 'story-credits', overFade: !!o.overFade, music: o.music ?? 'credits' });
     this.o = o;
     this.y = 0;
     this.m = -1;
@@ -253,15 +257,15 @@ export class CreditsScreen extends ClockScreen {
   build() {
     const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     this.el.innerHTML = `
-      <div class="cr-bg"><div class="cm-slot"></div><div class="cm-slot"></div></div>
-      <div class="cr-shade"></div>
-      <div class="cr-roll"><div class="cr-inner">${CREDITS.map(([k, a, b]) => {
-        if (k === 'gap') return '<div class="cr-gap"></div>';
-        if (k === 'cast') return `<div class="cr-cast"><b>${esc(a)}</b><span>${esc(b)}</span></div>`;
-        return `<div class="cr-${k}">${esc(a)}</div>`;
+      <div class="sc-bg"><div class="cm-slot"></div><div class="cm-slot"></div></div>
+      <div class="sc-shade"></div>
+      <div class="sc-roll"><div class="sc-inner">${CREDITS.map(([k, a, b]) => {
+        if (k === 'gap') return '<div class="sc-gap"></div>';
+        if (k === 'cast') return `<div class="sc-cast"><b>${esc(a)}</b><span>${esc(b)}</span></div>`;
+        return `<div class="sc-${k}">${esc(a)}</div>`;
       }).join('')}</div></div>`;
-    this.slots = [...this.el.querySelectorAll('.cr-bg .cm-slot')];
-    this.inner = this.el.querySelector('.cr-inner');
+    this.slots = [...this.el.querySelectorAll('.sc-bg .cm-slot')];
+    this.inner = this.el.querySelector('.sc-inner');
     this._skipUI();
   }
 
@@ -323,8 +327,8 @@ export function playCredits(app, o = {}) {
   return s.done;
 }
 
-export const playPrologue = (app, o = {}) => playComic(app, PROLOGUE, o);
-export const playEnding = (app, o = {}) => playComic(app, ENDING, o);
-export const playPostCredits = (app, o = {}) => playComic(app, POST_CREDITS, { ...o, className: 'tease' });
+export const playPrologue = (app, o = {}) => playComic(app, PROLOGUE, { music: 'story', ...o });
+export const playEnding = (app, o = {}) => playComic(app, ENDING, { music: 'story', ...o });
+export const playPostCredits = (app, o = {}) => playComic(app, POST_CREDITS, { music: false, ...o, className: 'tease' });
 
 export { SPEAKERS };

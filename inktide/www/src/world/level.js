@@ -43,7 +43,7 @@ export class Level {
   _notifyDynamic(c, r, team, n) {
     for (const d of this.dynamic) {
       const owner = d.owner;
-      if (!d.enabled || !owner?.onInkHit) continue;
+      if (!d.enabled || !owner?.onInkHit || d === this._skipDynamic) continue;
       const g = d.mesh.geometry;
       if (!g.boundingSphere) g.computeBoundingSphere();
       this._sph.copy(g.boundingSphere).applyMatrix4(d.mesh.matrixWorld);

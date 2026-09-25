@@ -21,6 +21,8 @@ const UP = new THREE.Vector3(0, 1, 0);
 const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
 const _d = new THREE.Vector3();
+const _p = new THREE.Vector3();
+const _t = new THREE.Vector3();
 
 /** Diorama: a harbour-side plaza with a brick wall, containers, a ramp deck and low cover. */
 const PLAZA = {
@@ -111,6 +113,10 @@ class Kid {
     this.firing = false;
     this.form = 'kid';
     this.ripT = 0;
+    this.anim = {
+      speed: 0, grounded: true, vy: 0, aiming: false, aimPitch: 0, firing: false, recoil: 0,
+      submerged: false, climbing: false, inkLevel: 1, landed: 0, hidden: false,
+    };
     if (this.path) this.pos.copy(this.path.getPointAt(this.u));
     this.model.root.position.copy(this.pos);
     this.model._prevPos.copy(this.pos);
@@ -188,8 +194,8 @@ class Kid {
     } else if (this.state === 'run' || this.state === 'squid') {
       const sp = this.state === 'squid' ? 7.4 : 4.6;
       this.u = (this.u + (sp * dt) / this.pathLen) % 1;
-      const p = this.path.getPointAt(this.u);
-      const tan = this.path.getTangentAt(this.u);
+      const p = this.path.getPointAt(this.u, _p);
+      const tan = this.path.getTangentAt(this.u, _t);
       this.pos.copy(p);
       const want = Math.atan2(tan.x, tan.z);
       let d = ((want - this.yaw + Math.PI) % (Math.PI * 2)) - Math.PI;
@@ -247,10 +253,10 @@ class Kid {
     const m = this.model;
     m.root.position.copy(this.pos);
     m.root.rotation.y = this.yaw;
-    m.update(dt, {
-      speed, grounded: true, vy: 0, aiming, aimPitch: this.aimPitch, firing: this.firing, recoil: this.recoil,
-      submerged: false, climbing: false, inkLevel: 0.55 + 0.45 * Math.sin(this.t * 0.4 + this.u * 6) ** 2, landed: 0, hidden: false,
-    });
+    const s = this.anim;       // reused every frame (no per-frame garbage)
+    s.speed = speed; s.aiming = aiming; s.aimPitch = this.aimPitch; s.firing = this.firing; s.recoil = this.recoil;
+    s.inkLevel = 0.55 + 0.45 * Math.sin(this.t * 0.4 + this.u * 6) ** 2;
+    m.update(dt, s);
     this.gun.visible = this.form === 'kid';
   }
 
@@ -426,13 +432,16 @@ export class MenuScene {
     cam.position.y += Math.sin(this.time * 0.91) * 0.03;
     cam.lookAt(this.camTarget);
 
-    // keep the subject at `frame` of the viewport width (menus cover the left third)
+    // keep the subject at `frame` of the viewport width (menus cover the left third): render a
+    // wider virtual frame and show a window of it. The aspect must be the VIRTUAL frame's, or the
+    // window is squeezed horizontally (kids looked ~20% fat in the 'wide' shot).
     const W = Math.max(1, innerWidth), H = Math.max(1, innerHeight);
     const f = THREE.MathUtils.clamp(this.frame, 0.2, 0.8);
     const fullW = W * 2 * Math.max(f, 1 - f);
     const offX = f >= 0.5 ? 0 : fullW - W;
     cam.fov = this.fov;
     cam.near = 0.1; cam.far = 1400;
+    cam.aspect = fullW / H;
     cam.setViewOffset(fullW, H, offX, 0, W, H);
   }
 

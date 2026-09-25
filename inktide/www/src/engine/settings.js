@@ -50,7 +50,8 @@ export const DEFAULTS = {
 };
 
 function deepMerge(base, over) {
-  const out = Array.isArray(base) ? base.slice() : { ...base };
+  // always deep-copy the base so later settings.set() calls never mutate DEFAULTS
+  const out = structuredClone(base);
   if (!over || typeof over !== 'object') return out;
   for (const k of Object.keys(over)) {
     const b = base?.[k];

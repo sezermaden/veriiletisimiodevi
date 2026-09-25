@@ -51,7 +51,12 @@ export class Cutscene {
     this.ended = true;
     const blend = this.o.blendBack ?? 0.7;
     if (this.d.cam.active && blend > 0 && !this.skipping) await this.returnCamera(blend);
-    if (this.d.cutscene === this) this.d.cutscene = this.prevCutscene || null;
+    if (this.d.cutscene === this) {
+      // scenes can end out of order: never hand control back to one that has already ended
+      let prev = this.prevCutscene;
+      while (prev && prev.ended) prev = prev.prevCutscene;
+      this.d.cutscene = prev || null;
+    }
     if (!this.d.cutscene) this.d.releaseCam();
     for (const m of this.models) if (!m.keep) this.despawn(m);
     this.d.release(this.key);

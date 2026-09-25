@@ -36,6 +36,9 @@ export default {
     box(-20, -0.2, -20, -16, 0.05, 20, { mat: 'grate' }),
     // floating hex platform
     prism([[0, -2], [1.7, -1], [1.7, 1], [0, 2], [-1.7, 1], [-1.7, -1]].map(([x, z]) => [x - 14, z + 14]), 2.2, 2.8, { mat: 'metal' }),
+    // steep (34°) ramp up to a platform — movement regression test
+    ramp(17, 0, 14, 20, 2.4, 17.5, '-z', { mat: 'concrete', color: '#d8cfc0' }),
+    block(18.5, 12, 3, 4, 0, 2.4, { mat: 'concrete', color: '#d8cfc0' }),
     // gentle slope
     rampC(0, 17, 8, 6, 0, 1.2, '+z', { mat: 'asphalt' }),
     block(0, 21, 8, 2, 0, 1.2, { mat: 'asphalt' }),

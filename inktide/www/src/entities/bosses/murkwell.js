@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { registerEntity } from '../base.js';
 import { inkExplosion } from '../../weapons/base.js';
-import { Boss, Beam, G, UP, DOWN, TEAM_MURK, TEAM_HERO, clamp, lerp, smooth, easeOut, easeIn, angleDiff, turnToward, emblemTexture, hazardTexture } from './common.js';
+import { Boss, Beam, G, UP, DOWN, TEAM_MURK, TEAM_HERO, clamp, lerp, smooth, easeOut, easeIn, angleDiff, turnToward, emblemTexture, hazardTexture, mergeStatic } from './common.js';
 import { Pilot } from './pilots.js';
 
 const _v = new THREE.Vector3();
@@ -29,7 +29,8 @@ const _hc = new THREE.Vector3();
 const DOWN_V = new THREE.Vector3(0, -1, 0);
 
 const PALM_HP = 280;
-const POD_HP = 240;
+const POD_HP = 175;
+const MS = 1.2;                    // model scale (reach / heights below are multiplied by it)
 const CORE_HP = 525;
 const UPPER = 2.8, FORE = 2.7, HANDOFF = 0.55;
 const ARM_LEN = UPPER + FORE + HANDOFF;
@@ -60,7 +61,7 @@ export class MurkwellMech extends Boss {
     this.waves = [];
     this.missiles = [];
     this.flood = 0; this.floodTarget = 0;
-    this.defeatDuration = 6.8;
+    this.defeatDuration = 7.6;
     this.defeatBooms = 3.4;
     this.armorHint = 'The Graytide Mech is armoured! Wait for its weak spots to glow.';
     this._build();
@@ -87,6 +88,7 @@ export class MurkwellMech extends Boss {
     this.jetMat = jetM; this.eyeMat = eye; this.seamMat = seam;
     const m = this.model;
     m.rotation.y = this.yaw;
+    m.scale.setScalar(MS);
 
     // ---- legs ----
     this.legs = [];
@@ -136,6 +138,7 @@ export class MurkwellMech extends Boss {
     this.coreMat = this.mat('core', this.coreColor, { emissive: this.coreColor, emissiveIntensity: 1.8, roughness: 0.08, rim: 0.8, rimColor: '#ffffff' });
     this.coreMat.flatShading = true;
     this.coreGem = this.mesh(new THREE.IcosahedronGeometry(0.72, 1), this.coreMat, coreG);
+    this.coreGem.userData.noMerge = true;
     this.own(this.coreGem.geometry);
     this.mesh(G.torus(0.95, 0.12, 10, 30), gold, coreG, [0, 0, -0.05]);
     this.coreGlow = this.sprite(this.coreColor, 4, 0.5, coreG, [0, 0, 0.3]);
@@ -150,7 +153,7 @@ export class MurkwellMech extends Boss {
     // missile pods on the shoulders
     this.pods = [];
     for (const s of [-1, 1]) {
-      const pod = this.node(chest, [s * 1.9, 1.75, -0.2]);
+      const pod = this.node(chest, [s * 1.9, 1.75, -0.2], [0.55, 0, s * -0.12]);
       this.mesh(G.rbox(1.5, 1.1, 1.7, 0.15), dark, pod);
       this.mesh(G.box(1.55, 0.2, 1.75), hazard, pod, [0, -0.45, 0]);
       const glowM = this.mat('pod' + s, this.coreColor, { emissive: this.coreColor, emissiveIntensity: 1.2, roughness: 0.2, rim: 0.4 });
@@ -162,7 +165,7 @@ export class MurkwellMech extends Boss {
       this.mesh(G.rbox(1.55, 0.14, 1.75, 0.06), gray, lid, [0, 0, 0.87]);
       this.mesh(G.box(0.2, 0.05, 1.6), gold, lid, [0, 0.08, 0.87]);
       const glow = this.sprite(this.coreColor, 2.2, 0.5, pod, [0, 0.9, 0]);
-      const part = this.part({ kind: 'weak', name: 'pod' + s, anchor: pod, offset: [0, 0.55, 0], radius: 0.95, hp: Math.round(POD_HP * this.hpMul), mats: [glowM], glow, glowSize: 2.4, color: this.coreColor });
+      const part = this.part({ kind: 'weak', name: 'pod' + s, anchor: pod, offset: [0, 0.55, 0], radius: 0.95 * MS, hp: Math.round(POD_HP * this.hpMul), mats: [glowM], glow, glowSize: 2.4, color: this.coreColor });
       this.pods.push({ pod, lid, s, part, muzzle: this.node(pod, [0, 0.7, 0]) });
       this.anchors.push(pod);
     }
@@ -202,9 +205,9 @@ export class MurkwellMech extends Boss {
       const thumb = this.node(hand, [-s * 0.78, -0.35, 0.1], [0, 0, s * 0.6]);
       this.mesh(G.rbox(0.3, 0.7, 0.34, 0.08), gray, thumb, [0, -0.3, 0]);
       const fistTip = this.node(hand, [0, -0.55, 0]);
-      const part = this.part({ kind: 'weak', name: 'palm' + i, anchor: palm, offset: [0, 0, 0.35], radius: 0.95, hp: Math.round(PALM_HP * this.hpMul), mats: [palmM], glow: palmGlow, glowSize: 2.6, color: this.coreColor });
-      const armor = this.part({ kind: 'armor', anchor: fore, offset: [0, -FORE * 0.55, 0], radius: 0.95 });
-      const fistArmor = this.part({ kind: 'armor', anchor: hand, offset: [0, -0.5, 0], radius: 0.95 });
+      const part = this.part({ kind: 'weak', name: 'palm' + i, anchor: palm, offset: [0, 0, 0.35], radius: 0.95 * MS, solid: true, hp: Math.round(PALM_HP * this.hpMul), mats: [palmM], glow: palmGlow, glowSize: 2.6, color: this.coreColor });
+      const armor = this.part({ kind: 'armor', anchor: fore, offset: [0, -FORE * 0.55, 0], radius: 0.95 * MS });
+      const fistArmor = this.part({ kind: 'armor', anchor: hand, offset: [0, -0.5, 0], radius: 0.95 * MS, solid: true });
       this.arms.push({ s, sh, upperArm, elbow, fore, wrist, hand, palm, fingers, thumb, part, armor, fistArmor, fistTip });
       this.anchors.push(hand, elbow);
     }
@@ -234,9 +237,11 @@ export class MurkwellMech extends Boss {
     this.stacks = [this.node(chest, [-0.9, 2.25, -1.25]), this.node(chest, [0.9, 2.25, -1.25])];
     // colliders + armour for the torso
     this.collider(3.9, 3.9, 2.5, up, 0, 1.9, 0);
-    this.chestArmor = this.part({ kind: 'armor', anchor: chest, offset: [0, 0, 0.4], radius: 1.6 });
-    this.core = this.part({ kind: 'weak', name: 'core', anchor: coreG, offset: [0, 0, 0.35], radius: 1.05, hp: Math.round(CORE_HP * this.hpMul), mats: [this.coreMat], glow: this.coreGlow, glowSize: 4, color: this.coreColor });
+    this.chestArmor = this.part({ kind: 'armor', anchor: chest, offset: [0, 0, 0.4], radius: 1.6 * MS });
+    this.core = this.part({ kind: 'weak', name: 'core', anchor: coreG, offset: [0, 0, 0.35], radius: 1.05 * MS, hp: Math.round(CORE_HP * this.hpMul), mats: [this.coreMat], glow: this.coreGlow, glowSize: 4, color: this.coreColor });
     this.anchors.push(chest, up, this.stacks[0], this.stacks[1]);
+
+    mergeStatic(this, m);
 
     // beam for phase 3 (fired from the lure)
     this.beam = new Beam(this, '#cfd2de', 0.5);
@@ -352,18 +357,19 @@ export class MurkwellMech extends Boss {
     this.group.updateMatrixWorld(true);
     const A = this.arms[i];
     A.sh.getWorldPosition(_w);
-    const h = _w.y - (this.floorY + 0.75);
-    const reach = Math.sqrt(Math.max(0.5, ARM_LEN * ARM_LEN * 0.97 - h * h));
+    const L = ARM_LEN * MS;
+    const h = _w.y - (this.floorY + 0.75 * MS);
+    const reach = Math.sqrt(Math.max(0.5, L * L * 0.97 - h * h));
     this.fwd(_d);
     _t.subVectors(toward, _w).setY(0);
     let ang = Math.atan2(_t.x, _t.z) - this.yaw;
     ang = clamp(angleDiff(0, ang), -0.55, 0.55);
     const a = this.yaw + ang;
     const dist = Math.min(reach, Math.max(2.5, _t.length()));
-    const target = this.arm[i].target.set(_w.x + Math.sin(a) * dist, this.floorY + 0.75, _w.z + Math.cos(a) * dist);
+    const target = this.arm[i].target.set(_w.x + Math.sin(a) * dist, this.floorY + 0.75 * MS, _w.z + Math.cos(a) * dist);
     // keep the reach exact: arm length from the shoulder
     _t.subVectors(target, _w);
-    if (_t.length() > ARM_LEN) target.copy(_w).addScaledVector(_t.normalize(), ARM_LEN);
+    if (_t.length() > L) target.copy(_w).addScaledVector(_t.normalize(), L);
     P.bend = save.bend; P.lean = save.lean; P.hover = save.hover;
     this.applyPose();
     return target;
@@ -405,7 +411,7 @@ export class MurkwellMech extends Boss {
       case 'hover-up': {
         if (enter) { S.audio?.sfx('boss_whir', { pos, volume: 1, dur: 1.6 }); }
         this.jet = lerp(this.jet, 1, Math.min(1, dt * 3));
-        this.pose.hover = lerp(this.pose.hover, 2.2, Math.min(1, dt * 1.5));
+        this.pose.hover = lerp(this.pose.hover, 1.6, Math.min(1, dt * 1.5));
         this.pose.bend = lerp(this.pose.bend, 0.25, Math.min(1, dt * 2));
         this._face(dt, 1);
         if (this.stateT > 1.8) { this._pickHover(); this.setState('hover'); }
@@ -579,7 +585,7 @@ export class MurkwellMech extends Boss {
     S.fx.explosion(_w.copy(at).setY(this.floorY + 0.3), UP, this.pal.ink, 3.2);
     for (let k = 0; k < 5; k++) S.fx.puff(_w.copy(at).add(_t.set(Math.random() - 0.5, 0.2, Math.random() - 0.5).multiplyScalar(4)), '#8a8398', 2.4, 0.9, null, 2, 0.5);
     inkExplosion(S, at, UP, TEAM_MURK, { paintRadius: 3.2, damage: 0, owner: this, sound: 'boss_slam' });
-    this.hurtNear(at, 3.0, 60);
+    this.hurtNear(at, 3.2, 60);
     this.spawnWave(at, this.phase === 3 ? 1.45 : 0.62, this.phase === 3 ? 12 : 11);
     if (this.phase === 1 && !a.broken) this.setState('palm');
     else if (this.slamDouble) { this.slamDouble = false; this.slamI = 1 - i; this.setState('slam-raise'); }
@@ -592,7 +598,7 @@ export class MurkwellMech extends Boss {
     if (!Pl.alive) return;
     Pl.hitCenter(_hc);
     const d = Math.hypot(_hc.x - at.x, _hc.z - at.z);
-    if (d < r && _hc.y - at.y < 2.6) this.hurt('slam', dmg, at, 11, 7, 0.5);
+    if (d < r && _hc.y - at.y < 3) this.hurt('slam', dmg, at, 11, 7, 0.5);
   }
 
   _palm(dt, enter) {
@@ -678,7 +684,7 @@ export class MurkwellMech extends Boss {
     if (!Pl.alive || this.pose.hover > 0.5) return;
     for (const L of this.legs) {
       L.foot.getWorldPosition(_t);
-      if (Math.hypot(Pl.position.x - _t.x, Pl.position.z - _t.z) < 1.5 && Pl.position.y - this.floorY < 1.2 && this.walkSpeed > 0.1) this.hurt('stomp', 25, _t, 9, 5, 1);
+      if (Math.hypot(Pl.position.x - _t.x, Pl.position.z - _t.z) < 1.5 * MS && Pl.position.y - this.floorY < 1.2 * MS && this.walkSpeed > 0.1) this.hurt('stomp', 25, _t, 9, 5, 1);
     }
   }
 
@@ -696,9 +702,10 @@ export class MurkwellMech extends Boss {
     this._moveTo(dt, this.hoverTarget, 2.2);
     this._face(dt, 1.2);
     this.jet = lerp(this.jet, 1, Math.min(1, dt * 3));
-    this.pose.hover = lerp(this.pose.hover, 2.0 + Math.sin(this.t * 1.7) * 0.3, Math.min(1, dt * 2));
-    this.pose.bend = lerp(this.pose.bend, 0.25, Math.min(1, dt * 2));
-    this.pose.lean = lerp(this.pose.lean, 0.08, Math.min(1, dt * 2));
+    const firing = this.state === 'missiles';
+    this.pose.hover = lerp(this.pose.hover, (firing ? 0.9 : 1.6) + Math.sin(this.t * 1.7) * 0.25, Math.min(1, dt * 2));
+    this.pose.bend = lerp(this.pose.bend, firing ? 0.35 : 0.25, Math.min(1, dt * 2));
+    this.pose.lean = lerp(this.pose.lean, firing ? 0.3 : 0.08, Math.min(1, dt * 2));
     // jets rain a little Murk
     this._rainT = (this._rainT || 0) - dt;
     if (this._rainT <= 0) {
@@ -948,6 +955,7 @@ export class MurkwellMech extends Boss {
   // ---------------------------------------------------------------------------------------------
   onDefeatStart() {
     this.beam.hide();
+    this.floodTarget = 0;
     for (const w of this.waves) w.mesh.visible = false;
     this.waves.length = 0;
     this.chestOpen = 1;
@@ -958,6 +966,12 @@ export class MurkwellMech extends Boss {
 
   defeatStep(dt, t) {
     const pos = this.position;
+    // the flood drains away as the mech fails
+    if (this.flood > 0) {
+      this.flood = Math.max(0, this.flood - dt / 1.8);
+      this.floodMesh.position.y = this.floodY();
+      if (this.flood <= 0) this.floodMesh.visible = false;
+    }
     // stagger back toward the tower edge, then topple over it
     this.pose.hover = Math.max(0, this.pose.hover - dt * 3);
     this.jet = Math.max(0, this.jet - dt);
@@ -968,22 +982,31 @@ export class MurkwellMech extends Boss {
       pos.addScaledVector(_d, -dt * 1.2);
       for (let i = 0; i < 2; i++) { this.raisedQ(i, _q); this.arm[i].q.slerp(_q, Math.min(1, dt * 2)); this.arm[i].curl = -0.1; }
     } else {
+      // topple on the heels until it lies over the parapet, then slide off the edge and drop
       const f = this.fall;
-      f.av += dt * 1.6;
-      f.a = Math.min(Math.PI * 0.62, f.a + f.av * dt);
       this.fwd(_d);
-      pos.addScaledVector(_d, -dt * (1.5 + f.av * 3));
       const c = this.aCenter;
-      const back = -((pos.x - c.x) * Math.sin(this.yaw) + (pos.z - c.z) * Math.cos(this.yaw));
-      if (back > this.aHalf[1] + 6.8 || t > 5) { f.vy -= 22 * dt; pos.y += f.vy * dt; }
-      if (!this._fallSfx && t > 2.6) { this._fallSfx = true; this.S.audio?.sfx('rumble', { pos, volume: 1 }); }
+      const back = -((pos.x - c.x) * _d.x + (pos.z - c.z) * _d.z);
+      if (f.a < 1.3) {
+        f.av += dt * 1.15;
+        f.a = Math.min(1.3, f.a + f.av * dt);
+        if (!this._fallSfx) { this._fallSfx = true; this.S.audio?.sfx('rumble', { pos, volume: 1 }); this.S.audio?.sfx('boss_roar', { pos, volume: 0.8, pitch: 0.55 }); }
+        if (f.a >= 1.3) { this.S.audio?.sfx('boss_slam', { pos, volume: 1 }); this.S.shake(pos, 0.9); }
+      } else {
+        f.slide = (f.slide || 0) + dt * 6;
+        pos.addScaledVector(_d, -f.slide * dt);
+        if (back > this.aHalf[1] + 1.5) {
+          f.vy -= 22 * dt; pos.y += f.vy * dt;
+          f.a = Math.min(2.4, f.a + dt * 0.9);
+        }
+      }
     }
     this.applyPose();
     this.model.rotation.x = -(this.fall.a || 0);
     this.model.rotation.order = 'YXZ';
     if (t > 2.2 && !this._podFly) this._ejectPod();
     // far below: the crash
-    if (t > 5.2 && !this._crashed) {
+    if (pos.y < this.floorY - 45 && !this._crashed) {
       this._crashed = true;
       this.S.audio?.sfx('bigboom', { volume: 0.8 });
       this.S.shake(this.position, 0.4);

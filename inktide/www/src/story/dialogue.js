@@ -128,7 +128,11 @@ export class DialogueBox {
     const size = settings.get('gameplay.subtitleSize') || 'medium';
     document.body.classList.toggle('subs-small', size === 'small');
     document.body.classList.toggle('subs-large', size === 'large');
-    this.chars = buildText(this.textEl, line.text, o.input);
+    // {kitName} {subName} {specialName}: the equipped kit, so tutorial lines stay true on replays
+    // with another kit (button tokens like {sub} / {special} are left for buildText)
+    const vars = o.vars || null;
+    const text = vars ? String(line.text ?? '').replace(/\{(kitName|subName|specialName)\}/g, (m, k) => vars[k] ?? m) : line.text;
+    this.chars = buildText(this.textEl, text, o.input);
     this.setNext(false);
     this.skipEl.innerHTML = o.chatter || o.noSkip ? '' : `${promptHTML(o.input, 'skip')}<span>Skip</span>`;
     el.classList.remove('hidden');
@@ -225,7 +229,7 @@ export class Dialogue {
     const line = job.lines[job.i];
     const prev = job.lines[job.i - 1];
     this.box.resetReveal();
-    this.box.show(line, { ink: this.o.ink?.(), input: this.input, chatter: job.radio, noSkip: job.opts.noSkip });
+    this.box.show(line, { ink: this.o.ink?.(), vars: this.o.vars?.() || null, input: this.input, chatter: job.radio, noSkip: job.opts.noSkip });
     this.shown = 0;
     this.acc = 0;
     this.lineT = 0;

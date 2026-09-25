@@ -22,7 +22,7 @@ export class StoryMapScreen extends UiScreen {
     this.focusId = f;
     this.world = worldOf(this.focusId)?.n || 1;
     this.sel = this.focusId;
-    this._size = '';
+    this._laid = null;
   }
 
   build() {
@@ -78,7 +78,11 @@ export class StoryMapScreen extends UiScreen {
     loadStageMeta().then(() => { this.renderNodes(); this.showStage(this.sel); });
   }
 
-  onEnter() { this.app.menuScene?.setShot('map'); this.app.menuScene?.setCovered?.(true); }
+  onEnter() {
+    this.app.menuScene?.setShot('map');
+    this.app.menuScene?.setCovered?.(true);
+    try { audio.playMusic('map'); } catch { /* optional */ }
+  }
   onExit() { this.app.menuScene?.setCovered?.(false); }
   onResume() {
     this.app.menuScene?.setShot('map');
@@ -147,13 +151,13 @@ export class StoryMapScreen extends UiScreen {
   layoutMap(force = false) {
     const box = this.$('.sm-map');
     const w = box.clientWidth, h = box.clientHeight;
-    const key = `${w}x${h}x${this.world}`;
-    if (!force && key === this._size) return;
+    const L = this._laid || (this._laid = { w: 0, h: 0, world: 0 });   // runs every frame: no garbage
+    if (!force && L.w === w && L.h === h && L.world === this.world) return;
     if (!w || !h) return;
-    this._size = key;
+    L.w = w; L.h = h; L.world = this.world;
     const V = WORLD_VIEW[this.world];
-    const base = Math.max(w / MAP_W, h / MAP_H);
-    const s = base * V.zoom;
+    // cover the box, zoomed toward the world; on ultra-wide boxes the width alone already zooms in
+    const s = Math.max(w / MAP_W, (h / MAP_H) * V.zoom);
     let tx = w / 2 - V.cx * s, ty = h / 2 - V.cy * s;
     tx = Math.min(0, Math.max(w - MAP_W * s, tx));
     ty = Math.min(0, Math.max(h - MAP_H * s, ty));

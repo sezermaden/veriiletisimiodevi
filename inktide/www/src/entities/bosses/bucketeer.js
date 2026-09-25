@@ -10,7 +10,7 @@
 //   { type: 'boss-bucketeer', pos (floor centre), arena: { center, radius }, tower: [x, topY, z] }
 import * as THREE from 'three';
 import { registerEntity } from '../base.js';
-import { Boss, G, UP, TEAM_MURK, clamp, lerp, smooth, easeOut, angleDiff, turnToward, emblemTexture, hazardTexture } from './common.js';
+import { Boss, G, UP, TEAM_MURK, clamp, lerp, smooth, easeOut, angleDiff, turnToward, emblemTexture, hazardTexture, mergeStatic } from './common.js';
 import { Pilot } from './pilots.js';
 
 const _v = new THREE.Vector3();
@@ -57,7 +57,8 @@ export class Bucketeer extends Boss {
     this.pourFrom = new THREE.Vector3(); this.pourTo = new THREE.Vector3();
     this._build();
     // hover start: spawn pos is the floor under it
-    this.position.y = this.floorY + (this.dormant ? 3.2 : 1.5);
+    this.position.y = this.floorY + (this.dormant ? 3.2 : 4.2);
+    this.rotorSpeed = 24;
     this.group.updateMatrixWorld(true);
     this.setState(this.dormant ? 'idle' : 'intro');
   }
@@ -104,6 +105,7 @@ export class Bucketeer extends Boss {
     this.coreMat = this.mat('core', this.coreColor, { emissive: this.coreColor, emissiveIntensity: 1.6, roughness: 0.1, rim: 0.7, rimColor: '#ffffff' });
     this.coreMat.flatShading = true;
     this.coreGem = this.mesh(new THREE.IcosahedronGeometry(0.72, 0), this.coreMat, core);
+    this.coreGem.userData.noMerge = true;
     this.own(this.coreGem.geometry);
     this.mesh(G.torus(0.95, 0.06, 8, 30), steel, core, [0, 0, 0], [Math.PI / 2, 0, 0]);
     this.mesh(G.torus(0.95, 0.05, 8, 30), steel, core, [0, 0, 0], [0, 0, 0]);
@@ -176,6 +178,7 @@ export class Bucketeer extends Boss {
     this.armor = this.part({ kind: 'armor', anchor: body, offset: [0, -0.15, 0], radius: 1.9 });
     this.core = this.part({ kind: 'weak', name: 'core', anchor: core, radius: 0.95, hp: Math.round(CORE_HP * this.hpMul), mats: [this.coreMat], glow: this.coreGlow, glowSize: 3.4, color: this.coreColor });
     this.anchors.push(core, canopy, ...this.arms.map((a) => a.nac));
+    mergeStatic(this, this.model);
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -451,7 +454,9 @@ export class Bucketeer extends Boss {
     _d.subVectors(Pl.position, this.position).setY(0);
     if (_d.lengthSq() < 1) _d.set(1, 0, 0);
     _d.normalize();
-    const through = _p.copy(Pl.position).setY(this.floorY + C.alt - 0.4);
+    // fly high enough to clear the vantage tower (the player may be standing on it)
+    const alt = Math.max(C.alt - 0.4, this.tower ? this.tower.y - this.floorY + 2.9 : 0);
+    const through = _p.copy(Pl.position).setY(this.floorY + alt);
     const half = this.orbitR + 2;
     this.pourFrom.copy(through).addScaledVector(_d, -half * 0.8);
     this.pourTo.copy(through).addScaledVector(_d, half * 0.9);
@@ -602,7 +607,13 @@ export class Bucketeer extends Boss {
     if (t < 3.4) {
       // spiral down toward the roof
       this.vel.y -= 5 * dt;
-      _d.subVectors(this.center, pos).setY(0).multiplyScalar(0.4);
+      // spiral down beside the tower (never into it)
+      if (!this.crashAt) {
+        _v.subVectors(pos, this.center).setY(0);
+        if (_v.lengthSq() < 1) _v.set(1, 0, 0);
+        this.crashAt = this.center.clone().addScaledVector(_v.normalize(), this.tower ? 8.5 : 0);
+      }
+      _d.subVectors(this.crashAt, pos).setY(0).multiplyScalar(0.8);
       this.vel.x += (_d.x - this.vel.x) * dt; this.vel.z += (_d.z - this.vel.z) * dt;
       pos.addScaledVector(this.vel, dt);
       const g = this.floorY + 1.6;
