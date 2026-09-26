@@ -44,6 +44,13 @@ fs.rmSync(appDir, { recursive: true, force: true });
 copyTree(shellSrc, appDir, () => true, true);
 fs.renameSync(path.join(appDir, 'App.csproj'), path.join(appDir, `${cfg.app}.csproj`));
 copyTree(path.join(root, 'www'), path.join(appDir, 'www'), (p) => !p.includes(`${path.sep}node_modules`));
+// tile / icon set referenced by Package.appxmanifest (tools/make-icons.mjs writes uwp/assets/)
+const icons = path.join(out, 'assets');
+if (!fs.existsSync(path.join(icons, 'Square150x150Logo.png'))) throw new Error('uwp/assets/ is missing the tile set: run node tools/make-icons.mjs first');
+copyTree(icons, path.join(appDir, 'Assets'));
+const manifest = fs.readFileSync(path.join(appDir, 'Package.appxmanifest'), 'utf8');
+const missing = [...manifest.matchAll(/Assets\\([A-Za-z0-9]+)\.png/g)].map((m) => m[1]).filter((n) => !fs.existsSync(path.join(appDir, 'Assets', n + '.png')));
+if (missing.length) throw new Error('manifest references missing tiles: ' + missing.join(', '));
 
 // solution file
 let h = 0x811c9dc5;

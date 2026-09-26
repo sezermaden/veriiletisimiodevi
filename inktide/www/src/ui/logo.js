@@ -9,8 +9,9 @@ const WORD = 'INKTIDE';
 /** Letter index → drip (x = % of that letter's width, delay s, extra length em). */
 const DRIPS = { 1: { x: 20, d: 0, h: 0.2 }, 3: { x: 50, d: 1.7, h: 0.12 }, 4: { x: 50, d: 0.8, h: 0.24 }, 6: { x: 24, d: 2.6, h: 0.16 } };
 
-/** Squid peeking over the word: swept fins, rounded dome, big eyes; the skirt hides behind the letters. */
-const SQUID = `
+/** Squid peeking over the word: swept fins, rounded dome, big eyes; the skirt hides behind the letters.
+ *  (Also the app icon mark: tools/make-icons.mjs.) */
+export const SQUID = `
   <path class="sq-body" d="M100 6C82 24 70 48 66 74 48 80 30 92 14 108 34 116 52 118 66 114 64 134 64 152 66 172H134C136 152 136 134 134 114 148 118 166 116 186 108 170 92 152 80 134 74 130 48 118 24 100 6Z"/>
   <path class="sq-skirt" d="M64 166H136V206C136 218 126 222 120 212 114 226 104 228 100 214 96 228 86 226 80 212 74 222 64 218 64 206Z"/>
   <path class="sq-hl" d="M94 28C86 38 80 52 77 68"/>
