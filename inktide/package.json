@@ -1,0 +1,20 @@
+{
+  "name": "inktide",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "INKTIDE - a single-player ink-splatting action adventure built on three.js",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "test": "node test/run-all.mjs"
+  },
+  "devDependencies": {
+    "@fontsource/baloo-2": "^5.3.0",
+    "@fontsource/bungee": "^5.3.0",
+    "@fontsource/lilita-one": "^5.3.0",
+    "@fontsource/rubik-wet-paint": "^5.3.0",
+    "playwright": "^1.63.0",
+    "three": "^0.186.1",
+    "three-mesh-bvh": "^0.9.15"
+  }
+}

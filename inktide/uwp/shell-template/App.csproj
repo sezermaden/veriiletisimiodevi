@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    UWP on .NET 9 with Native AOT.
+
+    WHY THIS PROJECT WAS MIGRATED
+    The previous project was a legacy .NET Native UWP project
+    (TargetPlatformIdentifier=UAP + Microsoft.NETCore.UniversalWindowsPlatform
+    6.2.x + UseDotNetNativeToolchain=true). That toolchain stamps every package
+    it produces with
+
+        <build:Item Name="OptimizingToolset" Value="ilc.exe"/>
+
+    inside AppxManifest.xml, and Partner Center rejects those packages with
+    "You cannot submit pre-compiled .NET Native packages". No amount of
+    repackaging fixes it, because the stamp is in the package content.
+
+    UseUwp + PublishAot uses the modern .NET Native AOT compiler instead, which
+    Partner Center accepts. Verified against a blank .NET 9 UWP project whose
+    package uploaded successfully.
+  -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>__APP__</RootNamespace>
+    <AssemblyName>__APP__</AssemblyName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- The three properties that define a UWP .NET 9 project. -->
+    <UseUwp>true</UseUwp>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <PublishAot>true</PublishAot>
+    <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
+
+    <Platforms>x86;x64;arm64</Platforms>
+    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+
+    <!-- Packaging. Xbox consoles are x64, so x64 must be in the bundle.
+         arm64 is intentionally left out of the bundle: Native AOT has to
+         cross-compile for it and it is the most likely step to fail. Once an
+         x86|x64 package is accepted, add arm64 back here. -->
+    <AppxBundle>Always</AppxBundle>
+    <AppxBundlePlatforms>x86|x64</AppxBundlePlatforms>
+    <PackageCertificateKeyFile>__APP___TemporaryKey.pfx</PackageCertificateKeyFile>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+    <GenerateTestArtifacts>True</GenerateTestArtifacts>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WinUI 2 supplies Microsoft.UI.Xaml.Controls.WebView2, the only WebView2
+         XAML host available to UWP. Microsoft.Web.WebView2 supplies CoreWebView2. -->
+    <PackageReference Include="Microsoft.UI.Xaml" Version="2.8.7" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The game itself. Everything under www is packaged verbatim and served
+         to the WebView2 through a virtual host mapping. -->
+    <Content Include="www\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- StoreArt and dist are authoring/output folders, not app content. -->
+    <Content Remove="StoreArt\**" />
+    <Content Remove="dist\**" />
+    <None Remove="StoreArt\**" />
+    <None Remove="dist\**" />
+  </ItemGroup>
+
+</Project>
