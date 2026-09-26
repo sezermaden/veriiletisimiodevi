@@ -340,6 +340,14 @@ export class StoryMode {
     pl.velocity.set(0, 0, 0);
     const g = S.level?.groundBelow?.(pl.position, 12);
     if (g && g.normal.y > 0.5) pl.position.y = g.point.y;
+    // the celebration orbit circles in front of Kai and only collides with static level walls:
+    // turn Kai's back to a boss wreck so the camera never ends up inside it (it frames the wreck
+    // behind Kai instead)
+    const boss = S.entities.find((e) => String(e.type || '').startsWith('boss-'));
+    if (boss?.position) {
+      const dx = pl.position.x - boss.position.x, dz = pl.position.z - boss.position.z;
+      if (dx * dx + dz * dz > 1e-4) pl.yaw = Math.atan2(dx, dz);
+    }
   }
 
   _saveResults(info) {

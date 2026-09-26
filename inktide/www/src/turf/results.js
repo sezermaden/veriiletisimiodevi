@@ -97,8 +97,13 @@ export class TurfResultsScreen extends Screen {
       this.shown = true;
       this.el.classList.add('revealed');
       this.bars[r.win ? 0 : 1].classList.add('won');
-      audio.sfx(r.win ? 'victory' : 'defeat', { volume: 0.8 });
+      // one-shot fanfare / lament (~5.5 s), then the results loop fades in under the buttons
+      audio.playMusic(r.win ? 'victory' : 'defeat');
       if (r.win) audio.sfx('crowd_cheer', { volume: 0.5 });
+    }
+    if (this.shown && !this._loop && this.t > 8.2) {
+      this._loop = true;
+      audio.playMusic('results', { fadeIn: 2 });
     }
     if (this.app.input.lastDevice !== this._dev) { this._dev = this.app.input.lastDevice; this.refreshPrompt(); }
   }

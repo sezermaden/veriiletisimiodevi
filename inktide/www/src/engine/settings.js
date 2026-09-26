@@ -97,7 +97,16 @@ class Settings {
     if (section) this.data[section] = deepMerge(DEFAULTS[section], {});
     else this.data = deepMerge(DEFAULTS, {});
     this.save();
-    for (const fn of this._listeners) fn(section || '*', null);
+    if (!section) { for (const fn of this._listeners) fn('*', null); return; }
+    // per-key notifications, like set(): listeners watch paths such as 'video.quality'
+    const walk = (o, path) => {
+      for (const [k, v] of Object.entries(o)) {
+        const p = `${path}.${k}`;
+        if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, p);
+        else for (const fn of this._listeners) fn(p, v);
+      }
+    };
+    walk(this.data[section] || {}, section);
   }
 
   onChange(fn) { this._listeners.add(fn); return () => this._listeners.delete(fn); }

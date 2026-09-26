@@ -42,7 +42,10 @@ Developer shortcuts: `?stage=w1-1` loads a stage directly, `&kit=longshot` sets 
 npm test                                   # every suite (headless Chromium + SwiftShader)
 node test/feel.mjs                         # jump acceptance + camera stability, with negative controls
 node test/mechanics.mjs                    # swim / climb / enemy-ink regression
+node test/campaign.mjs [--negative]        # fresh save → all 15 stages → finale, gamepad only
 node tools/validate-level.mjs --all        # route traversability + placement for every stage
+node tools/perf.mjs [stageId …]            # draw calls, triangles, casters, JS step time per stage
+node tools/make-uwp.mjs                    # stamp the Xbox/Windows UWP shell (build on Windows)
 ```
 
 ## Layout

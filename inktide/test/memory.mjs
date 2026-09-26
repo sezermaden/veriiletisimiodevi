@@ -8,9 +8,13 @@ const counts = await h.page.evaluate(async (stage) => {
   const g = __game;
   const wait = (n) => new Promise((r) => { const t = g.frames + n; const f = () => (g.frames >= t ? r() : requestAnimationFrame(f)); f(); });
   const out = [];
+  g.save.setFlag('seenPrologue');
+  const ui = await import('/src/ui/boot-ui.js');
   for (let i = 0; i < 5; i++) {
-    await g.startSession({ stageId: stage, lockPointer: false });
-    await wait(4);
+    // the real mode (story / turf with 7 bots / sandbox): its HUD, bots, nav and props must go too
+    const mode = await ui.modeFor(g, stage);
+    await g.startSession({ stageId: stage, mode, lockPointer: false });
+    await wait(i === 0 ? 4 : 30);
     const m = g.renderer.gl.info.memory;
     out.push({ geometries: m.geometries, textures: m.textures, actors: g.session.actors.length, heap: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null });
   }

@@ -127,7 +127,9 @@ export class AimCamera {
     } else {
       if (level) {
         const hit = level.raycast(_pivot, back, want + 0.4, { staticOnly: false });
-        if (hit) clear = Math.max(2.0, Math.min(want, hit.distance - 0.35));
+        // floor 1.2 m: close enough to stay in front of a wall / under a low platform (a 2 m floor
+        // pushed the camera through them), far enough to never enter Kai's head
+        if (hit) clear = Math.max(1.2, Math.min(want, hit.distance - 0.35));
       }
       // pull in fast (or it clips through walls), push out slowly (or every gap fires it backwards)
       this._dist += (clear - this._dist) * Math.min(1, dt * (clear < this._dist ? 22 : 2.6));
