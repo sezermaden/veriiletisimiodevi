@@ -104,6 +104,7 @@ export class Player {
     this.subBuffer = 0;
     this.specialBuffer = 0;
     this.firePressed = false;
+    this.fireGate = false;          // fire ignored until released (the press that closed a menu/dialogue)
 
     this.model = new SquidkinModel({ inkColor: session.ink.color(this.team), look: opts.look });
     session.scene.add(this.model.root);
@@ -243,7 +244,11 @@ export class Player {
       return;
     }
     if (this.frozen) {
+      // no control, but still fall: actors frozen mid-air (Turf whistle, story holds) land instead
+      // of hovering. A squid on a wall keeps clinging, and nobody sinks past killY (no splat while
+      // frozen). Scripted flights (super jump, launchpad) overwrite position every step.
       this.velocity.x = 0; this.velocity.z = 0;
+      if (!this.grounded && !this.climbing) this.velocity.y = this.position.y > S.level.killY ? Math.max(-T.maxFall, this.velocity.y - T.gravity * dt) : 0;
       this._integrate(dt, false);
       this.decayBuffers(dt);
       return;
@@ -261,7 +266,10 @@ export class Player {
 
     const special = this.kit.special;
     const specialActive = !!special?.active;
-    const fireHeld = input.isDown('fire') && !(specialActive && special.blocksFire);
+    // fire is level-triggered: a click that closed a dialogue or a paused screen must be released
+    // before it shoots (edges are already kept out by latchInput)
+    if (this.fireGate && !input.isDown('fire')) this.fireGate = false;
+    const fireHeld = input.isDown('fire') && !this.fireGate && !(specialActive && special.blocksFire);
     let swimHeld = settings.get('controls.swimToggle') ? this.swimToggled : input.isDown('swim');
     if (fireHeld) { swimHeld = false; this.swimToggled = false; }
     if (specialActive && special.drivesMovement) swimHeld = false;
@@ -415,6 +423,9 @@ export class Player {
       }
     }
     if (special?.active && !special.drivesMovement) special.update(dt, { fire: fireHeld, firePressed: this.firePressed, jumpPressed: false });
+    // buffers expire on the step clock (a press that could not be used, e.g. Jump in mid-air or
+    // Sub while swimming, must not fire much later); entities stepping after us still see it
+    this.decayBuffers(dt);
     this.firePressed = false;
 
     // ---- fall out of the world ----

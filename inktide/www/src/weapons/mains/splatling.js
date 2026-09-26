@@ -2,7 +2,7 @@
 // on the crosshair), release to unleash a long rapid stream whose length is proportional to the
 // charge. Press Fire again mid-burst to start a new spin-up.
 import * as THREE from 'three';
-import { MainWeapon, registerMain, aimDir } from '../base.js';
+import { MainWeapon, registerMain, aimDir, clampMuzzle } from '../base.js';
 import { makeSplatlingModel, addPoseHook, holdTwoHanded, rootMatrix } from '../models.js';
 import { sfx, LoopSound, toWorld } from './shared.js';
 
@@ -86,8 +86,8 @@ export class Splatling extends MainWeapon {
 
   muzzle(out) {
     const mz = this.model?.userData.muzzle;
-    if (mz && this.w.model?.kid?.visible) return mz.getWorldPosition(out);
-    return toWorld(this.w, -0.18, 0.95, 0.8, out);
+    if (mz && this.w.model?.kid?.visible) return clampMuzzle(this.w, mz.getWorldPosition(out));
+    return clampMuzzle(this.w, toWorld(this.w, -0.18, 0.95, 0.8, out));
   }
 
   shoot() {

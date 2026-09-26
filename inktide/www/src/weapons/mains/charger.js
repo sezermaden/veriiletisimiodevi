@@ -2,7 +2,7 @@
 // on the crosshair via `charge`), release to fire an instant long shot that paints a line along
 // its path. A full charge splats in one hit (160) and pierces through everyone in the line.
 import * as THREE from 'three';
-import { MainWeapon, registerMain, muzzleOf, aimDir } from '../base.js';
+import { MainWeapon, registerMain, muzzleOf, clampMuzzle, aimDir } from '../base.js';
 import { makeChargerModel, addPoseHook, reachArm, glowTexture } from '../models.js';
 import { rayActor, paintBelow, sfx, Beam, LoopSound } from './shared.js';
 
@@ -58,7 +58,7 @@ export class Charger extends MainWeapon {
 
   muzzle(out) {
     const mz = this.model?.userData.muzzle;
-    if (mz && this.model.visible && this.w.model?.kid?.visible) return mz.getWorldPosition(out);
+    if (mz && this.model.visible && this.w.model?.kid?.visible) return clampMuzzle(this.w, mz.getWorldPosition(out));
     return muzzleOf(this.w, out, 0.75, 0.2, 1.12);
   }
 

@@ -65,13 +65,20 @@ export async function modeFor(app, stageId, opts = {}) {
   return new SandboxMode(app, stageId, opts);
 }
 
-/** Pointer lock that never throws or leaves an unhandled rejection (headless, no gesture, …). */
+/**
+ * Pointer lock that never throws or leaves an unhandled rejection (headless, no gesture, …). A
+ * refusal (Resume by Esc is no user gesture; Chrome also refuses ~1 s after the player's own Esc)
+ * sets app._relock: the app pauses again rather than play on without mouse look, and Resume by
+ * click / Enter (real gestures) takes the lock.
+ */
 export function safePointerLock(app) {
   if (app.input.lastDevice === 'gamepad') return;
   const el = app.canvas;
+  const refused = () => { app._relock = true; };
+  app._relock = false;
   try {
     const p = el.requestPointerLock?.({ unadjustedMovement: true });
-    p?.catch?.(() => { try { el.requestPointerLock?.()?.catch?.(() => {}); } catch { /* ignore */ } });
+    p?.catch?.(() => { try { el.requestPointerLock?.()?.catch?.(refused); } catch { /* ignore */ } });
   } catch { /* ignore */ }
 }
 

@@ -151,14 +151,15 @@ export class Session {
     const cp = this.camera.position;
     const k = DETAIL_K * Math.max(0.5, Math.min(2, (this.renderer.height || 1080) / 1080));
     for (const d of ds) {
-      const m = d.root.matrixWorld.elements;
-      const dx = m[12] - cp.x, dy = m[13] - cp.y, dz = m[14] - cp.z;
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      const lim = dist / k;                                   // radii below this are too small to see
       const l = d.list;
       for (let i = 0; i < l.length; i += 3) {
         const o = l[i], r = l[i + 1];
-        o.layers.mask = r < DETAIL_R && r < lim ? 2 : 1;
+        // measured from the part, not the root: rails and the serpent keep their group at the
+        // world origin and place their parts in world space
+        const m = o.matrixWorld.elements;
+        const dx = m[12] - cp.x, dy = m[13] - cp.y, dz = m[14] - cp.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        o.layers.mask = r < DETAIL_R && r < dist / k ? 2 : 1;   // radii below dist/k are too small to see
         if (l[i + 2]) o.castShadow = dist < Math.max(SHADOW_NEAR, SHADOW_K * r);
       }
     }
@@ -212,6 +213,7 @@ export class Session {
     const input = this.input;
     const dt = Math.min(0.05, frameDt);        // a hitch must not teleport anyone
     if (this.paused) {
+      this.player.fireGate = true;               // the click that closes the screen must not shoot
       this.renderer.render();
       return;
     }
@@ -230,8 +232,7 @@ export class Session {
       steps++;
     }
     if (steps === 5) this._acc = 0;              // a long stall must not spiral
-    if (steps === 0) this.player.decayBuffers(dt); // buffers decay on the frame clock
-    this.stepsLastFrame = steps;
+    this.stepsLastFrame = steps;                 // (latched buffers decay in Player.step)
 
     // ---- per frame ----
     this.camRig.update(input, dt, this.player);

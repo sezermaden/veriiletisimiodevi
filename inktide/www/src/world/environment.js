@@ -316,6 +316,7 @@ export class Environment {
   dispose() {
     this.scene.remove(this.group);
     this.envRT?.dispose();
+    this.sun.dispose();   // its shadow map (render target + depth texture); disposeTree only sees meshes
     disposeTree(this.group);
     this.scene.fog = null;
     this.scene.environment = null;

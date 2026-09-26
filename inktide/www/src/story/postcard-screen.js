@@ -65,9 +65,15 @@ export class PostcardScreen extends Screen {
         <div class="lp-btn">Nice!</div>
       </div>`;
     this.cardEl = this.el.querySelector('.lp-card');
-    const btn = this.el.querySelector('.lp-btn');
-    btn.innerHTML = `${promptHTML(this.app.input, 'ui_accept')} Nice!`;
-    this.button(btn, () => this.close(), { autofocus: true });
+    this.btn = this.el.querySelector('.lp-btn');
+    this.refreshPrompt();
+    this.button(this.btn, () => this.close(), { autofocus: true });
+  }
+
+  /** The button glyph follows the last-used device (keyboard ↔ pad), like every menu. */
+  refreshPrompt() {
+    this._dev = this.app.input.lastDevice === 'gamepad' ? 'gamepad' : 'keyboard';
+    this.btn.innerHTML = `${promptHTML(this.app.input, 'ui_accept')} Nice!`;
   }
 
   onEnter() { this.app.audio?.sfx?.('story_postcard', { volume: 0.7 }); }
@@ -75,6 +81,7 @@ export class PostcardScreen extends Screen {
   update(dt) {
     this.t += dt;
     if (!this.flipped && this.t > 1.1) { this.flipped = true; this.cardEl.classList.add('flip'); this.app.audio?.sfx?.('story_page', { volume: 0.5 }); }
+    if ((this.app.input.lastDevice === 'gamepad' ? 'gamepad' : 'keyboard') !== this._dev) this.refreshPrompt();
   }
 
   handleInput(input) {

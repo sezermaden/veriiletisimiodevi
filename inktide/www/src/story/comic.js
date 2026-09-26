@@ -59,13 +59,22 @@ class ClockScreen extends Screen {
     if (this.ring) this.ring.style.strokeDashoffset = String(94.25 * (1 - Math.min(1, this.skipHold / SKIP_HOLD)));
     this.el.classList.toggle('skipping', this.skipHold > 0.05);
     if (this.skipHold >= SKIP_HOLD) this.finish(true);
+    if (this.skipKey && (this.app.input.lastDevice === 'gamepad' ? 'gamepad' : 'keyboard') !== this._dev) this._skipPrompt();
+  }
+
+  /** The skip glyph follows the last-used device (Esc ↔ Menu) through a minutes-long comic / roll. */
+  _skipPrompt() {
+    this._dev = this.app.input.lastDevice === 'gamepad' ? 'gamepad' : 'keyboard';
+    this.skipKey.innerHTML = promptHTML(this.app.input, 'skip');
   }
 
   _skipUI() {
     const el = document.createElement('div');
     el.className = 'cm-skip';
-    el.innerHTML = `<span class="cm-skip-key">${promptHTML(this.app.input, 'skip')}</span><span>Hold to skip</span><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15"/><circle class="fg" cx="18" cy="18" r="15"/></svg>`;
+    el.innerHTML = `<span class="cm-skip-key"></span><span>Hold to skip</span><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15"/><circle class="fg" cx="18" cy="18" r="15"/></svg>`;
     this.el.appendChild(el);
+    this.skipKey = el.querySelector('.cm-skip-key');
+    this._skipPrompt();
     this.ring = el.querySelector('.fg');
     el.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.pointerSkip = true; });
     this._pu = () => { this.pointerSkip = false; };

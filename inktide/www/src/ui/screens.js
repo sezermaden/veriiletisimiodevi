@@ -87,7 +87,8 @@ export class ScreenManager {
     return screen;
   }
 
-  pop() {
+  /** silent: the stack is being torn down (clear / replace), so the screen below is not resumed. */
+  pop(silent = false) {
     const s = this.stack.pop();
     if (!s) return null;
     s.onExit();
@@ -95,13 +96,14 @@ export class ScreenManager {
     s.el.classList.add('out');
     setTimeout(() => s.el.remove(), 220);
     const top = this.top;
-    if (top) { top.el.classList.remove('under'); top.refreshFocus(false); top.onResume?.(); }
+    if (top) { top.el.classList.remove('under'); if (!silent) { top.refreshFocus(false); top.onResume?.(); } }
     return s;
   }
 
-  replace(screen) { this.pop(); return this.push(screen); }
+  replace(screen) { this.pop(true); return this.push(screen); }
 
-  clear() { while (this.stack.length) this.pop(); }
+  // no onResume on the way down: a MainMenu under a just-started stage would restart the menu music
+  clear() { while (this.stack.length) this.pop(true); }
 
   update(dt, input) {
     const top = this.top;

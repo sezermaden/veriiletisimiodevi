@@ -59,6 +59,8 @@ export class Hud {
     this._lastDevice = null;
     this.refreshKit();
     this.setScale(settings.get('gameplay.hudScale') || 1);
+    // Options → HUD scale applies live (the pause menu opens Options over the running stage)
+    this._offScale = settings.onChange((p) => { if (p === 'gameplay.hudScale' || p === 'gameplay' || p === '*') this.setScale(settings.get('gameplay.hudScale') || 1); });
   }
 
   setScale(s) { this.root.style.setProperty('--hud-scale', s); }
@@ -211,6 +213,7 @@ export class Hud {
 
   dispose() {
     removeEventListener('resize', this._onResize);
+    this._offScale?.();
     this.root.remove();
   }
 }

@@ -2,7 +2,7 @@
 // with an ink explosion. A direct hit splats a standard enemy (125); the blast catches anyone
 // hiding near a wall or just around a corner.
 import * as THREE from 'three';
-import { MainWeapon, registerMain, aimDir } from '../base.js';
+import { MainWeapon, registerMain, aimDir, clampMuzzle } from '../base.js';
 import { makeBlasterModel, addPoseHook, reachArm } from '../models.js';
 import { blast, sfx } from './shared.js';
 
@@ -49,10 +49,10 @@ export class Blaster extends MainWeapon {
 
   muzzle(out) {
     const mz = this.model?.userData.muzzle;
-    if (mz && this.w.model?.kid?.visible) return mz.getWorldPosition(out);
+    if (mz && this.w.model?.kid?.visible) return clampMuzzle(this.w, mz.getWorldPosition(out));
     const w = this.w;
     _d.set(w.aim.dir.x, 0, w.aim.dir.z).normalize();
-    return out.copy(w.position).addScaledVector(_d, 0.55).add(_p.set(-_d.z, 0, _d.x).multiplyScalar(-0.22)).setY(w.position.y + 1.05);
+    return clampMuzzle(w, out.copy(w.position).addScaledVector(_d, 0.55).add(_p.set(-_d.z, 0, _d.x).multiplyScalar(-0.22)).setY(w.position.y + 1.05));
   }
 
   shoot() {

@@ -25,6 +25,8 @@ export class App {
     this.errors = [];
     this.fadeEl = document.getElementById('fade');
     this._busy = false;
+    this._pauseWanted = false;   // pause as soon as the stage allows it (window blur / pad lost meanwhile)
+    this._relock = false;        // pointer lock lost in a hold or refused: pause so Resume can relock
 
     // audio + pointer lock need a user gesture
     const gesture = () => this.audio.init();
@@ -36,10 +38,23 @@ export class App {
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement === this.canvas;
       document.body.classList.toggle('locked', locked);
-      // browser Esc releases the lock without a keydown reaching us → pause like the game would
-      if (!locked && this.session && !this.session.paused && !this.ui.blocking && this.session.allowPause !== false) this.openPause();
+      const S = this.session;
+      if (locked) this._relock = false;
+      else if (S?.started && !S.paused && !this.ui.blocking && !this._busy) {
+        // browser Esc releases the lock without a keydown reaching us → pause like the game would;
+        // during a no-pause hold (dialogue / cutscene) pause once it ends, so Resume can relock
+        if (!this._pauseNow()) this._relock = true;
+      }
     });
-    addEventListener('blur', () => { if (this.session && !this.ui.blocking && this.session.allowPause !== false) this.openPause(); });
+    // focus or the only controller lost while no pause can open (stage start, a no-pause hold):
+    // remember it, _frame pauses as soon as it can
+    addEventListener('blur', () => { if (!this._pauseNow()) this._pauseWanted = true; });
+    addEventListener('focus', () => { this._pauseWanted = false; });
+    addEventListener('gamepaddisconnected', () => {
+      if (!this.session || this.input.lastDevice !== 'gamepad' || [...this.input._gamepads()].some((g) => g?.connected)) return;
+      if (!this._pauseNow()) this._pauseWanted = true;
+    });
+    addEventListener('gamepadconnected', () => this.input.recalibrate());
     this._frame = this._frame.bind(this);
     window.__game = this;
     // test/dev helpers: hold a key or mouse button for n frames
@@ -67,6 +82,14 @@ export class App {
       this.input.update(dt);
       if (this.session && this.session.started) {
         if (!this.ui.blocking && this.input.justPressed('pause') && this.session.allowPause !== false) this.openPause();
+        // a pause that had to wait (see the constructor), or play running without the pointer lock
+        // that mouse look needs (lost in a hold, or refused on Resume: see ui/flow.js safePointerLock)
+        else if (this._pauseWanted || (this._relock && !this.input.pointerLocked && this.input.lastDevice !== 'gamepad')) {
+          if (this._pauseNow()) this._pauseWanted = this._relock = false;
+          // a screen already holds the game (pause, postcard, results): the player closes it
+          // themselves, so a pad lost meanwhile must not re-pause the stage right after
+          else if (this.ui.blocking && !this._busy) this._pauseWanted = false;
+        }
         this.session.paused = this.ui.blocking;
         this.ui.update(dt, this.input);
         this.session.update(dt);
@@ -95,6 +118,14 @@ export class App {
     if (!this.session || this.ui.blocking) return;
     this.input.exitPointerLock();
     this.onPause?.();
+  }
+
+  /** Pause now if the running stage allows it (not starting, no no-pause hold, no screen on top). */
+  _pauseNow() {
+    const S = this.session;
+    if (!S?.started || this._busy || this.ui.blocking || S.allowPause === false) return false;
+    this.openPause();
+    return true;
   }
 
   /**
@@ -127,6 +158,7 @@ export class App {
   }
 
   endSession(silent = false) {
+    this._relock = false;   // a lost / refused lock belongs to the session that ends
     if (!this.session) return;
     const s = this.session;
     this.session = null;

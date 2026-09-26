@@ -7,7 +7,7 @@
 // hook fall back to polling from the `drivesMovement` getter. While rolling the weapon owns the
 // horizontal velocity and the Player only applies gravity.
 import * as THREE from 'three';
-import { MainWeapon, registerMain, muzzleOf, aimDir } from '../base.js';
+import { MainWeapon, registerMain, muzzleOf, clampMuzzle, aimDir } from '../base.js';
 import { makeDualieModel, addPoseHook } from '../models.js';
 import { wishDir, sfx, UP } from './shared.js';
 import { disposeTree } from '../../engine/dispose.js';
@@ -163,7 +163,7 @@ export class Dualies extends MainWeapon {
     const left = (this.shots++ & 1) === 1;
     const src = left ? this.offModel : this.model;
     const mz = src?.userData.muzzle;
-    if (mz && w.model?.kid?.visible && this.rollT <= 0) mz.getWorldPosition(_m);
+    if (mz && w.model?.kid?.visible && this.rollT <= 0) clampMuzzle(w, mz.getWorldPosition(_m));
     else muzzleOf(w, _m, 0.45, left ? -0.22 : 0.22, 1.02);
     const spread = !w.grounded ? s.jumpSpread : this.turretT > 0 ? s.turretSpread : s.spread;
     aimDir(w, _m, spread, _d);

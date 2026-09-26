@@ -27,7 +27,8 @@ export class Shooter extends MainWeapon {
     this.cool -= dt;
     this.recoil = Math.max(0, this.recoil - dt * 8);
     this.firing = ctrl.fire;
-    if (!ctrl.fire) return;
+    // no cooldown debt while idle: the loop below would pay it back as one burst on the next pull
+    if (!ctrl.fire) { if (this.cool < 0) this.cool = 0; return; }
     const s = this.s;
     while (this.cool <= 0) {
       this.cool += 1 / s.fireRate;

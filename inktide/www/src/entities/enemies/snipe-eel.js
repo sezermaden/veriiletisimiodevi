@@ -339,10 +339,11 @@ export class SnipeEel extends MurkEnemy {
     this.eyeM.emissive.copy(this.eyeM.color);
     this.canMat.emissiveIntensity = 0.4 + this.charge * 1.6;
 
-    // laser sight
-    const on = this.alive && (this.state !== 'attack' || this.coolT < 1.3);
+    // laser sight (world space, outside the group: hidden with the body when the session culls it)
+    const on = this.alive && !this._culled && (this.state !== 'attack' || this.coolT < 1.3);
     this.laser.visible = on;
     this.laserDot.visible = on;
+    if (!on) this._len = null;   // the aim moved while hidden: trace afresh when the sight returns
     if (on) {
       const from = this.muzzle(_m);
       // the wall/player trace runs at ~30 Hz; direction and origin update every frame

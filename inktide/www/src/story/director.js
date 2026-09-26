@@ -4,7 +4,7 @@
 //  - frame-clock tweens / waits (pause-aware: they only advance while the session updates)
 //  - reference-counted "holds": freeze the player, hide the HUD, block pausing, stop world time,
 //    letterbox — released one frame late so the press that closed a dialogue never reaches the
-//    player (no accidental jump/shot)
+//    player (no accidental jump/shot; a still-held fire waits for its release via player.fireGate)
 //  - cinematic camera via session.camRig.override (+ its own shake, since the rig ignores trauma
 //    while overridden)
 //  - ticks NPC models spawned by cutscenes (talk animation follows the current speaker)
@@ -97,6 +97,7 @@ export class Director {
     if (p && p.frozen !== freeze) {
       p.frozen = freeze;
       if (freeze) { p.kit?.main?.cancel?.(); p.firePressed = false; p.jumpBuffer = 0; p.subBuffer = 0; p.specialBuffer = 0; }
+      else p.fireGate = true;       // fire is level-triggered: the LMB that closed the dialogue is still down
     }
     const hud = this.held('hud');
     if (S.hud && this._hudHidden !== hud) { this._hudHidden = hud; S.hud.show(!hud); }

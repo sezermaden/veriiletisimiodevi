@@ -1,7 +1,7 @@
 // Swift Brush. Tap Fire to flick quick bristle splashes (mash for a flurry); hold Fire to dash
 // (1.25× run speed) while the brush paints a lane under it and bowls through anyone in the way.
 import * as THREE from 'three';
-import { MainWeapon, registerMain } from '../base.js';
+import { MainWeapon, registerMain, clampMuzzle } from '../base.js';
 import { makeBrushModel, addPoseHook, holdTwoHanded, rootMatrix } from '../models.js';
 import { toWorld, aimYaw, hitActor, sfx, DOWN } from './shared.js';
 
@@ -71,7 +71,7 @@ export class Brush extends MainWeapon {
     const { psi, phi } = this.headAngles();
     const L = (this.model?.userData.len ?? 1.08) + 0.12;   // + the 0.22 m grip offset used by pose()
     const c = Math.cos(phi);
-    return toWorld(this.w, Math.sin(psi) * c * L, PIVOT_Y + Math.sin(phi) * L, Math.cos(psi) * c * L + 0.05, out);
+    return clampMuzzle(this.w, toWorld(this.w, Math.sin(psi) * c * L, PIVOT_Y + Math.sin(phi) * L, Math.cos(psi) * c * L + 0.05, out), this.w.position.y + PIVOT_Y);
   }
 
   update(dt, ctrl) {
@@ -104,7 +104,7 @@ export class Brush extends MainWeapon {
     this.side = -this.side;
     this.swipeT = 0;
     const color = S.ink.color(w.team);
-    toWorld(w, 0, 1.05, 0.55, _head);
+    clampMuzzle(w, toWorld(w, 0, 1.05, 0.55, _head));
     const yaw0 = aimYaw(w);
     const pitch0 = Math.asin(THREE.MathUtils.clamp(w.aim.dir.y, -1, 1));
     for (let i = 0; i < s.flickBlobs; i++) {

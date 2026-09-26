@@ -55,11 +55,12 @@ html, body {
 .hud-lowink.show { opacity: 1; animation: pulse 500ms ease-in-out infinite alternate; }
 @keyframes pulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.08); } }
 
-.hud-special { position: absolute; right: var(--safe-x); top: var(--safe-y); width: 120px; height: 120px; }
+/* sized (not `scale`d) by --hud-scale so the READY pulse below keeps scaling about its centre */
+.hud-special { position: absolute; right: var(--safe-x); top: var(--safe-y); width: calc(120px * var(--hud-scale, 1)); height: calc(120px * var(--hud-scale, 1)); }
 .hud-special svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .hud-special .label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column;
-  font-size: var(--step--2); color: var(--text); text-align: center; line-height: 1.05; text-shadow: 0 2px 0 rgba(0,0,0,.6); }
-.hud-special .label b { font-size: var(--step-0); }
+  font-size: calc(var(--step--2) * var(--hud-scale, 1)); color: var(--text); text-align: center; line-height: 1.05; text-shadow: 0 2px 0 rgba(0,0,0,.6); }
+.hud-special .label b { font-size: calc(var(--step-0) * var(--hud-scale, 1)); }
 .hud-special.ready { animation: specialReady 600ms ease-in-out infinite alternate; }
 .hud-special.ready .label b { color: var(--accent-warm); }
 @keyframes specialReady { from { transform: scale(1); filter: drop-shadow(0 0 0 var(--ink-hero)); } to { transform: scale(1.08); filter: drop-shadow(0 0 18px var(--ink-hero)); } }
@@ -115,6 +116,14 @@ html, body {
 .hud-turf .squid.down { opacity: .35; filter: grayscale(1); }
 
 .hud-fps { position: absolute; left: 8px; bottom: 6px; font: 700 14px monospace; color: #fff; text-shadow: 0 1px 2px #000; }
+
+/* Options → HUD scale (--hud-scale, set by ui/hud.js): each cluster grows from its anchored corner.
+   `scale` applies outside `transform`, so the translateX(-50%)-centred clusters pivot on their left
+   edge, which sits on the screen centre line. */
+.hud-topleft, .hud-weapon, .hud-boss, .hud-turf, .hud-hint { scale: var(--hud-scale, 1); }
+.hud-topleft, .hud-boss, .hud-turf { transform-origin: 0 0; }
+.hud-weapon { transform-origin: 100% 100%; }
+.hud-hint { transform-origin: 0 100%; }
 
 /* dialogue */
 .dialogue { position: absolute; left: 50%; bottom: calc(var(--safe-y) + 10px); transform: translateX(-50%); width: min(1200px, 80vw);

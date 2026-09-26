@@ -90,7 +90,7 @@ export function blast(S, pos, normal, team, o = {}) {
     a.hitCenter(_hc);
     const dist = Math.max(0, _hc.distanceTo(pos) - a.hitRadius * 0.6);
     if (dist > R) continue;
-    if (!S.level.lineOfSight(_p, _hc)) continue;
+    if (!S.level.lineOfSight(_p, _hc, { occluders: true, ignoreOwner: a })) continue;
     const f = dist < R * 0.35 ? 1 : 1 - ((dist - R * 0.35) / (R * 0.65)) * 0.6;
     hitActor(S, a, dmg * f, { source: o.owner, team, point: _hc.clone(), dir: _d.subVectors(_hc, pos).normalize().clone(), kind: o.kind || 'explosion' });
   }

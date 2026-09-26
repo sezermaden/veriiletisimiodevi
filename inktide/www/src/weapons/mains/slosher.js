@@ -1,7 +1,7 @@
 // Slosh Bucket. Each slosh swings the bucket and throws a heavy, arcing wave of three blobs that
 // sails over low walls and drops onto ledges. The lead blob hits hardest (70).
 import * as THREE from 'three';
-import { MainWeapon, registerMain } from '../base.js';
+import { MainWeapon, registerMain, clampMuzzle } from '../base.js';
 import { makeSlosherModel, addPoseHook } from '../models.js';
 import { aimYaw, toWorld, sfx } from './shared.js';
 
@@ -56,7 +56,7 @@ export class Slosher extends MainWeapon {
     this.released = true;
     if (!w.useInk(s.inkPerSlosh)) { w.onOutOfInk?.(); return; }
     const color = S.ink.color(w.team);
-    toWorld(w, -0.2, 1.35, 0.35, _m);
+    clampMuzzle(w, toWorld(w, -0.2, 1.35, 0.35, _m));
     const yaw = aimYaw(w);
     const pitch = Math.asin(THREE.MathUtils.clamp(w.aim.dir.y, -1, 1));
     s.blobs.forEach((b, i) => {

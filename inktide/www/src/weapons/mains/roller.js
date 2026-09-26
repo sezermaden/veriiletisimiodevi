@@ -2,7 +2,7 @@
 // in its way (heavy contact damage). Tap Fire to flick: the roller swings overhead and hurls a
 // wide fan of heavy blobs (a tall, narrow fan when flicked in mid-air).
 import * as THREE from 'three';
-import { MainWeapon, registerMain } from '../base.js';
+import { MainWeapon, registerMain, clampMuzzle } from '../base.js';
 import { makeRollerModel, addPoseHook, holdTwoHanded, rootMatrix } from '../models.js';
 import { toWorld, aimYaw, hitActor, sfx, DOWN } from './shared.js';
 
@@ -82,7 +82,7 @@ export class Roller extends MainWeapon {
 
   drumWorld(phi, out) {
     const R = this.model?.userData.R ?? 1.2;
-    return toWorld(this.w, 0, PIVOT_Y + Math.sin(phi) * R, PIVOT_Z + Math.cos(phi) * R, out);
+    return clampMuzzle(this.w, toWorld(this.w, 0, PIVOT_Y + Math.sin(phi) * R, PIVOT_Z + Math.cos(phi) * R, out), this.w.position.y + PIVOT_Y);
   }
 
   update(dt, ctrl) {
@@ -146,7 +146,7 @@ export class Roller extends MainWeapon {
       _v.set(Math.sin(yaw) * cp, Math.sin(pitch), Math.cos(yaw) * cp).multiplyScalar(speed);
       _v.x += w.velocity.x * 0.4; _v.z += w.velocity.z * 0.4;
       const lateral = THREE.MathUtils.lerp(-0.4, 0.4, k);
-      const from = _g.copy(_drum).add(_right.set(Math.cos(yaw0), 0, -Math.sin(yaw0)).multiplyScalar(this.airFlick ? 0 : lateral));
+      const from = clampMuzzle(w, _g.copy(_drum).add(_right.set(Math.cos(yaw0), 0, -Math.sin(yaw0)).multiplyScalar(this.airFlick ? 0 : lateral)), w.position.y + PIVOT_Y);
       S.projectiles.spawn({
         pos: from, vel: _v, team: w.team, owner: w,
         damage: this.airFlick ? 45 : s.flickDamage, size: 0.15 + Math.random() * 0.04, radius: 0.2,

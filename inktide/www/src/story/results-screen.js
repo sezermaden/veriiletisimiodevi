@@ -122,7 +122,7 @@ export class ResultsScreen extends Screen {
     }
     if (!this.r.nextId && !this.r.final) q('.sr-btn[data-a="map"]').remove();
     if (this.r.final) { q('.sr-btn[data-a="map"]')?.remove(); q('.sr-btn[data-a="retry"]')?.remove(); }
-    this.el.querySelector('.sr-hint').innerHTML = `${promptHTML(this.app.input, 'ui_accept')} Select`;
+    this.refreshPrompt();
     // timeline
     const kitAt = 3.0;
     this.steps = [
@@ -131,6 +131,12 @@ export class ResultsScreen extends Screen {
       ...(kit ? [[kitAt, () => this._kit()]] : []),
       [kit ? kitAt + 0.6 : 2.9, () => this._reveal()],
     ];
+  }
+
+  /** The hint's button glyph follows the last-used device (keyboard ↔ pad), like every menu. */
+  refreshPrompt() {
+    this._dev = this.app.input.lastDevice === 'gamepad' ? 'gamepad' : 'keyboard';
+    this.el.querySelector('.sr-hint').innerHTML = `${promptHTML(this.app.input, 'ui_accept')} Select`;
   }
 
   onEnter() {
@@ -179,6 +185,7 @@ export class ResultsScreen extends Screen {
     this.timeV.textContent = formatTime(this.r.time * (this.t >= 99 ? 1 : k));
     const kp = Math.min(1, Math.max(0, (this.t - 0.75) / 0.6));
     this.pearlV.textContent = String(Math.round(this.r.pearls * (this.t >= 99 ? 1 : kp)));
+    if ((this.app.input.lastDevice === 'gamepad' ? 'gamepad' : 'keyboard') !== this._dev) this.refreshPrompt();
   }
 
   handleInput(input) {

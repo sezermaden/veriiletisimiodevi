@@ -22,6 +22,8 @@ const _le = new THREE.Vector3();
 const _gN = new THREE.Vector3();
 const _wN = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
+// dynamic colliders that seal a passage: they block sight lines asked for with `occluders`
+const OCCLUDERS = new Set(['gate', 'gate-frame', 'murk-barrier']);
 
 export class Level {
   constructor(session, def) {
@@ -177,7 +179,8 @@ export class Level {
 
   /**
    * First hit along a ray. Returns { point, normal, distance, faceId, face, dynamic } or null.
-   * Dynamic colliders are included unless opts.staticOnly.
+   * Dynamic colliders are included unless opts.staticOnly; opts.occluders keeps only the OCCLUDERS
+   * (minus those owned by opts.ignoreOwner).
    */
   raycast(origin, dir, far = 200, opts = {}) {
     _ray.origin.copy(origin); _ray.direction.copy(dir);
@@ -192,6 +195,7 @@ export class Level {
     if (!opts.staticOnly) {
       for (const d of this.dynamic) {
         if (!d.enabled) continue;
+        if (opts.occluders && (!OCCLUDERS.has(d.tag) || (opts.ignoreOwner && d.owner === opts.ignoreOwner))) continue;
         d.mesh.updateMatrixWorld();
         _inv.copy(d.mesh.matrixWorld).invert();
         _ray.origin.copy(origin).applyMatrix4(_inv);
@@ -208,13 +212,16 @@ export class Level {
     return best;
   }
 
-  /** Is there a clear line between a and b (static geometry only)? */
-  lineOfSight(a, b) {
+  /**
+   * Is there a clear line between a and b? Static geometry only, unless o.occluders: then closed
+   * gates and murk barriers block it too (o.ignoreOwner = the target, whose own collider never does).
+   */
+  lineOfSight(a, b, o) {
     _dir.subVectors(b, a);
     const len = _dir.length();
     if (len < 1e-4) return true;
     _dir.divideScalar(len);
-    return !this.raycast(a, _dir, len - 0.05, { staticOnly: true });
+    return !this.raycast(a, _dir, len - 0.05, o?.occluders ? o : { staticOnly: true });
   }
 
   /** Ground probe: first surface below p within `far`. */

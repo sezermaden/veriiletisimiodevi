@@ -68,6 +68,8 @@ export function createKit(wielder, kitId) {
 // ---------------------------------------------------------------------------------------------
 const _v = new THREE.Vector3();
 const _r = new THREE.Vector3();
+const _o = new THREE.Vector3();
+const _c = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 
 /** World position the shots leave from: right-hand side, chest height, a bit forward. */
@@ -77,7 +79,23 @@ export function muzzleOf(w, out, forward = 0.45, side = 0.22, height = 1.02) {
   if (_v.lengthSq() < 1e-6) _v.set(-Math.sin(w.yaw), 0, -Math.cos(w.yaw));
   _v.normalize();
   _r.crossVectors(_v, _up).normalize();
-  return out.copy(w.position).addScaledVector(_v, forward).addScaledVector(_r, side).setY(w.position.y + height);
+  return clampMuzzle(w, out.copy(w.position).addScaledVector(_v, forward).addScaledVector(_r, side).setY(w.position.y + height));
+}
+
+/**
+ * Pull a spawn point (muzzle, roller drum, brush head) back in front of anything solid between the
+ * wielder's body axis (at height `fromY`, default the point's own) and it, so shots, paint and
+ * contact hits never start beyond a thin wall, a closed gate or a murk barrier the wielder touches.
+ */
+export function clampMuzzle(w, out, fromY = out.y) {
+  _o.set(w.position.x, fromY, w.position.z);
+  _c.subVectors(out, _o);
+  const len = _c.length();
+  if (len < 1e-4) return out;
+  _c.divideScalar(len);
+  const hit = w.session.level.raycast(_o, _c, len);
+  if (hit) out.copy(_o).addScaledVector(_c, Math.max(0, hit.distance - 0.05));
+  return out;
 }
 
 /** Direction from `from` to the aim point, with random cone spread (degrees). */
@@ -207,7 +225,7 @@ export function inkExplosion(session, pos, normal, team, o = {}) {
       const d = hc.distanceTo(pos);
       if (d > dmgR + a.hitRadius) continue;
       const f = d < dmgR * 0.4 ? 1 : 1 - ((d - dmgR * 0.4) / (dmgR * 0.6)) * 0.7;
-      if (!session.level.lineOfSight(pos.clone().addScaledVector(n, 0.3), hc)) continue;
+      if (!session.level.lineOfSight(pos.clone().addScaledVector(n, 0.3), hc, { occluders: true, ignoreOwner: a })) continue;
       const amount = dmg * Math.max(0.3, f);
       const applied = a.damage(amount, { source: o.owner, team, point: pos.clone(), dir: hc.clone().sub(pos).normalize(), kind: 'explosion' });
       if (applied !== false) session.events.emit('hit', { target: a, source: o.owner, damage: amount, point: hc.clone() });

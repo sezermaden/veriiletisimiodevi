@@ -2,7 +2,7 @@
 // stick, or `botMove` for bots), Fire shoots slow explosive shots, the exhaust rains ink on the
 // ground below. When the fuel runs out you drift back down with a splash landing.
 import * as THREE from 'three';
-import { Special, registerSpecial, aimDir } from '../base.js';
+import { Special, registerSpecial, aimDir, clampMuzzle } from '../base.js';
 import { makeJetpackModel, makeBlasterModel, addPoseHook } from '../models.js';
 import { wishDir, blast, sfx, LoopSound, toWorld, UP, DOWN } from '../mains/shared.js';
 
@@ -112,8 +112,8 @@ export class InkJet extends Special {
 
   muzzle(out) {
     const g = this.gun?.userData.muzzle;
-    if (g && this.w.model?.kid?.visible) return g.getWorldPosition(out);
-    return toWorld(this.w, -0.22, 1.05, 0.55, out);
+    if (g && this.w.model?.kid?.visible) return clampMuzzle(this.w, g.getWorldPosition(out));
+    return clampMuzzle(this.w, toWorld(this.w, -0.22, 1.05, 0.55, out));
   }
 
   shoot() {

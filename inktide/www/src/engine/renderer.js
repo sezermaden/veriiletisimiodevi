@@ -78,6 +78,7 @@ export class Renderer {
     this.height = 1;
 
     this.grade = null;
+    this._bloom = { strength: 0.32, threshold: 0.88, radius: 0.45 };   // last setBloom(): survives rebuilds
     this._buildComposer();
     this.resize();
     addEventListener('resize', () => this.resize());
@@ -94,7 +95,8 @@ export class Renderer {
     this.quality = q;
     this.gl.shadowMap.enabled = q.shadows;
     this.gl.shadowMap.needsUpdate = true;
-    if (this.composer) this.composer.dispose?.();
+    // the composer frees only its own two targets: each pass owns render targets and materials
+    if (this.composer) { for (const p of this.composer.passes) p.dispose?.(); this.composer.dispose?.(); }
 
     const size = this.gl.getDrawingBufferSize(new THREE.Vector2());
     const rt = new THREE.WebGLRenderTarget(Math.max(1, size.x), Math.max(1, size.y), { type: THREE.HalfFloatType, samples: 0 });
@@ -112,7 +114,8 @@ export class Renderer {
 
     this.bloomPass = null;
     if (q.bloom) {
-      this.bloomPass = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.32, 0.45, 0.88);
+      const b = this._bloom;
+      this.bloomPass = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), b.strength, b.radius, b.threshold);
       composer.addPass(this.bloomPass);
     }
 
@@ -154,6 +157,7 @@ export class Renderer {
 
   /** Called by world code that wants a stronger or weaker bloom (e.g. night stages). */
   setBloom(strength = 0.32, threshold = 0.88, radius = 0.45) {
+    this._bloom = { strength, threshold, radius };   // re-applied when a quality / scale change rebuilds the pass
     if (!this.bloomPass) return;
     this.bloomPass.strength = strength;
     this.bloomPass.threshold = threshold;
