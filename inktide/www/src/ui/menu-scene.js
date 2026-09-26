@@ -335,7 +335,7 @@ export class MenuScene {
     this._unsub = settings.onChange((p) => {
       if (p === 'gameplay.inkPalette' || p === '*') this.recolor();
       if (p === 'video.motionFx' || p === '*') this.calm = settings.get('video.motionFx') === false;
-      // a quality change rebuilds the post chain with stock bloom: restore the plaza grade
+      // a quality change rebuilds the post chain (the renderer carries the bloom over; re-applying the plaza grade is harmless)
       if ((p === 'video.quality' || p === '*') && this.active && !app.session) this._applyLook();
     });
 

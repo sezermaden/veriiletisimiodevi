@@ -39,7 +39,7 @@ session.ink          InkSystem   paint(pos, radius, team, normal, {source}) → 
                                   inkAt(faceId, point) → team, inkFraction(face, p, r, team)
                                   coverage() → {a, b, total} (floor m²), onPaint(fn)
 session.level        Level        raycast(origin, dir, far, {staticOnly}) → {point, normal, distance, faceId, face, dynamic}
-                                  lineOfSight(a, b), groundBelow(p, far), collideCapsule(...)
+                                  lineOfSight(a, b, {occluders, ignoreOwner}?), groundBelow(p, far), collideCapsule(...)
                                   addDynamic(mesh, {owner, solid, tag}) → moving/toggle collider (owner.lastDelta carries riders)
                                   killY, bounds
 session.player       Player       position, velocity, hp, maxHp, ink, inkMax, special, alive, form,
@@ -89,7 +89,10 @@ Kits (8), subs (4), specials (4) are listed in `KITS`, `SUB_INFO`, `SPECIAL_INFO
 class and `registerMain('roller', Roller)` etc.; import it from `weapons/index.js`. A wielder is
 anything with `session, team, position, velocity, yaw, grounded, aim {dir, point}, useInk(n),
 ink, inkMax, model?, addSpecial(n), isPlayer`. Helpers: `muzzleOf`, `aimDir`, `inkExplosion`,
-`makeGunModel`.
+`makeGunModel`, `clampMuzzle(w, out, fromY?)`. Any spawn point that is not on the body axis
+(muzzle, roller drum, brush head, splatling barrel) must go through `clampMuzzle` (`muzzleOf` already
+does), so shots never start past a thin wall, a closed gate or a murk barrier. A main weapon's
+cooldown must not bank while the trigger is up: clamp it to 0 when `!ctrl.fire`.
 
 ## Level definitions (`levels/*.js`, helpers in `levels/kit.js`)
 
