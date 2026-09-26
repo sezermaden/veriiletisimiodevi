@@ -12,10 +12,11 @@ import { StoryMapScreen } from './story-map.js';
 import { PauseScreen } from './pause.js';
 
 const modCache = new Map();
-/** Import an optional module once; resolves null when it does not exist (yet). */
-function tryImport(path) {
+/** Import an optional module once; resolves null when it does not exist (yet). The loader is a
+ *  literal `() => import('…')` so a bundler (tools/build-single.mjs) can follow it. */
+function tryImport(path, load) {
   if (!modCache.has(path)) {
-    modCache.set(path, import(path).catch((e) => { console.warn(`[ui] optional module ${path} unavailable (${e?.message || e}); using a fallback`); return null; }));
+    modCache.set(path, load().catch((e) => { console.warn(`[ui] optional module ${path} unavailable (${e?.message || e}); using a fallback`); return null; }));
   }
   return modCache.get(path);
 }
@@ -52,12 +53,12 @@ export function install(app) {
 export async function modeFor(app, stageId, opts = {}) {
   install(app);
   if (/^w\d/.test(stageId)) {
-    const m = await tryImport('../game/modes/story.js');
+    const m = await tryImport('story', () => import('../game/modes/story.js'));
     if (m?.StoryMode) {
       try { return new m.StoryMode(app, stageId, opts); } catch (e) { console.warn('[ui] StoryMode failed, using sandbox', e); }
     }
   } else if (/^turf-/.test(stageId)) {
-    const m = await tryImport('../game/modes/turf.js');
+    const m = await tryImport('turf', () => import('../game/modes/turf.js'));
     if (m?.TurfMode) {
       try { return new m.TurfMode(app, stageId, opts); } catch (e) { console.warn('[ui] TurfMode failed, using sandbox', e); }
     }

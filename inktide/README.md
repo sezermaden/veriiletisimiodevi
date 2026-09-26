@@ -18,6 +18,10 @@ npm run serve          # http://localhost:8080
 
 Any static web server works; open `www/index.html` through it. WebGL2 is required.
 
+**No server, just play:** `node tools/build-single.mjs` writes `dist/INKTIDE.html`, the whole game in
+one file (fonts included) that plays by double-click in Chrome or Edge. `node test/single-file.mjs`
+checks that build straight from disk.
+
 Developer shortcuts: `?stage=w1-1` loads a stage directly, `&kit=longshot` sets the weapon kit,
 `&q=low|medium|high|ultra` sets the quality preset, and `&god=1` makes the player invulnerable.
 
