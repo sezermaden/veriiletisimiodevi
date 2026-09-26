@@ -58,6 +58,7 @@ class Crate extends PropActor {
     const sz = typeof def.size === 'number' ? [def.size, def.size, def.size] : (def.size || [1.2, 1.2, 1.2]);
     super(session, def, { hp: def.hits ?? 3, hitRadius: Math.max(sz[0], sz[2]) * 0.55, hitHeight: sz[1] });
     this.sz = sz;
+    this.cullDist = 75;           // session distance cull: 9 meshes for a few far-away pixels
     this.solid = false;           // the box collider blocks the player (the hit circle would not fit a long crate)
     this.t = 0;
     this.wob = 0;

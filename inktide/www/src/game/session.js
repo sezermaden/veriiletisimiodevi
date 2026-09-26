@@ -23,6 +23,20 @@ export const FIXED = 1 / 60;
 // full step makes the common case exactly one step per frame.
 const SNAP = 0.0015;
 
+/** Stop meshes smaller than `minRadius` (world space) from casting shadows. Parts that are
+ *  currently scaled to ~0 (a hidden squid form, a popping-up enemy) are left alone. */
+function trimShadowCasters(root, minRadius = 0.12) {
+  if (!root) return;
+  root.updateMatrixWorld(true);
+  root.traverse((o) => {
+    if (!o.isMesh || !o.castShadow || o.isInstancedMesh || !o.geometry) return;
+    const sc = o.matrixWorld.getMaxScaleOnAxis();
+    if (sc < 0.05) return;
+    if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+    if (o.geometry.boundingSphere && o.geometry.boundingSphere.radius * sc < minRadius) o.castShadow = false;
+  });
+}
+
 export class Session {
   /**
    * @param {App} app
@@ -80,6 +94,9 @@ export class Session {
     this.audio?.playMusic?.(def.music || def.theme || 'docks');
     this.audio?.ambience?.(def.theme || null);
     await this.mode?.start?.(this);
+    // tiny parts (eyes, suckers, bolts…) cost a shadow-pass draw each for no visible shadow
+    for (const e of this.entities) trimShadowCasters(e.group);
+    for (const a of this.actors) trimShadowCasters(a.model?.root);
     this.events.on('hit', (e) => { if (e.source === this.player && e.target !== this.player) this.hud.hitMarker(); });
     // warm the ink atlas + shaders so the first splat doesn't hitch
     this.ink.flush();
@@ -89,6 +106,20 @@ export class Session {
   }
 
   addEntity(e) { this.entities.push(e); return e; }
+
+  /** Distance cull: a small model far from the camera (enemy, crate) costs a dozen draw calls
+   *  for a few pixels. Entities opt in with `cullDist` (m); the 6% hysteresis stops flicker.
+   *  Only the group's visibility changes: the entity keeps simulating and rendering. */
+  _cullEntities() {
+    const cp = this.camera.position;
+    for (const e of this.entities) {
+      const d = e.cullDist;
+      if (!d || e.dead) continue;
+      const lim = e._culled ? d * 0.94 : d;
+      const far = e.group.position.distanceToSquared(cp) > lim * lim;
+      if (far !== !!e._culled) { e._culled = far; e.group.visible = !far; }
+    }
+  }
 
   entity(id) { return this.entities.find((e) => e.id === id && !e.dead) || null; }
 
@@ -151,6 +182,7 @@ export class Session {
     // ---- per frame ----
     this.camRig.update(input, dt, this.player);
     this.player.render(dt);
+    this._cullEntities();
     for (const e of this.entities) if (!e.dead) e.render(dt);
     this.projectiles.render();
     this.fx.update(dt);

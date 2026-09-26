@@ -248,6 +248,7 @@ export class MurkEnemy extends Actor {
     this.diff = diff;
     this.groupName = def.group ?? null;
     this.aggro = def.aggro ?? o.aggro ?? 16;
+    this.cullDist = def.cullDist ?? Math.max(90, this.aggro * 2.5);   // session distance cull (hidden, still simulated)
     this.pal = murkPalette(session);
     this.yaw = def.yaw ?? 0;
     this.faceYaw = this.yaw;
