@@ -87,14 +87,14 @@ const brushes = [
   ...containerStack(-13.75, -158.5, 2, 4, 1),
   ...containerStack(-13.75, -167, 2, 6, 1),
   ...containerStack(-13.75, -175.5, 1, 8, 1),          // the low one: climb over to the jetty
-  ...containerStack(-13.75, -184, 2, 2, 1),
+  ...containerStack(-13.75, -184, 1, 2, 1),          // single: a leap off a 2-high stack here cleared the bay wall
   ...containerStack(-8.5, -171, 1, 9, 1),              // cover
   block(5.5, -170, 2.6, 1.2, 0, 1.0, { mat: 'concrete', color: '#f2c230' }),
   block(-3, -179, 1.2, 2.6, 0, 1.0, { mat: 'concrete', color: '#e8e2d6' }),
   block(8, -183, 2.4, 2.4, 0, 1.3, { mat: 'wood', color: '#b8845a' }),              // pallet stack
   ...bollards(21.6, -150, 21.6, -188, 8),
-  box(-15, 0, -190.6, -3.7, 4.6, -189.4, { mat: 'plaster', color: '#e8e2d6', paint: false }),      // bay exit wall (unpaintable: no climbing round the barrier)
-  box(3.7, 0, -190.6, 22, 4.6, -189.4, { mat: 'plaster', color: '#e8e2d6', paint: false }),
+  box(-15, 0, -190.6, -3.7, 5.2, -189.4, { mat: 'plaster', color: '#e8e2d6', paint: false }),      // bay exit wall (unpaintable, 5.2 m: no climbing or leaping round the barrier)
+  box(3.7, 0, -190.6, 22, 5.2, -189.4, { mat: 'plaster', color: '#e8e2d6', paint: false }),
   // hidden fishing jetty
   ...pier(-26, -171.5, -15, -179.5, 0, { edges: 'all', color: '#c49a6c', step: 3 }),
 
@@ -243,7 +243,7 @@ const entities = [
   ent('glooper', 0, 0, -238, { group: 'pier', yaw: 0 }),
   ent('glooper', -9, 0, -242, { group: 'pier', yaw: 0.3 }),
   ent('glooper', 9, 0, -246, { group: 'pier', yaw: -0.3 }),
-  ent('murk-barrier', 0, 0, -250, { id: 'bar-final', size: [8.5, 4, 0.4], group: 'pier' }),   // wider than the 6 m pier: no jumping round its ends
+  ent('murk-barrier', 0, 0, -250, { id: 'bar-final', size: [24.4, 4, 0.4], group: 'pier' }),  // the whole plaza edge: a squid leap (8 m) can't get round it to the capsule pier
   ent('pearl-trail', -10.5, 0, -223, { to: [-10.5, 0, -235], count: 4 }),
   D('lamp', -11.4, 0, -226, { yaw: PI / 2 }), D('lamp', 11.4, 0, -234, { yaw: -PI / 2 }), D('lamp', -11.4, 0, -244, { yaw: PI / 2 }),
   D('barrel', 10.8, 0, -225), D('barrel', 11.2, 0, -224.2), D('crate-stack', 10.4, 0, -247.5, { count: 3, yaw: -0.3 }),

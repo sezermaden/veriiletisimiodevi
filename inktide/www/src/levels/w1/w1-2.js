@@ -74,7 +74,7 @@ const brushes = [
   box(4.5, DOCK, -52, 16, DOCK + 2.4, -51.8, GRATE),
   ...[-16, -10, 10, 16].map((x) => block(x, -51.9, 0.3, 0.3, DOCK, 2.5, SCENERY({ mat: 'metal', color: '#f2c230' }))),
   container(-9, DOCK, -41, '#35b56a'),
-  container(9.5, DOCK, -45.5, '#d9482b'),
+  container(9.5, DOCK, -41, '#d9482b'),                                // (> 8.6 m from the fence: no squid leap over it from the roof)
   block(2.5, -40.5, 2.4, 1, DOCK, 1.0, { mat: 'concrete', color: '#e8e2d6' }),
   block(-3, -46, 1, 2.4, DOCK, 1.0, { mat: 'concrete', color: '#f2c230' }),
 
@@ -161,7 +161,7 @@ const entities = [
   T(0, DOCK, -38.8, { size: [32, 3, 2], dialogue: 'w1-2.shield', objective: 'Splat the Shield Glooper squad' }),
   ent('shield-glooper', 0, DOCK, -47.8, { group: 'dock', yaw: 0 }),
   ent('glooper', -8.5, DOCK, -46.5, { group: 'dock', yaw: 0.3 }),
-  ent('glooper', 9.5, DOCK + 2.6, -45.5, { group: 'dock', yaw: -0.2 }),
+  ent('glooper', 9.5, DOCK + 2.6, -41, { group: 'dock', yaw: -0.2 }),
   ent('gate', 0, DOCK, -51.9, { id: 'gate-dock', size: [8, 3.2, 0.5], openOn: 'group:dock' }),
   ent('pearl-trail', -13.5, DOCK, -38, { to: [-13.5, DOCK, -49], count: 4 }),
   D('crane', -21, 0, -44, { yaw: PI / 2 }),
@@ -205,7 +205,7 @@ const entities = [
   ent('glooper', -7.25, 5.2, -131, { group: 'alley', yaw: 0.4 }),
   ent('glooper', 12, 0, -133, { group: 'alley', yaw: 0 }),
   ent('shield-glooper', 3.5, 0, -147, { group: 'alley', yaw: 0 }),
-  ent('murk-barrier', 0, 0, -150.2, { id: 'bar-alley', size: [8.5, 4, 0.4], group: 'alley' }),   // wider than the 5 m gangway: no jumping round it
+  ent('murk-barrier', 0, 0, -150.2, { id: 'bar-alley', size: [22, 4, 0.4], group: 'alley' }),    // 22 m: a squid leap (8 m) can't get round it onto the gangway
   ent('crate', 12, 0, -117.2, { pearls: 2 }), ent('crate', -12.5, 0, -127.8, { pearls: 2 }), ent('crate', -13.2, 0, -129.2, { pearls: 2 }),
   ent('pearl-trail', 12, 0, -110, { to: [12, 0, -128], count: 5 }),
   ent('pearl-trail', 7.25, 5.2, -109, { to: [7.25, 5.2, -136], count: 4 }),
@@ -225,7 +225,7 @@ const entities = [
   ent('glooper', 12, 2.6, -178, { group: 'yardc', yaw: -0.2 }),
   ent('rollerbrute', -8, 0, -194, { group: 'yardc', yaw: 0.5, aggro: 20 }),
   ent('glooper', 8, 0, -195.5, { group: 'yardc', yaw: -0.3, patrol: [[8, 0, -195.5], [9, 0, -184], [2, 0, -181]] }),
-  ent('murk-barrier', 0, 0, -200.2, { id: 'bar-final', size: [8.5, 4, 0.4], group: 'yardc' }),
+  ent('murk-barrier', 0, 0, -200.2, { id: 'bar-final', size: [22, 4, 0.4], group: 'yardc' }),
   ent('pearl-trail', -19, 0, -166, { to: [-19, 0, -186], count: 5 }),
   ent('pearl-trail', -12, 5.2, -170.6, { to: [-12, 5.2, -173.4], count: 2 }),
   ent('crate', 16.8, 0, -171.5, { pearls: 2 }), ent('crate', 17.6, 0, -172.9, { pearls: 2 }),

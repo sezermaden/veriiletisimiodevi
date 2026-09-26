@@ -90,7 +90,8 @@ const brushes = [
 
   // ---------------- G4: greenhouse grove ----------------
   box(-34, TER - 0.8, -80, -26, TER, -76, { mat: 'wood', color: '#c9955e' }),                   // bridge
-  box(-34, TER, -80.3, -26, TER + 1.2, -80, GLASS), box(-34, TER, -76, -26, TER + 1.2, -75.7, GLASS),
+  // tall glass sides (3.6 m): no squid leap (even off a hedge top) can drop onto the bridge past gate 2
+  box(-34, TER, -80.3, -26, TER + 3.6, -80, GLASS), box(-34, TER, -76, -26, TER + 3.6, -75.7, GLASS),
   box(-33, -30, -79.5, -27, TER - 0.8, -76.5, SCENERY({ mat: 'plaster', color: '#8f7fa6' })),
   ...building(-58, -62, -34, -116, TER, { color: '#a8d8b9', roofMat: 'tiles', roofColor: '#e4f0e6' }),
   box(-34.3, TER, -116, -34, TER + 1.2, -80.3, GLASS), box(-34.3, TER, -75.7, -34, TER + 1.2, -62, GLASS),
@@ -150,7 +151,7 @@ const entities = [
   ent('glooper', 4.5, 0, -33, { group: 'walk', yaw: -0.2, patrol: [[4.5, 0, -33], [5.5, 0, -44], [0, 0, -40]] }),
   ent('shield-glooper', 0, 0, -43.5, { group: 'walk', yaw: 0 }),
   ent('glooper', -5, 0, -44, { group: 'walk', yaw: 0.3 }),
-  ent('murk-barrier', 0, 0, -47, { id: 'bar-walk', size: [15.2, 4, 0.4], group: 'walk' }),
+  ent('murk-barrier', 0, 0, -47, { id: 'bar-walk', size: [16.6, 4, 0.4], group: 'walk' }),     // overlaps the edge glass: no leaping round its ends
   ent('pearl-trail', -4, 2.9, -26.6, { to: [-4, 2.9, -29.4], count: 3 }),
   ent('pearl-trail', -6.5, 0, -18, { to: [-6.5, 0, -34], count: 5 }),
   D('lamp', -7.3, 0, -22, { yaw: PI / 2, light: '#ff9ff0' }), D('lamp', 7.3, 0, -30, { yaw: -PI / 2, light: '#9ff3ff' }),
@@ -196,7 +197,7 @@ const entities = [
   ent('bomblob', -37.5, TER, -94, { group: 'grove', yaw: 0 }),
   ent('shield-glooper', -47, TER, -104, { group: 'grove', yaw: 0 }),
   ent('glooper', -54, TER, -101, { group: 'grove', yaw: 0.4 }),
-  ent('murk-barrier', -46, TER, -106.5, { id: 'bar-final', size: [23.2, 4.2, 0.4], group: 'grove' }),
+  ent('murk-barrier', -46, TER, -106.5, { id: 'bar-final', size: [24.6, 4.2, 0.4], group: 'grove' }),
   // orchid house (timed)
   ent('switch', -35.2, TER, -100, { id: 'sw-3', yaw: -PI / 2, targets: ['gate-orchid'], timer: 9 }),
   ent('gate', -51.65, TER, -68, { id: 'gate-orchid', yaw: PI / 2, size: [2.6, 2.6, 0.4], color: '#ffd6e8' }),

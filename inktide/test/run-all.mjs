@@ -14,6 +14,7 @@ const suites = [
   ['gamepad reachability graph', 'gamepad.mjs'],
   ['scripted playtest (smoke)', 'smoke.mjs'],
   ['story stages load', 'stages.mjs'],
+  ['campaign: fresh save → 15 stages → finale, pad only', 'campaign.mjs'],
   ['audio: tracks, sfx, ambience, ids', 'audio.mjs'],
 ].filter(([, f]) => fs.existsSync(path.join(here, f)));
 

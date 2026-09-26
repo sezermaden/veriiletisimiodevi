@@ -57,7 +57,7 @@ const brushes = [
   // ---------------- S1: entry plaza ----------------
   ...building(-14, 16, 14, -18, 0, { color: '#f3c9e4', roofMat: 'tiles', roofColor: '#f2e6f0' }),
   ...parapet(-14, 16, 14, -18, 0, ['+z', '-x', '+x'], { color: '#ffd6e8' }),
-  ...rinkFence(-14, 14, -18, 0, [[-3.5, 3.5]]),
+  ...rinkFence(-18, 18, -18, 0, [[-3.5, 3.5]]),                    // as wide as the course behind it: no hopping round the corner
   block(-10, -6, 4, 2, 0, 0.5, conc('#8fe6d8')),                                   // manual pad
   ramp(6, 0, -3, 10, 1.0, 0, '+z', conc('#ffd6a0')),                               // kicker
   ...planter(-11.5, 8, 2, 6, 0), ...planter(11.5, 8, 2, 6, 0),
@@ -83,7 +83,7 @@ const brushes = [
   stairs(-10, 0, -57, -7.5, 1.5, -51, '-x', conc('#f2e6f0')),
   ...grindRail(-8.8, -51.2, -8.8, -56.8, 0.75, 0.9),
   rampC(15.5, -49, 5, 8, 0, 1.6, '+x', conc('#b8dcff')),                             // quarter pipe (east wall)
-  ...rinkFence(-18, 18, -62, 0, [[-3.5, 3.5]]),
+  ...rinkFence(-20, 20, -62, 0, [[-3.5, 3.5]]),                    // (as wide as the halfpipe deck)
 
   // ---------------- S3: the halfpipe ----------------
   block(0, -65, 40, 6, -30, 29.2, { mat: 'plaster', color: '#9ec5f0', paint: false }), // body under the near deck
@@ -98,7 +98,7 @@ const brushes = [
   box(-20.4, PIPE, -89.6, -20, 1.2, -82, GLASS), box(-20.4, PIPE, -76, -20, 1.2, -68, GLASS), box(20, PIPE, -89.6, 20.4, 1.2, -68, GLASS),  // side glass
   box(-20, 0, -68, -19.65, 0.7, -62, conc('#ffd6e8')), box(19.65, 0, -68, 20, 0.7, -62, conc('#ffd6e8')),
   box(-20, DECK, -100, -19.65, DECK + 0.7, -89.6, conc('#ffd6e8')), box(19.65, DECK, -100, 20, DECK + 0.7, -89.6, conc('#ffd6e8')),
-  ...rinkFence(-20, 20, -100, DECK, [[-3.5, 3.5]]),
+  ...rinkFence(-22, 22, -100, DECK, [[-3.5, 3.5]]),                // (as wide as the bowl rim)
   ...waterTower(-16, -95.5, DECK, { color: '#d98a8a' }),
   // Pix's corner: crate-sealed alcove west of the flat
   box(-26, PIPE - 0.8, -82, -20, PIPE, -76, { mat: 'wood', color: '#c9955e' }),
