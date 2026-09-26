@@ -6,7 +6,7 @@
 import { launch } from '../test/harness.mjs';
 
 const want = process.argv.slice(2);
-const h = await launch({ width: 960, height: 540 });
+const h = await launch({ width: 480, height: 270 });   // counts do not depend on resolution
 await h.open('/?q=high', 5);
 const ids = want.length ? want : await h.page.evaluate(async () => Object.keys((await import('/src/levels/index.js')).STAGE_LOADERS).filter((k) => /^(w\d|turf-)/.test(k)));
 
