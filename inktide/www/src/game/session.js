@@ -25,7 +25,15 @@ const SNAP = 0.0015;
 
 /** Stop meshes smaller than `minRadius` (world space) from casting shadows. Parts that are
  *  currently scaled to ~0 (a hidden squid form, a popping-up enemy) are left alone. */
-function trimShadowCasters(root, minRadius = 0.12) {
+// detail LOD: parts under DETAIL_R metres hide beyond DETAIL_K x radius (≈2.5 px at 1080p, fov 72)
+const DETAIL_R = 0.12;
+const DETAIL_K = 600;
+// shadow LOD: parts under SHADOW_R metres stop casting beyond max(SHADOW_NEAR, SHADOW_K x radius)
+const SHADOW_R = 0.5;
+const SHADOW_NEAR = 18;
+const SHADOW_K = 90;
+
+function trimShadowCasters(root, minRadius = DETAIL_R) {
   if (!root) return;
   root.updateMatrixWorld(true);
   root.traverse((o) => {
@@ -97,6 +105,11 @@ export class Session {
     // tiny parts (eyes, suckers, bolts…) cost a shadow-pass draw each for no visible shadow
     for (const e of this.entities) trimShadowCasters(e.group);
     for (const a of this.actors) trimShadowCasters(a.model?.root);
+    // detail LOD: the same tiny parts drop out of the main pass once they are a couple of pixels
+    this._details = [];
+    this._detailSeen = new WeakSet();
+    for (const a of this.actors) this._trackDetails(a.model?.root);
+    for (const e of this.entities) this._trackDetails(e.group);
     this.events.on('hit', (e) => { if (e.source === this.player && e.target !== this.player) this.hud.hitMarker(); });
     // warm the ink atlas + shaders so the first splat doesn't hitch
     this.ink.flush();
@@ -110,6 +123,47 @@ export class Session {
   /** Distance cull: a small model far from the camera (enemy, crate) costs a dozen draw calls
    *  for a few pixels. Entities opt in with `cullDist` (m); the 6% hysteresis stops flicker.
    *  Only the group's visibility changes: the entity keeps simulating and rendering. */
+  /** Register the meshes under `root` smaller than SHADOW_R (world space) for _detailLod(). */
+  _trackDetails(root) {
+    if (!root) return;
+    const list = [];
+    root.updateMatrixWorld(true);
+    root.traverse((o) => {
+      if (!o.isMesh || o.isInstancedMesh || !o.geometry || this._detailSeen.has(o)) return;
+      const sc = o.matrixWorld.getMaxScaleOnAxis();
+      if (sc < 0.05) return;                      // scaled away right now (hidden form): unknown size
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      const r = (o.geometry.boundingSphere?.radius || 0) * sc;
+      if (r <= 0 || r >= SHADOW_R) return;
+      this._detailSeen.add(o);
+      list.push(o, r, o.castShadow);
+    });
+    if (list.length) this._details.push({ root, list });
+  }
+
+  /** Parts whose projected size is under ~2.5 px go to layer 1, which no camera renders (layers,
+   *  not `visible`: models toggle their parts' visibility and must keep owning it). Small parts far
+   *  enough away that their shadow would be a smudge stop casting (castShadow is only ever set at
+   *  construction, so the registered value is the model's own choice). */
+  _detailLod() {
+    const ds = this._details;
+    if (!ds?.length) return;
+    const cp = this.camera.position;
+    const k = DETAIL_K * Math.max(0.5, Math.min(2, (this.renderer.height || 1080) / 1080));
+    for (const d of ds) {
+      const m = d.root.matrixWorld.elements;
+      const dx = m[12] - cp.x, dy = m[13] - cp.y, dz = m[14] - cp.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const lim = dist / k;                                   // radii below this are too small to see
+      const l = d.list;
+      for (let i = 0; i < l.length; i += 3) {
+        const o = l[i], r = l[i + 1];
+        o.layers.mask = r < DETAIL_R && r < lim ? 2 : 1;
+        if (l[i + 2]) o.castShadow = dist < Math.max(SHADOW_NEAR, SHADOW_K * r);
+      }
+    }
+  }
+
   _cullEntities() {
     const cp = this.camera.position;
     for (const e of this.entities) {
@@ -183,6 +237,7 @@ export class Session {
     this.camRig.update(input, dt, this.player);
     this.player.render(dt);
     this._cullEntities();
+    this._detailLod();
     for (const e of this.entities) if (!e.dead) e.render(dt);
     this.projectiles.render();
     this.fx.update(dt);

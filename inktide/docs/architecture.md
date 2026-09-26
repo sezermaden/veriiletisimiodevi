@@ -75,6 +75,14 @@ registerEntity('glooper', (s, d) => new Glooper(s, d));
 `this.group` is added to the scene at `def.pos`, `def.yaw`. `this.remove()` → disposed after the
 step. Register modules by importing them from `entities/index.js`.
 
+Draw-call budget (the session applies these automatically; `node tools/perf.mjs` reports them):
+- `this.cullDist = m` → the group is hidden beyond m metres from the camera (6% hysteresis) and
+  keeps simulating. Enemies default to max(90, 2.5 × aggro), crates 75. Nothing else may toggle
+  `this.group.visible` on an entity that sets `cullDist`.
+- Meshes under 0.12 m (world radius) never cast shadows, and leave the view (layer 1) once they
+  project under ~2.5 px. Meshes under 0.5 m stop casting beyond max(18 m, 90 × radius). Set
+  `castShadow` only at construction: the session caches it when the stage starts.
+
 ## Weapons (`weapons/base.js`)
 
 Kits (8), subs (4), specials (4) are listed in `KITS`, `SUB_INFO`, `SPECIAL_INFO`. Implement a
