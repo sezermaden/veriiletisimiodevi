@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  IgnorableNamespaces="uap mp">
+
+  <!-- Real Partner Center identity for the reserved name "__APP__".
+       Publisher must match the signing certificate's subject exactly. -->
+  <Identity
+    Name="__IDENTITY__"
+    Publisher="__PUBLISHER__"
+    Version="1.0.0.0" />
+
+  <mp:PhoneIdentity PhoneProductId="9f2c1a44-6f31-4d2a-8b6e-1c9a70b5d4e2"
+                    PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+
+  <Properties>
+    <DisplayName>__APP__</DisplayName>
+    <PublisherDisplayName>__PUBDISPLAY__</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <!-- Explicitly targets desktop AND Xbox. Xbox consoles are x64, so the
+       submitted bundle must contain an x64 package. -->
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Xbox" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="__APP__.App">
+      <uap:VisualElements
+        DisplayName="__APP__"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png"
+        Description="__DESC__"
+        BackgroundColor="transparent">
+        <uap:DefaultTile
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square71x71Logo="Assets\Square71x71Logo.png"
+          Square310x310Logo="Assets\Square310x310Logo.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo" />
+            <uap:ShowOn Tile="wide310x150Logo" />
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#0D0914" />
+        <uap:LockScreen BadgeLogo="Assets\LockScreenLogo.png" Notification="badge" />
+        <uap:InitialRotationPreference>
+          <uap:Rotation Preference="landscape" />
+          <uap:Rotation Preference="landscapeFlipped" />
+        </uap:InitialRotationPreference>
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <!-- No <Capabilities> on purpose. The game is fully offline: it makes no
+       network requests, so declaring internetClient would only add a privacy
+       policy requirement in Partner Center and extra scrutiny at certification.
+       The rescap namespace is also deliberately absent — the Windows App
+       Certification Kit fails packages that declare restricted capabilities. -->
+</Package>

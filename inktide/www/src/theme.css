@@ -1,0 +1,53 @@
+/* Theme tokens. Base values come from the chosen concept (docs/concept/theme-1.css, variant 1:
+   left rail + Bungee). Every screen reads these; nothing hard-codes a colour. */
+@font-face { font-family: 'Bungee'; src: url('../fonts/bungee-latin-400-normal.woff2') format('woff2'); font-display: block; }
+@font-face { font-family: 'Lilita One'; src: url('../fonts/lilita-one-latin-400-normal.woff2') format('woff2'); font-display: block; }
+@font-face { font-family: 'Rubik Wet Paint'; src: url('../fonts/rubik-wet-paint-latin-400-normal.woff2') format('woff2'); font-display: block; }
+@font-face { font-family: 'Baloo 2'; font-weight: 500; src: url('../fonts/baloo-2-latin-500-normal.woff2') format('woff2'); font-display: block; }
+@font-face { font-family: 'Baloo 2'; font-weight: 600; src: url('../fonts/baloo-2-latin-600-normal.woff2') format('woff2'); font-display: block; }
+@font-face { font-family: 'Baloo 2'; font-weight: 700; src: url('../fonts/baloo-2-latin-700-normal.woff2') format('woff2'); font-display: block; }
+@font-face { font-family: 'Baloo 2'; font-weight: 800; src: url('../fonts/baloo-2-latin-800-normal.woff2') format('woff2'); font-display: block; }
+
+:root {
+  --bg: #0b0a26;
+  --bg-rgb: 11, 10, 38;
+  --surface: #171446;
+  --surface-2: #2a2170;
+  --surface-3: #3a2f96;
+  --text: #eef2f8;
+  --text-muted: #ffffffb0;
+  --text-dim: #ffffff70;
+  --accent: #ff8a1f;
+  --accent-rgb: 255, 138, 31;
+  --accent-2: #2fe0ff;
+  --accent-2-rgb: 47, 224, 255;
+  --accent-warm: #ffe14d;
+  --focus: #ff8a1f;
+  --danger: #f2726b;
+  --success: #8ede6a;
+
+  /* ink team colours (overwritten at runtime from the chosen palette) */
+  --ink-hero: #ff8a1f;
+  --ink-murk: #6a2bd9;
+
+  --font-display: 'Bungee', system-ui, sans-serif;
+  --font-title: 'Lilita One', 'Bungee', system-ui, sans-serif;
+  --font-drip: 'Rubik Wet Paint', 'Bungee', system-ui, sans-serif;
+  --font-ui: 'Baloo 2', system-ui, sans-serif;
+  --step--2: clamp(15px, 0.95vw, 21px);
+  --step--1: clamp(18px, 1.15vw, 26px);
+  --step-0:  clamp(24px, 1.55vw, 34px);
+  --step-1:  clamp(32px, 2.1vw, 46px);
+  --step-2:  clamp(44px, 3.0vw, 66px);
+  --step-3:  clamp(64px, 4.8vw, 110px);
+  --step-4:  clamp(84px, 7.2vw, 160px);
+
+  --safe-x: 5vw;  --safe-y: 5vh;
+  --gap-s: .6rem; --gap-m: 1.2rem; --gap-l: 2.4rem;
+  --focus-ring: 4px; --radius: 14px; --radius-l: 22px; --hit-min: 64px;
+  --anim-fast: 120ms; --anim-slow: 260ms;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+}
+:where(button,[role="menuitem"],[tabindex]):focus-visible {
+  outline: var(--focus-ring) solid var(--focus); outline-offset: 3px;
+}

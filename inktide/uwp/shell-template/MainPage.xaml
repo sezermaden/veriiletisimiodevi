@@ -1,0 +1,41 @@
+<Page
+    x:Class="__APP__.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="#07050C">
+
+    <Grid Background="#07050C">
+        <!-- Chromium-backed WebView2 hosts the three.js game.
+             Note: the WinUI 2 (UWP) WebView2 does not expose DefaultBackgroundColor —
+             that property only exists on the WinUI 3 / WPF / WinForms wrappers. The
+             status panel below stays on top until the first navigation completes,
+             which covers the brief white frame instead. -->
+        <controls:WebView2 x:Name="GameView" />
+
+        <Grid x:Name="StatusPanel" Background="#07050C">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="620">
+                <TextBlock Text="__APP_UPPER__"
+                           FontSize="46" FontWeight="Black"
+                           Foreground="#8EE36A"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,14"/>
+                <TextBlock x:Name="StatusText"
+                           Text="Starting the forest…"
+                           FontSize="15"
+                           Foreground="#A396B8"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Margin="0,0,0,14"/>
+                <HyperlinkButton x:Name="RuntimeLink"
+                                 Content="Download the WebView2 Runtime"
+                                 NavigateUri="https://developer.microsoft.com/microsoft-edge/webview2/"
+                                 HorizontalAlignment="Center"
+                                 Visibility="Collapsed"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>
