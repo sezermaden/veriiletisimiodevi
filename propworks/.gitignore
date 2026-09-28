@@ -1,0 +1,8 @@
+bin/
+obj/
+AppPackages/
+BundleArtifacts/
+node_modules/
+.vs/
+*.user
+dist/

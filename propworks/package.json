@@ -1,0 +1,28 @@
+{
+  "name": "propworks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "vendor": "node tools/vendor.mjs",
+    "bundle": "node tools/build-single.mjs",
+    "icons": "node tools/make-icons.mjs",
+    "logo": "node tools/logo.mjs",
+    "covers": "node tools/covers.mjs",
+    "shots": "node tools/shots.mjs",
+    "test:input": "node test/input.mjs",
+    "test:feel": "node test/feel.mjs",
+    "test:layout": "node test/layout.mjs",
+    "test:memory": "node test/memory.mjs",
+    "test:story": "node test/story.mjs",
+    "test:listing": "node test/listing.mjs",
+    "test": "node test/input.mjs && node test/feel.mjs && node test/layout.mjs && node test/memory.mjs && node test/listing.mjs && node test/story.mjs"
+  },
+  "devDependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
+    "esbuild": "^0.24.2",
+    "playwright": "1.56",
+    "sharp": "^0.35.5",
+    "three": "^0.186.1"
+  }
+}

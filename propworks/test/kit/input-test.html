@@ -1,0 +1,193 @@
+<!doctype html><meta charset=utf-8>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<body><canvas id=c width=64 height=64></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { Input } from './engine/input.js';
+import { makeRig } from './engine/camera-rig.js';
+
+const results = [];
+const ok = (name, pass, detail='') => results.push({name, pass, detail});
+const near = (a,b,eps=1e-6)=>Math.abs(a-b)<=eps;
+
+function fresh(opts={}) {
+  const el = document.getElementById('c');
+  const input = new Input(el, opts);
+  input._injectPad({connected:true, axes:[0,0,0,0], buttons:[]});
+  const cam = new THREE.PerspectiveCamera(60,1,0.1,100);
+  return { input, cam };
+}
+
+// 1) SÜRÜKLENME: 600 kare, hiç girdi yok -> kamera 0.0 oynamalı
+{
+  const { input, cam } = fresh();
+  const rig = makeRig('fps', cam, {});
+  rig.update(input, 0);
+  const y0 = rig.yaw, p0 = rig.pitch, pos0 = rig.position.clone();
+  for (let i=0;i<600;i++){ input.update(1/60); rig.update(input, 1/60); input.endFrame(); }
+  const drift = Math.abs(rig.yaw-y0)+Math.abs(rig.pitch-p0)+rig.position.distanceTo(pos0);
+  ok('600 kare girdisiz: sürüklenme yok', drift===0, `toplam sapma ${drift}`);
+}
+
+// 2) SÜRÜKLENME (gamepad çubuğu 0'da durmuyor) -> deadzone + kalibrasyon yakalamalı
+{
+  const { input, cam } = fresh();
+  input._injectPad({connected:true, axes:[0.06,-0.05,0.04,0.07], buttons:[]});  // yıpranmış çubuk
+  const rig = makeRig('fps', cam, {});
+  const y0=rig.yaw, p0=rig.pitch, pos0=rig.position.clone();
+  for (let i=0;i<600;i++){ input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+  const drift = Math.abs(rig.yaw-y0)+Math.abs(rig.pitch-p0)+rig.position.distanceTo(pos0);
+  ok('yıpranmış gamepad çubuğu: sürüklenme yok', drift===0, `sapma ${drift}`);
+}
+
+// 3) fare deltası TEK KARE uygulanmalı, birikmemeli
+{
+  const { input, cam } = fresh();
+  const rig = makeRig('fps', cam, {});
+  input._injectMouse(100, 0);
+  input.update(1/60); rig.update(input,1/60); input.endFrame();
+  const afterFirst = rig.yaw;
+  for (let i=0;i<10;i++){ input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+  ok('fare deltası tüketiliyor (birikmiyor)', near(rig.yaw, afterFirst), `ilk ${afterFirst.toFixed(4)} sonra ${rig.yaw.toFixed(4)}`);
+}
+
+// 4) YÖN: fare sağa -> sağa dönmeli (dünya ileri vektörü sağa kaymalı)
+{
+  const { input, cam } = fresh();
+  const rig = makeRig('fps', cam, {});
+  input._injectMouse(200, 0); input.update(1/60); rig.update(input,1/60); input.endFrame();
+  const f = new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion);
+  ok('fare sağa = sağa bakış', f.x > 0.2, `ileri vektör x=${f.x.toFixed(3)}`);
+}
+
+// 5) YÖN: fare aşağı -> aşağı bakmalı (invertY kapalıyken)
+{
+  const { input, cam } = fresh();
+  const rig = makeRig('fps', cam, {});
+  input._injectMouse(0, 200); input.update(1/60); rig.update(input,1/60); input.endFrame();
+  const f = new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion);
+  ok('fare aşağı = aşağı bakış', f.y < -0.1, `ileri y=${f.y.toFixed(3)}`);
+}
+
+// 6) invertY çalışıyor
+{
+  const { input, cam } = fresh({invertY:true});
+  const rig = makeRig('fps', cam, {});
+  input._injectMouse(0, 200); input.update(1/60); rig.update(input,1/60); input.endFrame();
+  const f = new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion);
+  ok('invertY: fare aşağı = yukarı bakış', f.y > 0.1, `ileri y=${f.y.toFixed(3)}`);
+}
+
+// 7) PITCH KİLİDİ: sürekli yukarı bakış ±90'ı geçmemeli, kamera takla atmamalı
+{
+  const { input, cam } = fresh();
+  const rig = makeRig('fps', cam, {});
+  for (let i=0;i<200;i++){ input._injectMouse(0,-500); input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+  const up = new THREE.Vector3(0,1,0).applyQuaternion(cam.quaternion);
+  ok('pitch ±89° kilidi', rig.pitch < Math.PI/2 && up.y > 0, `pitch ${(rig.pitch*180/Math.PI).toFixed(1)}° up.y=${up.y.toFixed(3)}`);
+}
+
+// 8) W ileri gitmeli (kameranın baktığı yöne)
+{
+  const { input, cam } = fresh();
+  const rig = makeRig('fps', cam, {});
+  input._injectMouse(150,0); input.update(1/60); rig.update(input,1/60); input.endFrame();  // biraz dön
+  const f = new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion).setY(0).normalize();
+  const before = rig.position.clone();
+  input._injectKey('KeyW'); 
+  for(let i=0;i<30;i++){ input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+  const moved = rig.position.clone().sub(before).setY(0).normalize();
+  ok('W = kameranın baktığı yöne ileri', moved.dot(f) > 0.99, `hizalama ${moved.dot(f).toFixed(4)}`);
+}
+
+// 9) S geri, A sol, D sağ — işaretler doğru
+{
+  const dirs = {};
+  for (const [key,label] of [['KeyW','ileri'],['KeyS','geri'],['KeyA','sol'],['KeyD','sağ']]) {
+    const { input, cam } = fresh();
+    const rig = makeRig('fps', cam, {});
+    input._injectKey(key);
+    const b = rig.position.clone();
+    for(let i=0;i<20;i++){ input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+    dirs[label] = rig.position.clone().sub(b).setY(0).normalize();
+  }
+  // yaw=0'da: ileri -Z, geri +Z, sağ +X, sol -X
+  const okF = dirs['ileri'].z < -0.99, okB = dirs['geri'].z > 0.99;
+  const okR = dirs['sağ'].x > 0.99,  okL = dirs['sol'].x < -0.99;
+  ok('W/S/A/D işaretleri doğru', okF&&okB&&okR&&okL,
+     `ileri z=${dirs['ileri'].z.toFixed(2)} geri z=${dirs['geri'].z.toFixed(2)} sağ x=${dirs['sağ'].x.toFixed(2)} sol x=${dirs['sol'].x.toFixed(2)}`);
+}
+
+// 10) çapraz hareket daha hızlı olmamalı
+{
+  const mk=(keys)=>{ const {input,cam}=fresh(); const rig=makeRig('fps',cam,{});
+    keys.forEach(k=>input._injectKey(k)); const b=rig.position.clone();
+    for(let i=0;i<60;i++){ input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+    return rig.position.distanceTo(b); };
+  const straight = mk(['KeyW']), diag = mk(['KeyW','KeyD']);
+  ok('çapraz hızlanma yok', Math.abs(straight-diag) < 1e-6, `düz ${straight.toFixed(3)} çapraz ${diag.toFixed(3)}`);
+}
+
+// 11) fare hassasiyeti kare hızından bağımsız (60fps vs 144fps aynı açı)
+{
+  const run=(dt,steps)=>{ const {input,cam}=fresh(); const rig=makeRig('fps',cam,{});
+    for(let i=0;i<steps;i++){ input._injectMouse(10,0); input.update(dt); rig.update(input,dt); input.endFrame(); }
+    return rig.yaw; };
+  const a=run(1/60,60), b=run(1/144,60);
+  ok('fare: kare hızından bağımsız', near(a,b,1e-9), `60fps ${a.toFixed(5)} / 144fps ${b.toFixed(5)}`);
+}
+
+// 12) gamepad bakışı ZAMANA bağlı olmalı (aynı süre = aynı açı)
+{
+  const run=(dt,steps)=>{ const {input,cam}=fresh(); const rig=makeRig('fps',cam,{});
+    input._injectPad({connected:true, axes:[0,0,1,0], buttons:[]});
+    for(let i=0;i<steps;i++){ input.update(dt); rig.update(input,dt); input.endFrame(); }
+    return rig.yaw; };
+  const a=run(1/60,60), b=run(1/120,120);   // ikisi de 1 saniye
+  ok('gamepad bakışı: saniyede aynı açı', Math.abs(a-b)<1e-9, `${a.toFixed(5)} vs ${b.toFixed(5)}`);
+}
+
+// 12b) oyun AÇILIRKEN çubuk tutuluyorsa: bırakınca kayma olmamalı (kalibrasyon tuzağı)
+{
+  const { input, cam } = fresh();
+  const rig = makeRig('fps', cam, {});
+  const pad = {connected:true, axes:[0,0,1,0], buttons:[]};   // oyun açılırken çubuk sağda
+  input._injectPad(pad);
+  for(let i=0;i<30;i++){ input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+  const movedWhileHeld = Math.abs(rig.yaw) > 0.1;
+  pad.axes = [0,0,0.03,-0.02];                                 // oyuncu bıraktı (hafif ofsetle)
+  const y1 = rig.yaw, p1 = rig.pitch;
+  for(let i=0;i<600;i++){ input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+  const driftAfter = Math.abs(rig.yaw-y1)+Math.abs(rig.pitch-p1);
+  ok('açılışta çubuk tutuluyorsa: bakış çalışır, bırakınca kaymaz',
+     movedWhileHeld && driftAfter===0, `tutarken döndü=${movedWhileHeld}, bıraktıktan sonra sapma=${driftAfter}`);
+}
+
+// 13) 3. şahıs ve tepeden rig'lerde de yön doğru
+{
+  for (const kind of ['thirdPerson','topDown']) {
+    const { input, cam } = fresh();
+    const target = new THREE.Object3D();
+    const rig = makeRig(kind, cam, { target });
+    input._injectKey('KeyW');
+    const b = target.position.clone();
+    for(let i=0;i<30;i++){ input.update(1/60); rig.update(input,1/60); input.endFrame(); }
+    const d = target.position.clone().sub(b).setY(0).normalize();
+    ok(`${kind}: W ileri (-Z)`, d.z < -0.99, `z=${d.z.toFixed(3)}`);
+  }
+}
+
+// 14) pointer lock'tan çıkınca birikmiş delta atılmalı (kamera zıplamamalı)
+{
+  const { input, cam } = fresh();
+  const rig = makeRig('fps', cam, {});
+  input._injectMouse(500, 500);
+  input._onLockChange();                       // kilit bırakıldı
+  input.update(1/60); rig.update(input,1/60); input.endFrame();
+  ok('kilit bırakılınca kamera zıplamıyor', rig.yaw===0 && rig.pitch===0, `yaw ${rig.yaw} pitch ${rig.pitch}`);
+}
+
+const failed = results.filter(r=>!r.pass);
+window.__done = results.map(r=>`${r.pass?'  OK  ':'HATA  '}${r.name}${r.detail?'  ('+r.detail+')':''}`).join('\n')
+  + `\n\n${results.length-failed.length}/${results.length} test geçti`;
+</script>

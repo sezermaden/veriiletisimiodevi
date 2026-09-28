@@ -1,0 +1,49 @@
+/* Propworks design tokens. Every screen reads these; no component hard-codes a colour.
+   Palette: Source-era sandbox — graphite panels, sodium-amber HUD, physgun cyan-blue accent. */
+:root {
+  --bg: #101216;
+  --bg-2: #171a20;
+  --surface: rgba(24, 27, 33, 0.88);
+  --surface-2: rgba(38, 42, 50, 0.92);
+  --surface-3: rgba(58, 63, 73, 0.95);
+  --surface-light: #e4e6ea;
+  --surface-light-2: #cfd3d9;
+  --ink-dark: #1b1e24;
+  --line: rgba(255, 255, 255, 0.10);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --text: #f1f3f6;
+  --text-dim: #a8afbb;
+  --text-mute: #737b88;
+  --accent: #3fa9ff;
+  --accent-2: #7cc6ff;
+  --accent-deep: #1a6fc2;
+  --accent-warm: #ffb23e;
+  --hud: #ffc94a;
+  --hud-dim: rgba(255, 201, 74, 0.55);
+  --hud-bg: rgba(0, 0, 0, 0.42);
+  --danger: #ff4d4d;
+  --ok: #53d86a;
+  --glitch-a: #ff00dc;
+  --glitch-b: #000000;
+  --focus: #8fd0ff;
+
+  --font-ui: Tahoma, Verdana, "Segoe UI", system-ui, sans-serif;
+  --font-hud: "Segoe UI", "Arial Narrow", Arial, sans-serif;
+  --font-display: "Segoe UI Black", "Arial Black", Impact, "Segoe UI", sans-serif;
+  --font-mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+
+  --step--1: clamp(16px, 0.95vw, 30px);
+  --step-0: clamp(20px, 1.18vw, 36px);
+  --step-1: clamp(24px, 1.45vw, 44px);
+  --step-2: clamp(30px, 1.9vw, 58px);
+  --step-3: clamp(40px, 2.8vw, 84px);
+  --step-4: clamp(56px, 4.4vw, 132px);
+
+  --safe-x: 5vw;
+  --safe-y: 5vh;
+  --hit-min: clamp(56px, 5.9vh, 128px);
+  --radius: clamp(4px, 0.35vw, 10px);
+  --radius-lg: clamp(8px, 0.7vw, 18px);
+  --ring: clamp(3px, 0.22vw, 7px);
+  --gap: clamp(8px, 0.8vw, 22px);
+}

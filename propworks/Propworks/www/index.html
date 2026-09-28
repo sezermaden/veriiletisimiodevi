@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>Propworks</title>
+<link rel="stylesheet" href="./styles/theme.css" />
+<link rel="stylesheet" href="./styles/main.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/",
+    "rapier": "./vendor/rapier.mjs"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="viewport"></canvas>
+    <div id="hud" class="layer hidden"></div>
+    <div id="overlay" class="layer"></div>
+    <div id="screens" class="layer"></div>
+    <div id="boot" class="layer boot">
+      <div class="boot-inner">
+        <div class="boot-logo"><span class="logo-a">PROP</span><span class="logo-b">WORKS</span></div>
+        <div class="boot-bar"><div id="boot-fill"></div></div>
+        <div class="boot-status" id="boot-status">Initialising simulation…</div>
+      </div>
+    </div>
+    <div id="fatal" class="layer hidden fatal"></div>
+  </div>
+
+  <script type="module">
+    window.addEventListener('error', (e) => {
+      const el = document.getElementById('fatal');
+      if (!el || !el.classList.contains('hidden')) return;
+      el.classList.remove('hidden');
+      el.innerHTML = '<div class="fatal-box"><h2>Something went wrong</h2><pre>' +
+        String(e.message || e.error || 'Unknown error').replace(/[<>&]/g, '') +
+        '</pre><p>Press F5 to restart.</p></div>';
+    });
+  </script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "shortTitle": "Propworks",
+  "sortTitle": "Propworks",
+  "voiceTitle": "Propworks",
+  "shortDescription": "Grab anything with the Physics Gun, weld it, float it, drive it — then survive the story of a simulation that is un-rendering itself. A physics sandbox with a five-chapter campaign.",
+  "description": "Propworks is a physics sandbox with a story. Everything in the Workshop can be grabbed, frozen in mid-air, welded, roped, floated on balloons or strapped to thrusters — and then you have to use all of it to get out.\n\nTHE PHYSICS GUN\nHold any object at the exact point you aimed at. Push it away, pull it close, rotate it with snapping, freeze it in mid-air and walk on it. Unfreeze an entire welded contraption with one press.\n\nTHE TOOL GUN — 18 TOOLS\nWeld, Axis, Ball Socket, Rope, Elastic, No-Collide, Balloon, Thruster, Wheel, Hoverball, Dynamite, Lamp, Remover, Weight, Duplicator, Colour, Material and Ignite. Thrusters, wheels and hoverballs listen on six control channels, so what you build can actually be driven.\n\nA FIVE-CHAPTER STORY\nWake up inside the Workshop with WREN, the research engine that trains Builders. Stack crates, bridge chasms with frozen plates, lift cargo on balloons, build a car that can jump a canyon — and find out what happened to every Builder before you when the Archive started to lose its textures.\n\nSANDBOX MODE\nFour maps with everything unlocked: 55 props, 8 weapons, NPCs, ragdolls, explosive chain reactions, a drivable Rover, undo, clean-up and the duplicator.\n\nBUILT FOR EVERY INPUT\nFull keyboard and mouse, full gamepad (every menu and the whole spawn menu are navigable with a controller), rebindable keys, subtitles and spoken dialogue.",
+  "features": [
+    "Physics Gun: grab, push, pull, rotate with 45° snapping and freeze objects in mid-air",
+    "18 Tool Gun tools including weld, axis, rope, balloon, thruster, wheel, hoverball and duplicator",
+    "Five-chapter story campaign with spoken dialogue and subtitles",
+    "Sandbox mode on four maps with every prop, weapon, NPC and vehicle unlocked",
+    "55 physical props with real mass, buoyancy, breakable wood and glass, and chain-reacting explosives",
+    "Ragdolls you can pick up limb by limb",
+    "Drivable Rover plus anything you build yourself on six control channels",
+    "Full gamepad support in gameplay and every menu, including the spawn menu",
+    "Rebindable keyboard and mouse controls",
+    "Every texture, model and sound generated procedurally at runtime"
+  ],
+  "searchTerms": ["physics sandbox", "sandbox builder", "physics gun", "ragdoll", "construction", "puzzle", "first person"],
+  "copyright": "© 2026 Propworks",
+  "developedBy": "Propworks team"
+}
