@@ -1,0 +1,131 @@
+/* Plays all five chapters end to end with a scripted bot (teleports + events) and asserts
+   each chapter completes and the ending credits appear. Catches script crashes, missing
+   handles and broken transitions. */
+import { launch, frames } from './_browser.mjs';
+const SP = process.env.SHOTS || '/tmp/claude-0/-home-user-veriiletisimiodevi/29302d3b-793b-5314-8507-30afcaade7eb/scratchpad/';
+const { page, errors, close } = await launch();
+const log = (...a) => console.log(...a);
+const ev = (fn, arg) => page.evaluate(fn, arg);
+const tp = (x, y, z, yaw = 0) => ev(([x, y, z, yaw]) => { const g = window.__game; g.player.spawn({ x, y, z }, yaw); }, [x, y, z, yaw]);
+const waitFor = (fn, arg, timeout = 240000) => page.waitForFunction(fn, arg, { timeout, polling: 200 });
+const section = (name) => waitFor((n) => window.__game.story?.current === n, name);
+const chapter = (id) => waitFor((c) => window.__game.chapterId === c && window.__game.state === 'playing' && window.__game.story?.current, id);
+let failed = false;
+try {
+  await waitFor(() => window.__game?.state === 'menu');
+  await ev(() => { window.__game.storySpeed = 10; localStorage.clear(); });
+  const FROM = process.env.FROM || 'ch1';
+  await ev((c) => window.__game.startChapter(c), FROM);
+  const ORDER = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5'];
+  const run = (c) => ORDER.indexOf(c) >= ORDER.indexOf(FROM);
+  // ---------------------------------------------------------------- ch1
+  if (run('ch1')) {
+  await chapter('ch1');
+  await waitFor(() => window.__game.env.handles.door1.target === 1);
+  await tp(0, 0.05, 12);
+  await section('corridor'); await tp(0, 0.05, 24);
+  await section('physgun'); await tp(0, 0.05, 31.3);
+  await waitFor(() => window.__game.weapons.has('physgun'));
+  await frames(page, 30);
+  await page.screenshot({ path: SP + 'ch1.png' });
+  await ev(() => window.__game.story.emit('grab', {}));
+  await frames(page, 30);
+  await ev(() => window.__game.story.emit('freeze', {}));
+  await section('ledge'); await tp(0, 3.45, 58);
+  await section('chasm'); await tp(0, 3.45, 90);
+  await section('weight');
+  await ev(() => { const g = window.__game; const H = g.env.handles; H.heavy.setFrozen(false); H.heavy.setTransform({ x: 4, y: 4.3, z: 112 }); });
+  await waitFor(() => window.__game.env.handles.door3.target === 1);
+  await tp(0, 3.5, 123.7);
+  log('ch1 ok');
+  }
+  // ---------------------------------------------------------------- ch2
+  if (run('ch2')) {
+  await chapter('ch2');
+  await tp(0, 0.05, 11.3);
+  await section('debris');
+  await ev(() => { for (const j of window.__game.env.handles.junk) j.remove(); });
+  await section('bridge'); await tp(0, 0.05, 50);
+  await section('cargo');
+  await frames(page, 10);
+  await page.screenshot({ path: SP + 'ch2.png' });
+  await ev(() => { const H = window.__game.env.handles; H.pod.setTransform({ x: 0, y: 12, z: 88 }); });
+  await waitFor(() => window.__game.env.handles.liftButton.enabled);
+  await tp(0, 10.6, 88);
+  await section('glass'); await tp(0, 10.6, 108);
+  await section('exit'); await tp(0, 10.6, 119.3);
+  log('ch2 ok');
+  }
+  // ---------------------------------------------------------------- ch3
+  if (run('ch3')) {
+  await chapter('ch3');
+  await frames(page, 10);
+  await page.screenshot({ path: SP + 'ch3.png' });
+  await ev(() => { const g = window.__game; const e = g.entities.spawnProp('plate_2', { x: 0, y: 0.2, z: 86 }, undefined, {}); g.toolgun.tools.wheel.left({ point: { x: 0.9, y: 0.2, z: 86 }, normal: { x: 1, y: 0, z: 0 }, entity: e }); });
+  await tp(0, 0.1, 85);
+  await section('gate1'); await tp(0, 0.1, 146);
+  await section('cliff'); await tp(0, 14.2, 210);
+  await section('tower'); await tp(0, 14.2, 276);
+  await frames(page, 20);
+  await tp(0, 14.2, 282);
+  log('ch3 ok');
+  }
+  // ---------------------------------------------------------------- ch4
+  if (run('ch4')) {
+  await chapter('ch4');
+  await frames(page, 10);
+  await page.screenshot({ path: SP + 'ch4.png' });
+  await tp(5.5, 0.05, 3.2);
+  await section('corridor'); await tp(0, 0.05, 25);
+  await frames(page, 40);
+  await page.screenshot({ path: SP + 'ch4_scare.png' });
+  await tp(0, 0.05, 38);
+  await section('offices'); await tp(0, 0.05, 52);
+  await frames(page, 60);
+  await page.screenshot({ path: SP + 'ch4_fight.png' });
+  await ev(() => { for (const n of [...window.__game.npcs.list]) n.die({}); });
+  await section('storage'); await tp(0, 0.05, 74);
+  await waitFor(() => window.__game.npcs.list.some((n) => n.type === 'brute'));
+  await frames(page, 30);
+  await page.screenshot({ path: SP + 'ch4_brute.png' });
+  await ev(() => { for (const n of [...window.__game.npcs.list]) n.die({}); });
+  await section('power');
+  await ev(() => { const H = window.__game.env.handles; H.cells[0].setTransform({ x: -6, y: 2, z: 137.8 }); H.cells[1].setTransform({ x: 6, y: 2, z: 137.8 }); });
+  await section('defend');
+  await ev(() => { const g = window.__game; g.player.godMode = true; });
+  await waitFor(() => window.__game.env.handles.liftCage.target === 1, null, 400000);
+  await tp(0, 0.1, 169.3);
+  log('ch4 ok');
+  }
+  // ---------------------------------------------------------------- ch5
+  if (run('ch5')) {
+  await chapter('ch5');
+  await ev(() => { window.__game.player.godMode = true; });
+  await tp(0, 0.05, 26);
+  await section('boss');
+  await waitFor(() => !!window.__game.story.boss && window.__game.story.boss.state !== 'rise');
+  await frames(page, 30);
+  await page.screenshot({ path: SP + 'ch5.png' });
+  await ev(() => { const g = window.__game; for (const p of g.env.handles.pylons) g.explode(p.pos.clone(), { radius: 6, damage: 10, force: 10 }); });
+  await frames(page, 5);
+  await ev(() => { const g = window.__game; for (const p of g.env.handles.pylons) g.explode(p.pos.clone(), { radius: 6, damage: 10, force: 10 }); });
+  await frames(page, 5);
+  await ev(() => { const g = window.__game; for (const p of g.env.handles.pylons) g.explode(p.pos.clone(), { radius: 6, damage: 10, force: 10 }); });
+  await waitFor(() => !window.__game.story.boss.shielded);
+  await ev(() => window.__game.story.boss.hurt(99999, { type: 'bullet' }));
+  await section('escape');
+  await frames(page, 20);
+  await page.screenshot({ path: SP + 'ch5_escape.png' });
+  await tp(0, 0.05, -64);
+  await waitFor(() => window.__game.state === 'menu' && document.querySelector('.credits-roll'), null, 400000);
+  await frames(page, 10);
+  await page.screenshot({ path: SP + 'credits.png' });
+  const prog = await ev(() => JSON.parse(localStorage.getItem('propworks.save.v1')));
+  log('ending reached; progress', JSON.stringify({ completed: prog.completed, finished: prog.finishedStory }));
+  if (!prog.finishedStory || prog.completed.length !== 5 - ORDER.indexOf(FROM)) failed = true;
+  }
+} catch (e) { failed = true; log('FAIL', e.message); log(await ev(() => ({ ch: window.__game.chapterId, sec: window.__game.story?.current, state: window.__game.state, obj: document.querySelector('.objective .ot')?.textContent })).catch(() => '')); }
+const errs = errors.filter((e) => !/favicon|404|Pointer Lock|pointer lock/i.test(e));
+log(errs.slice(0, 20).join('\n') || 'no errors');
+await close();
+process.exit(failed || errs.length ? 1 : 0);
