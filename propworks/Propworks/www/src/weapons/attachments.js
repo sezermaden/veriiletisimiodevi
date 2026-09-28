@@ -237,7 +237,7 @@ export function createLamp(game, point, normal, target, { color = '#fff2d6', bri
   light.castShadow = game.renderer.q.maxLights >= 12;
   light.shadow.mapSize.set(512, 512);
   g.add(light, light.target);
-  light.visible = on;
+  light.intensity = on ? 60 * brightness : 0;
   const q = quatFromNormal(normal);
   const pos = new THREE.Vector3(point.x, point.y, point.z);
   const e = make(game, 'lamp', 'Lamp', g, [{ box: [0.08, 0.13, 0.08], p: [0, 0.13, 0] }], pos, q, { density: 1 });
@@ -246,7 +246,7 @@ export function createLamp(game, point, normal, target, { color = '#fff2d6', bri
   let prev = false;
   e.behaviours.push(() => {
     const d = channelDown(game, key);
-    if (d && !prev) { e.data.on = !e.data.on; light.visible = e.data.on; lensMat.emissiveIntensity = e.data.on ? 3 : 0; Audio.play('button', { pos: e.curr.p, volume: 0.4 }); }
+    if (d && !prev) { e.data.on = !e.data.on; light.intensity = e.data.on ? 60 * brightness : 0; lensMat.emissiveIntensity = e.data.on ? 3 : 0; Audio.play('button', { pos: e.curr.p, volume: 0.4 }); }
     prev = d;
   });
   e.onRemove = () => { if (light.shadow.map) light.shadow.map.dispose(); light.dispose(); };

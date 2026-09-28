@@ -10,10 +10,12 @@ await mkdir(OUT, { recursive: true });
 const only = (() => { const i = process.argv.indexOf('--only'); return i > 0 ? process.argv[i + 1].split(',') : null; })();
 const want = (n) => !only || only.includes(n);
 
-const { page, close } = await launch({ width: 1920, height: 1080 });
+const { page, close, errors } = await launch({ width: 1920, height: 1080 });
+process.on('exit', () => { const e = errors.filter((x) => !/favicon|404|Pointer/i.test(x)); if (e.length) console.log(e.slice(0, 5).join('\n')); });
 await page.waitForFunction(() => window.__game?.state === 'menu', null, { timeout: 180000 });
 await page.evaluate(() => { window.__game.storySpeed = 20; });
-const shot = async (name) => { await page.screenshot({ path: resolve(OUT, name + '.png') }); console.log(name); };
+const shot = async (name) => {
+  const e = errors.filter((x) => !/favicon|404|Pointer/i.test(x)); if (e.length) console.log('errors so far:', e.slice(0, 3).join(' | ')); await page.screenshot({ path: resolve(OUT, name + '.png') }); console.log(name); };
 const ev = (f, a) => page.evaluate(f, a);
 
 if (want('menu')) { await frames(page, 40); await shot('01-main-menu'); }

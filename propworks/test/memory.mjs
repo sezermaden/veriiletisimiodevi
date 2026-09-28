@@ -10,6 +10,9 @@ for (const m of seq) {
   await page.waitForFunction((m) => window.__game.state === 'playing' && window.__game.mapId === m, m, { timeout: 180000 });
   await page.evaluate(() => { const g = window.__game; for (let i = 0; i < 20; i++) g.spawnFromMenu('prop', 'crate'); g.spawnFromMenu('npc', 'citizen'); g.spawnFromMenu('npc', 'mannequin'); });
   await frames(page, 20);
+  // exercise removal paths, then measure in a settled state (dissolves finished)
+  await page.evaluate(() => { const g = window.__game; g.cleanup(); for (const n of [...g.npcs.list]) n.remove(); g.npcs.list = []; });
+  await frames(page, 45);
   const c = await page.evaluate(() => { const i = window.__game.renderer.renderer.info.memory; return { geo: i.geometries, tex: i.textures, ents: window.__game.entities.list.length }; });
   counts.push({ map: m, ...c });
   console.log(m.padEnd(9), JSON.stringify(c));

@@ -199,7 +199,7 @@ export class PhysGun extends Weapon {
     }
     if (this.parts.coilMat) this.parts.coilMat.emissiveIntensity = on ? 3 + Math.sin(this.spin * 3) * 1 : 1.1;
     if (this.parts.core) this.parts.core.scale.setScalar(on ? 1.3 + Math.sin(this.spin * 4) * 0.2 : 0.8);
-    if (!on || !this.vm.visible) { b.group.visible = false; return; }
+    if (!on || !this.vm.visible) { b.group.visible = false; b.setLight(false); return; }
     const from = this.muzzleWorld(_a.set(0, 0, 0));
     let to;
     if (this.held && !this.held.e.removed) to = this.held.e.localToWorld(this.held.local, new THREE.Vector3());
@@ -210,16 +210,18 @@ export class PhysGun extends Weapon {
     const ctrl = eye.clone().addScaledVector(dir, dist * 0.55);
     b.update(from, ctrl, to, this.game.renderer.camera, this.spin);
     b.group.visible = true;
+    b.setLight(true);
   }
 
   holster() {
     if (this.held) this._release(false);
     this.firing = false;
     this.beam.group.visible = false;
+    this.beam.setLight(false);
     this.hum?.set(0);
   }
 
-  dispose() { disposeTree(this.beam.group); this.hum?.stop(); }
+  dispose() { this.beam.dispose(); disposeTree(this.beam.group); this.hum?.stop(); }
 
   onEntityRemoved(e) { if (this.held?.e === e) { this.held = null; this.game.player.lookLocked = false; } }
 
@@ -266,9 +268,11 @@ function makeBeam(scene) {
   const endGlow = new THREE.Sprite(spriteMat); endGlow.scale.setScalar(0.6);
   const startGlow = new THREE.Sprite(spriteMat); startGlow.scale.setScalar(0.1);
   group.add(endGlow, startGlow);
-  const light = new THREE.PointLight(0x5cb8ff, 2.5, 6, 2);
-  group.add(light);
-  scene.add(group);
+  const light = new THREE.PointLight(0x5cb8ff, 0, 6, 2);
+  scene.add(group, light);
+  let lightOn = 0;
+  const _vis = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(group), 'visible');
+  void _vis;
   const P = new THREE.Vector3(), T = new THREE.Vector3(), S = new THREE.Vector3(), C = new THREE.Vector3();
   return {
     group,
@@ -290,5 +294,7 @@ function makeBeam(scene) {
       startGlow.position.copy(a);
       light.position.copy(b);
     },
+    setLight(on) { lightOn = on; light.intensity = on ? 2.5 : 0; },
+    dispose() { light.removeFromParent(); light.dispose(); },
   };
 }

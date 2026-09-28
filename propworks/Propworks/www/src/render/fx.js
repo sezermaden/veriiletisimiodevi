@@ -125,8 +125,10 @@ export class FX {
     // flash lights
     this.lights = [];
     for (let i = 0; i < 6; i++) {
+      // lights stay in the scene at intensity 0: toggling .visible changes the light count
+      // and forces every material's shader to recompile (a visible hitch on real GPUs)
       const l = new THREE.PointLight(0xffaa55, 0, 12, 2);
-      l.visible = false; scene.add(l);
+      scene.add(l);
       this.lights.push({ light: l, life: 0, max: 1, peak: 0 });
     }
 
@@ -176,7 +178,7 @@ export class FX {
   clear() {
     this.add.clear(); this.smoke.clear();
     for (const t of this.tracers) { t.life = 0; t.mesh.visible = false; }
-    for (const l of this.lights) { l.life = 0; l.light.visible = false; }
+    for (const l of this.lights) { l.life = 0; l.light.intensity = 0; }
     for (const d of this.decals) d.visible = false;
     this.cubeData.length = 0; this.cubes.count = 0;
     for (const r of this.rings) { r.life = 0; r.mesh.visible = false; }
@@ -317,7 +319,7 @@ export class FX {
   flash(pos, color, intensity, life, distance = 10) {
     const f = this.lights.reduce((a, b) => (a.life < b.life ? a : b));
     f.light.position.copy(pos); f.light.color.set(color); f.light.distance = distance;
-    f.peak = intensity; f.life = f.max = life; f.light.visible = true;
+    f.peak = intensity; f.life = f.max = life;
     f.light.intensity = intensity;
   }
 
@@ -372,7 +374,7 @@ export class FX {
     for (const f of this.lights) {
       if (f.life <= 0) continue;
       f.life -= dt;
-      if (f.life <= 0) { f.light.visible = false; f.light.intensity = 0; continue; }
+      if (f.life <= 0) { f.light.intensity = 0; continue; }
       f.light.intensity = f.peak * (f.life / f.max) ** 2;
     }
 

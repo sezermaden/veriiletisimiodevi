@@ -166,7 +166,7 @@ export class Renderer {
     }
     s.environmentIntensity = env.envIntensity ?? 0.8;
     this.vmScene.environment = s.environment;
-    this.vmScene.environmentIntensity = env.envIntensity ?? 0.8;
+    this.vmScene.environmentIntensity = (env.envIntensity ?? 0.8) * 0.5;
     s.fog = env.fog ? new THREE.FogExp2(env.fog.color, env.fog.density) : null;
     if (this.bloomPass) {
       this.bloomPass.strength = env.bloom ?? 0.55;

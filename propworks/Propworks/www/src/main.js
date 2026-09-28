@@ -306,10 +306,14 @@ class Game {
 
   /* ================================================================== frame */
   frame(t) {
-    const dt = Math.min(0.05, (t - this._last) / 1000);   // a hitch must not teleport anyone
+    const dt = Math.max(0, Math.min(0.05, (t - this._last) / 1000));   // a hitch must not teleport anyone; rAF can report a time before boot
     this._last = t;
-    if (!this.manual) this.tick(dt);
+    // schedule first: one bad frame must never stop the game loop
     requestAnimationFrame((tt) => this.frame(tt));
+    if (!this.manual) {
+      try { this.tick(dt); }
+      catch (e) { if (!this._errLogged || this._errLogged < 5) { console.error('frame error', e); this._errLogged = (this._errLogged || 0) + 1; } }
+    }
   }
 
   /** One frame of the game at a given dt. Tests call this directly with `manual` set. */

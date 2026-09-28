@@ -41,5 +41,5 @@ export async function launch({ width = 1280, height = 720 } = {}) {
 /** Wait N rendered frames (frame-based, not time-based: SwiftShader is slow). */
 export async function frames(page, n) {
   const start = await page.evaluate(() => window.__game?.frames ?? 0);
-  await page.waitForFunction((t) => (window.__game?.frames ?? 0) >= t, start + n, { timeout: 180000, polling: 100 });
+  await page.waitForFunction((t) => (window.__game?.frames ?? 0) >= t, start + n, { timeout: Math.max(180000, n * 8000), polling: 100 });
 }

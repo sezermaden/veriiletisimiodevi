@@ -308,7 +308,7 @@ export class Player {
 
   toggleFlashlight() {
     if (!this.flashlight) {
-      this.flashlight = new THREE.SpotLight(0xfff4e0, 30, 40, 0.42, 0.45, 1.6);
+      this.flashlight = new THREE.SpotLight(0xfff4e0, 0, 40, 0.42, 0.45, 1.6);
       this.flashlight.castShadow = false;
       this.camera.add(this.flashlight);
       this.camera.add(this.flashlight.target);
@@ -316,7 +316,7 @@ export class Player {
       this.flashlight.target.position.set(0, 0, -5);
     }
     this.flashOn = !this.flashOn;
-    this.flashlight.visible = this.flashOn;
+    this.flashlight.intensity = this.flashOn ? 30 : 0;
     Audio.play('button', { volume: 0.5 });
   }
 
