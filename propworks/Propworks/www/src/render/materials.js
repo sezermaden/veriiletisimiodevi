@@ -75,6 +75,7 @@ export function material(key) {
     const def = DEFS[key] || DEFS.devGrey;
     const m = def.make();
     m.userData.key = key;
+    m.userData.shared = true;
     cache.set(key, m);
   }
   return cache.get(key);
@@ -83,7 +84,7 @@ export function material(key) {
 /** A private copy, for props that get tinted or dissolved. */
 export function materialInstance(key, color = null) {
   const m = material(key).clone();
-  m.userData.key = key;
+  m.userData = { key };
   if (color) m.color = new THREE.Color(color);
   return m;
 }

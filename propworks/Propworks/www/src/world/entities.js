@@ -6,6 +6,7 @@ import { R, GROUPS, FIXED } from '../physics/physics.js';
 import { PROPS, propTemplate } from './props.js';
 import { material, materialInstance, surfaceOf, makeDissolve, SURFACES } from '../render/materials.js';
 import { Audio } from '../core/audio.js';
+import { disposeTree } from './geometry.js';
 
 export const DENSITY_SCALE = 100;       // catalogue densities are in 100 kg/m³ units
 
@@ -340,14 +341,7 @@ export class Entities {
     }
   }
 
-  _disposeObject(obj) {
-    obj.removeFromParent();
-    obj.traverse((o) => {
-      if (o.isMesh && o.userData.ownMaterial) o.material.dispose();
-      if (o.isMesh && o.userData.ownGeometry) o.geometry.dispose();
-      if (o.isLight && o.shadow?.map) o.shadow.map.dispose();
-    });
-  }
+  _disposeObject(obj) { disposeTree(obj); }
 
   clear() {
     for (const e of [...this.list]) e.remove({ effect: 'none' });

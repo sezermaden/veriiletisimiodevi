@@ -6,6 +6,7 @@ import { R, GROUPS } from '../physics/physics.js';
 import { Entity } from '../world/entities.js';
 import { buildHumanoid, looks } from '../world/npc.js';
 import { Audio } from '../core/audio.js';
+import { disposeTree } from '../world/geometry.js';
 import { settings, DIFFICULTY } from '../core/settings.js';
 
 const S = 4.4;
@@ -226,7 +227,7 @@ export class Boss {
   dispose() {
     for (const r of this.rings) r.mesh.removeFromParent();
     this.rings = [];
-    this.object3d.removeFromParent();
+    disposeTree(this.object3d);
     if (this.body) { this.game.physics.unregister(this.collider); this.game.physics.world.removeRigidBody(this.body); this.body = null; }
   }
 }

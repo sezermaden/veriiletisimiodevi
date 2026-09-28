@@ -167,7 +167,7 @@ body.cursor-on { cursor: default; }
 .fade.white { background: #fff; }
 
 /* ---------------------------------------------------------------- spawn menu */
-.spawnmenu { position: absolute; inset: 0; padding: 3vh 3vw; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.42fr); grid-template-rows: auto minmax(0, 1fr); gap: 1.2vh 1vw; background: rgba(8, 10, 14, 0.35); }
+.spawnmenu { position: absolute; inset: 0; padding: var(--safe-y) var(--safe-x); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.42fr); grid-template-rows: auto minmax(0, 1fr); gap: 1.2vh 1vw; background: rgba(8, 10, 14, 0.35); }
 .sm-top { grid-column: 1 / -1; display: flex; gap: 0.5vw; align-items: center; }
 .sm-top .btn { min-height: var(--hit-min); font-size: var(--step--1); }
 .sm-top .spacer { flex: 1; }

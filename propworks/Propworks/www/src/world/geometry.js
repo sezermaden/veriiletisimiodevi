@@ -60,3 +60,20 @@ export function wedgeGeo(w, h, d) {
 }
 
 export { mergeGeometries };
+
+/** Remove an object and free every geometry/material/texture it owns. Resources marked
+    userData.shared (catalogue geometry, library materials) are left alone. */
+export function disposeTree(obj) {
+  if (!obj) return;
+  obj.removeFromParent();
+  obj.traverse((o) => {
+    if (o.geometry && !o.geometry.userData?.shared) o.geometry.dispose();
+    const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    for (const m of mats) {
+      if (m.userData?.shared) continue;
+      for (const k of ['map', 'emissiveMap']) if (m[k] && !m[k].userData?.shared && (m[k].userData?.canvas || m[k].userData?.owned)) m[k].dispose();
+      m.dispose();
+    }
+    if (o.isLight) { o.shadow?.map?.dispose(); o.dispose?.(); }
+  });
+}

@@ -333,6 +333,7 @@ export class Player {
     this.hurtFlash = Math.min(1, this.hurtFlash + dmg / 30);
     this.game.renderer.addShake(Math.min(0.6, dmg / 40));
     this.game.hud?.damageFrom(info.from);
+    this.game.rumble?.(Math.min(1, dmg / 30), 0.4, 200);
     Audio.play('hurt', { volume: Math.min(1, 0.4 + dmg / 30) });
     if (info.force) this.vel.add(info.force);
     if (this.health <= 0) {

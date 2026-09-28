@@ -14,8 +14,12 @@ let failed = false;
 try {
   await waitFor(() => window.__game?.state === 'menu');
   await ev(() => { window.__game.storySpeed = 10; localStorage.clear(); });
-  await ev(() => window.__game.startChapter('ch1'));
+  const FROM = process.env.FROM || 'ch1';
+  await ev((c) => window.__game.startChapter(c), FROM);
+  const ORDER = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5'];
+  const run = (c) => ORDER.indexOf(c) >= ORDER.indexOf(FROM);
   // ---------------------------------------------------------------- ch1
+  if (run('ch1')) {
   await chapter('ch1');
   await waitFor(() => window.__game.env.handles.door1.target === 1);
   await tp(0, 0.05, 12);
@@ -34,7 +38,9 @@ try {
   await waitFor(() => window.__game.env.handles.door3.target === 1);
   await tp(0, 3.5, 123.7);
   log('ch1 ok');
+  }
   // ---------------------------------------------------------------- ch2
+  if (run('ch2')) {
   await chapter('ch2');
   await tp(0, 0.05, 11.3);
   await section('debris');
@@ -49,7 +55,9 @@ try {
   await section('glass'); await tp(0, 10.6, 108);
   await section('exit'); await tp(0, 10.6, 119.3);
   log('ch2 ok');
+  }
   // ---------------------------------------------------------------- ch3
+  if (run('ch3')) {
   await chapter('ch3');
   await frames(page, 10);
   await page.screenshot({ path: SP + 'ch3.png' });
@@ -61,7 +69,9 @@ try {
   await frames(page, 20);
   await tp(0, 14.2, 282);
   log('ch3 ok');
+  }
   // ---------------------------------------------------------------- ch4
+  if (run('ch4')) {
   await chapter('ch4');
   await frames(page, 10);
   await page.screenshot({ path: SP + 'ch4.png' });
@@ -86,7 +96,9 @@ try {
   await waitFor(() => window.__game.env.handles.liftCage.target === 1, null, 400000);
   await tp(0, 0.1, 169.3);
   log('ch4 ok');
+  }
   // ---------------------------------------------------------------- ch5
+  if (run('ch5')) {
   await chapter('ch5');
   await ev(() => { window.__game.player.godMode = true; });
   await tp(0, 0.05, 26);
@@ -110,7 +122,8 @@ try {
   await page.screenshot({ path: SP + 'credits.png' });
   const prog = await ev(() => JSON.parse(localStorage.getItem('propworks.save.v1')));
   log('ending reached; progress', JSON.stringify({ completed: prog.completed, finished: prog.finishedStory }));
-  if (!prog.finishedStory || prog.completed.length !== 5) failed = true;
+  if (!prog.finishedStory || prog.completed.length !== 5 - ORDER.indexOf(FROM)) failed = true;
+  }
 } catch (e) { failed = true; log('FAIL', e.message); log(await ev(() => ({ ch: window.__game.chapterId, sec: window.__game.story?.current, state: window.__game.state, obj: document.querySelector('.objective .ot')?.textContent })).catch(() => '')); }
 const errs = errors.filter((e) => !/favicon|404|Pointer Lock|pointer lock/i.test(e));
 log(errs.slice(0, 20).join('\n') || 'no errors');

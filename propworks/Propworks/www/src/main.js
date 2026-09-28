@@ -313,7 +313,7 @@ class Game {
   }
 
   /** One frame of the game at a given dt. Tests call this directly with `manual` set. */
-  tick(dt) {
+  tick(dt, render = true) {
     this.time += dt;
     this.frames++;
     const input = this.input;
@@ -361,7 +361,8 @@ class Game {
     const cam = this.renderer.camera;
     Audio.setListener(cam.position, cam.getWorldDirection(_v), cam.up);
     this.renderer.vmScene.visible = this.mode !== 'menu' && !this.player.vehicle && this.player.alive && !this.cutscene;
-    this.renderer.render(dt, this.player.pos);
+    if (render) this.renderer.render(dt, this.player.pos);
+    else this.renderer.camera.updateMatrixWorld();
     input.endFrame();
     if (playing) progress.stats.playSeconds += dt;
   }
@@ -479,6 +480,13 @@ class Game {
   canUseTool(id) { return this.mode === 'sandbox' || !!this.story?.canUseTool(id); }
   canPhysgun(e) { return this.story ? this.story.canPhysgun(e) : true; }
 
+  /** Controller rumble (respects the Vibration setting; silently absent on keyboard). */
+  rumble(strong, weak = strong, ms = 120) {
+    if (!settings.vibration || this.input.lastDevice !== 'gamepad') return;
+    const pad = this.input.pad;
+    try { pad?.vibrationActuator?.playEffect?.('dual-rumble', { duration: ms, strongMagnitude: Math.min(1, strong), weakMagnitude: Math.min(1, weak) }); } catch { /* unsupported */ }
+  }
+
   /* ================================================================== combat */
   fireBullet(o, d, { damage = 10, force = 30, tracerFrom = null, tracer = true } = {}) {
     const hit = this.physics.raycast(o, d, 500, { excludeBody: this.player.body, predicate: (c) => !c.isSensor() && this.physics.colliderOwner.get(c.handle)?.kind !== 'player' });
@@ -512,6 +520,7 @@ class Game {
     Audio.play('explosion', { pos, big: radius > 6, volume: 1.2, ref: 8 });
     const dist = this.renderer.camera.position.distanceTo(pos);
     this.renderer.addShake(Math.max(0, 1.2 - dist / (radius * 4)));
+    this.rumble(Math.max(0, 1 - dist / (radius * 5)), 0.6, 400);
     const down = this.physics.raycast({ x: pos.x, y: pos.y + 0.2, z: pos.z }, { x: 0, y: -1, z: 0 }, radius * 0.6);
     if (down && down.entity?.kind === 'world') this.fx.decal(new THREE.Vector3(down.point.x, down.point.y, down.point.z), new THREE.Vector3(down.normal.x, down.normal.y, down.normal.z), 'scorch', radius * 0.8);
     // player

@@ -61,9 +61,9 @@ export function physgunModel() {
 
 export function toolgunModel() {
   const root = new THREE.Group();
-  const body = std('#d7dbe0', 0.4, 0.3);
-  const dark = std('#32363c', 0.5, 0.5);
-  const accent = std('#3fa9ff', 0.35, 0.3);
+  const body = std('#7d848d', 0.5, 0.35);
+  const dark = std('#2b2f35', 0.55, 0.45);
+  const accent = std('#2f86d6', 0.45, 0.2);
   root.add(mesh(roundBox(0.1, 0.12, 0.34, 0.02), body, [0, 0.02, -0.1]));
   root.add(mesh(roundBox(0.06, 0.06, 0.2, 0.015), dark, [0, 0.0, -0.33]));
   root.add(mesh(cyl(0.015, 0.1, 10), dark, [0, 0.0, -0.46], [Math.PI / 2, 0, 0]));

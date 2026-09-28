@@ -269,7 +269,7 @@ function pasteContraption(g, copy, point, yaw) {
 /* ------------------------------------------------------------------ the gun */
 export class ToolGun extends Weapon {
   constructor(game) {
-    super(game, { id: 'toolgun', name: 'Tool Gun', slot: 6, model: toolgunModel, base: [0.18, -0.2, -0.36] });
+    super(game, { id: 'toolgun', name: 'Tool Gun', slot: 6, model: toolgunModel, base: [0.2, -0.21, -0.4] });
     this.tools = buildTools(game);
     this.current = 'weld';
     this.screenTime = 0;

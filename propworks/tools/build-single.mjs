@@ -12,6 +12,7 @@ const threeAlias = {
   name: 'three-alias',
   setup(build) {
     build.onResolve({ filter: /^three$/ }, () => ({ path: resolve(WWW, 'vendor/three.module.js') }));
+    build.onResolve({ filter: /^rapier$/ }, () => ({ path: resolve(WWW, 'vendor/rapier.mjs') }));
     build.onResolve({ filter: /^three\/addons\// }, (args) => ({
       path: resolve(WWW, 'vendor/addons', args.path.slice('three/addons/'.length)),
     }));
@@ -21,7 +22,7 @@ const threeAlias = {
 const result = await esbuild.build({
   entryPoints: [resolve(WWW, 'src/main.js')],
   bundle: true,
-  format: 'iife',
+  format: 'esm',
   target: ['chrome90'],
   minify: true,
   legalComments: 'none',
@@ -30,16 +31,17 @@ const result = await esbuild.build({
 });
 
 const js = result.outputFiles[0].text;
-const css = await readFile(resolve(WWW, 'styles/main.css'), 'utf8');
+const css = (await readFile(resolve(WWW, 'styles/theme.css'), 'utf8')) + '\n' + (await readFile(resolve(WWW, 'styles/main.css'), 'utf8'));
 const html = await readFile(resolve(WWW, 'index.html'), 'utf8');
 
 // Replacement *functions* only: the bundled code contains `$&` sequences that
 // String.replace would otherwise interpret as the matched substring.
 let out = html
+  .replace(/<link rel="stylesheet"[^>]*theme\.css"[^>]*>\s*/, () => '')
   .replace(/<link rel="stylesheet"[^>]*>/, () => `<style>\n${css}\n</style>`)
   .replace(/<script type="importmap">[\s\S]*?<\/script>\s*/, () => '')
   .replace(/<script type="module" src="\.\/src\/main\.js"><\/script>/,
-    () => `<script>\n${js}\n</script>`);
+    () => `<script type="module">\n${js}\n</script>`);
 
 if (out.includes('src="./src/main.js"') || out.includes('importmap')) {
   throw new Error('single-file inlining failed');

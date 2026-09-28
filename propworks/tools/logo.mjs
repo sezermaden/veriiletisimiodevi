@@ -12,14 +12,14 @@ const theme = await readFile(resolve(HERE, '../Propworks/www/styles/theme.css'),
 
 const html = (variant) => `<!doctype html><meta charset=utf-8><style>${theme}
 html,body{margin:0;background:transparent}
-.wrap{display:inline-flex;flex-direction:column;align-items:center;padding:40px 60px}
+.wrap{display:inline-flex;flex-direction:column;align-items:center;padding:90px 60px 40px}
 .stack{position:relative;font-family:var(--font-display);font-size:${variant === 'stacked' ? 150 : 180}px;line-height:1;letter-spacing:.01em;white-space:nowrap}
 .stack span{position:absolute;left:0;top:0}
 .l1{color:transparent;-webkit-text-stroke:22px var(--bg);transform:translate(0,10px)}
 .l2{color:transparent;-webkit-text-stroke:14px var(--surface-3)}
 .l3{color:transparent;-webkit-text-stroke:3px var(--accent);filter:drop-shadow(0 0 18px var(--accent))}
 .l4{background:linear-gradient(180deg,#fff 0%,var(--text) 45%,var(--accent-2) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-.ghost{visibility:hidden;position:relative}
+.stack .ghost{visibility:hidden;position:relative;display:block}
 .mark{position:absolute;left:50%;top:50%;width:1.15em;height:1.15em;transform:translate(-50%,-52%) rotate(45deg);border:10px solid color-mix(in srgb,var(--accent) 45%,transparent);border-radius:14px;z-index:-1}
 .tag{margin-top:26px;color:var(--accent-warm);font-family:var(--font-ui);font-size:40px;letter-spacing:.42em;text-transform:uppercase;display:flex;align-items:center;gap:24px}
 .tag::before,.tag::after{content:'';width:90px;height:3px;background:var(--accent-warm);opacity:.8}

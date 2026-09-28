@@ -567,8 +567,11 @@ async function ch5(S) {
         S.objective('Destroy the three pylons with explosions (0/3)');
         S.hint('Press the barrel dispensers near the entrance. Carry barrels to the pylons with the Gravity Gun or Physics Gun — or fly them with thrusters.', 14, 'pylons');
         let left = 3;
+        const alive = () => H.pylons.filter((p) => p.alive).length;
         while (left > 0) {
-          left = await S.on('pylon');
+          // count-based, not event-based: two pylons can fall in the same explosion
+          await S.until(() => alive() < left);
+          left = alive();
           S.objective(`Destroy the three pylons with explosions (${3 - left}/3)`);
           if (left === 2) await S.say('One down! It felt that.', { wait: false });
           if (left === 1) await S.say('Two! One more and its shield collapses!', { wait: false });

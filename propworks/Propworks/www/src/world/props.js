@@ -450,6 +450,7 @@ export function propTemplate(key) {
   const def = PROPS[key];
   if (!def) throw new Error('Unknown prop ' + key);
   const t = def.build();
+  for (const [g, m] of t.parts) { g.userData.shared = true; if (typeof m !== 'string') m.userData.shared = true; }
   // bounding info for buoyancy, spawn placement and icons
   const box = new THREE.Box3();
   for (const [g, , p = [0, 0, 0], r] of t.parts) {

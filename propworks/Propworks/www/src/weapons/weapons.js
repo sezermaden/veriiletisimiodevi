@@ -7,6 +7,7 @@ import { settings } from '../core/settings.js';
 import { crowbarModel, pistolModel, smgModel, shotgunModel, grenadeModel, grenadeWorldMesh } from './viewmodels.js';
 import { GROUPS } from '../physics/physics.js';
 import { Entity } from '../world/entities.js';
+import { disposeTree } from '../world/geometry.js';
 
 const _v = new THREE.Vector3();
 
@@ -129,6 +130,7 @@ class Firearm extends Weapon {
     p.rig.pitch += this.recoil * (0.6 + Math.random() * 0.4);
     p.rig.yaw += (Math.random() - 0.5) * this.recoil * 0.5;
     this.game.renderer.addShake(this.pellets > 1 ? 0.35 : 0.08);
+    this.game.rumble?.(this.pellets > 1 ? 0.7 : 0.25, 0.3, this.pellets > 1 ? 160 : 60);
     this.game.noise?.(o, 30);
     if (this.pump) setTimeout(() => Audio.play('pump', { volume: 0.6 }), 280);
   }
@@ -276,7 +278,7 @@ export class WeaponManager {
   }
 
   stripAll() {
-    for (const w of this.owned.values()) { w.holster(); w.vm.removeFromParent(); w.dispose?.(); }
+    for (const w of this.owned.values()) { w.holster(); w.dispose?.(); disposeTree(w.vm); }
     this.owned.clear();
     this.current = null;
     this.pending = null;

@@ -14,6 +14,7 @@ import { physgunModel } from './viewmodels.js';
 import { Audio } from '../core/audio.js';
 import { contraption } from '../physics/constraints.js';
 import { TEX } from '../render/textures.js';
+import { disposeTree } from '../world/geometry.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
 const UP = new THREE.Vector3(0, 1, 0);
@@ -218,7 +219,7 @@ export class PhysGun extends Weapon {
     this.hum?.set(0);
   }
 
-  dispose() { this.beam.group.removeFromParent(); this.hum?.stop(); }
+  dispose() { disposeTree(this.beam.group); this.hum?.stop(); }
 
   onEntityRemoved(e) { if (this.held?.e === e) { this.held = null; this.game.player.lookLocked = false; } }
 
@@ -263,9 +264,9 @@ function makeBeam(scene) {
   group.add(ribbon);
   const spriteMat = new THREE.SpriteMaterial({ map: TEX.spriteGlow, color: new THREE.Color(0.5, 1.4, 3), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
   const endGlow = new THREE.Sprite(spriteMat); endGlow.scale.setScalar(0.6);
-  const startGlow = new THREE.Sprite(spriteMat); startGlow.scale.setScalar(0.25);
+  const startGlow = new THREE.Sprite(spriteMat); startGlow.scale.setScalar(0.1);
   group.add(endGlow, startGlow);
-  const light = new THREE.PointLight(0x5cb8ff, 4, 6, 2);
+  const light = new THREE.PointLight(0x5cb8ff, 2.5, 6, 2);
   group.add(light);
   scene.add(group);
   const P = new THREE.Vector3(), T = new THREE.Vector3(), S = new THREE.Vector3(), C = new THREE.Vector3();

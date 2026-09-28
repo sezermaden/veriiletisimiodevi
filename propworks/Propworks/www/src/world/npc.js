@@ -11,6 +11,7 @@ import { makeGlitch, material } from '../render/materials.js';
 import { Audio } from '../core/audio.js';
 import { settings, DIFFICULTY } from '../core/settings.js';
 import { TEX } from '../render/textures.js';
+import { disposeTree } from './geometry.js';
 
 const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _q = new THREE.Quaternion();
 
@@ -59,7 +60,7 @@ function looks(kind, seed = Math.random()) {
   }
   // corrupted: missing-texture checker with a glitch vertex shader, magenta emissive
   const mat = new THREE.MeshStandardMaterial({ map: TEX.checker.map, emissive: '#ff00dc', emissiveMap: TEX.checker.map, emissiveIntensity: kind === 'brute' ? 0.9 : 0.6, roughness: 0.4 });
-  mat.map = TEX.checker.map.clone(); mat.map.needsUpdate = true;
+  mat.map = TEX.checker.map.clone(); mat.map.needsUpdate = true; mat.map.userData = { owned: true };
   mat.map.repeat.set(2, 2);
   const u = makeGlitch(mat, kind === 'brute' ? 0.05 : 0.035);
   const out = Object.fromEntries(BONES.map(([n]) => [n, mat]));
@@ -224,7 +225,7 @@ export class NPC {
       this.rig = null;
     }
     this._destroyBody();
-    if (this.flying) this.object3d.removeFromParent();
+    if (this.flying) disposeTree(this.object3d);
     this.object3d = null;
   }
 
@@ -236,7 +237,8 @@ export class NPC {
 
   remove() {
     if (this.body) this._destroyBody();
-    this.object3d?.removeFromParent();
+    disposeTree(this.object3d);
+    this.object3d = null;
     this.alive = false;
   }
 
@@ -629,7 +631,7 @@ export class NPCs {
         this.game.fx.glitchBurst(next, 8, 0.5);
         this.game.fx.flash(next, 0xff40e0, 4, 0.2, 6);
         Audio.play('zap', { pos: next, volume: 0.6 });
-        o.mesh.removeFromParent(); o.mesh.geometry.dispose(); o.mesh.material.dispose();
+        disposeTree(o.mesh);
         this.orbs.splice(i, 1);
         continue;
       }

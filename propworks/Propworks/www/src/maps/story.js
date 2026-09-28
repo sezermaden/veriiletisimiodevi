@@ -169,7 +169,7 @@ export function fabrication(L, game, opts) {
     H.pod.name = 'Cargo Pod';
     H.pod.flags.noPhysgun = true;
     H.pod.setMass(700);
-    H.pod.setColor('#ffd21f');
+    H.pod.setMaterial('hazard');
     // wrecking ball and the glass wall
     H.ball = P('ball', -2, 11.1, 96);
     H.ball.name = 'Wrecking Ball';

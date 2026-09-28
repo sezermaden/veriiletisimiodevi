@@ -196,7 +196,7 @@ export class Vehicle {
     const cp = Math.cos(this.camPitch);
     const dir = new THREE.Vector3(Math.sin(this.camYaw) * cp, -Math.sin(this.camPitch) + 0.15, Math.cos(this.camYaw) * cp).normalize();
     const want = 6.5;
-    const hit = this.game.physics.raycast(focus, dir, want + 0.4, { predicate: (c) => { const o = this.game.physics.colliderOwner.get(c.handle); return (legacy || o !== this.entity) && o?.kind !== 'player' && !c.isSensor(); } });
+    const hit = this.game.physics.raycast(focus, dir, want + 0.4, { predicate: (c) => { const o = this.game.physics.colliderOwner.get(c.handle); return o !== this.entity && o?.kind !== 'player' && !c.isSensor(); } });
     const clear = hit ? Math.max(1.5, Math.min(want, hit.distance - 0.35)) : want;
     if (legacy) this.boom = clear;
     else this.boom += (clear - this.boom) * Math.min(1, dt * (clear < this.boom ? 20 : 2.5));
