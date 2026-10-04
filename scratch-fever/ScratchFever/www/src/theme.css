@@ -1,0 +1,54 @@
+/* =========================================================
+   Scratch Fever — design tokens
+   Mood: late-night lottery kiosk. Deep casino felt, hot gold
+   foil, neon magenta jackpots. Every screen reads from these
+   tokens; nothing in the UI hard-codes a colour.
+   ========================================================= */
+:root {
+  /* surfaces */
+  --bg: #07130e;
+  --surface: #0f271c;
+  --surface-2: #163a2a;
+  --surface-3: #1e4a36;
+  --panel: rgba(13, 36, 26, 0.94);
+  --line: rgba(244, 197, 66, 0.22);
+  --line-strong: rgba(244, 197, 66, 0.55);
+
+  /* text */
+  --text: #fff6dc;
+  --text-dim: #a9bfae;
+  --text-faint: #6f8a76;
+
+  /* accents */
+  --accent: #f4c542;          /* gold foil */
+  --accent-2: #ffe28a;        /* bright gold */
+  --accent-warm: #ff7a3d;     /* orange heat */
+  --focus: #ffd95a;
+  --focus-glow: rgba(255, 217, 90, 0.55);
+  --win: #7ef0a0;
+  --win-dim: #3faf63;
+  --lose: #ff6b6b;
+  --jackpot: #ff4fd8;
+  --cyan: #5ad7e6;
+  --bot: #7fb5ff;
+
+  /* 10-foot type scale (1080p reference; scales with viewport) */
+  --step--1: clamp(16px, 1.1vw, 22px);
+  --step-0: clamp(20px, 1.35vw, 28px);
+  --step-1: clamp(24px, 1.7vw, 34px);
+  --step-2: clamp(30px, 2.3vw, 46px);
+  --step-3: clamp(40px, 3.4vw, 68px);
+  --step-4: clamp(56px, 5.2vw, 104px);
+
+  /* layout */
+  --safe-x: 5vw;
+  --safe-y: 5vh;
+  --hit-min: 64px;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --gap: clamp(10px, 1vw, 18px);
+
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  --font: "Segoe UI", "Trebuchet MS", system-ui, -apple-system, sans-serif;
+  --font-display: "Arial Black", "Segoe UI Black", "Impact", "Trebuchet MS", system-ui, sans-serif;
+}

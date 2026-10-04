@@ -1,0 +1,286 @@
+  ok   penny: a grid without a line never pays (2487 losers)
+  ok   penny: never more than one paying line (0 violations)
+  ok   penny: expected value 1.31× price stays positive and bounded
+  ok   penny: win rate 38% in the 20–50% band
+  ok   penny: every prize tier has a symbol
+  ok   penny: every paying symbol has a pay
+  ok   fruit: a grid without a line never pays (2626 losers)
+  ok   fruit: never more than one paying line (0 violations)
+  ok   fruit: expected value 1.27× price stays positive and bounded
+  ok   fruit: win rate 34% in the 20–50% band
+  ok   fruit: every prize tier has a symbol
+  ok   fruit: every paying symbol has a pay
+  ok   bell: a grid without a line never pays (2928 losers)
+  ok   bell: never more than one paying line (0 violations)
+  ok   bell: expected value 1.04× price stays positive and bounded
+  ok   bell: win rate 27% in the 20–50% band
+  ok   bell: every prize tier has a symbol
+  ok   bell: every paying symbol has a pay
+  ok   vault: a grid without a line never pays (2725 losers)
+  ok   vault: never more than one paying line (0 violations)
+  ok   vault: expected value 1.26× price stays positive and bounded
+  ok   vault: win rate 32% in the 20–50% band
+  ok   vault: every prize tier has a symbol
+  ok   vault: every paying symbol has a pay
+  ok   madness: a grid without a line never pays (2964 losers)
+  ok   madness: never more than one paying line (0 violations)
+  ok   madness: expected value 1.41× price stays positive and bounded
+  ok   madness: win rate 26% in the 20–50% band
+  ok   madness: every prize tier has a symbol
+  ok   madness: every paying symbol has a pay
+  ok   golden: a grid without a line never pays (2788 losers)
+  ok   golden: never more than one paying line (0 violations)
+  ok   golden: expected value 1.33× price stays positive and bounded
+  ok   golden: win rate 30% in the 20–50% band
+  ok   golden: every prize tier has a symbol
+  ok   golden: every paying symbol has a pay
+  ok   cosmic: a grid without a line never pays (2740 losers)
+  ok   cosmic: never more than one paying line (0 violations)
+  ok   cosmic: expected value 1.37× price stays positive and bounded
+  ok   cosmic: win rate 32% in the 20–50% band
+  ok   cosmic: every prize tier has a symbol
+  ok   cosmic: every paying symbol has a pay
+  ok   mega: a grid without a line never pays (2737 losers)
+  ok   mega: never more than one paying line (0 violations)
+  ok   mega: expected value 1.31× price stays positive and bounded
+  ok   mega: win rate 32% in the 20–50% band
+  ok   mega: every prize tier has a symbol
+  ok   mega: every paying symbol has a pay
+  ok   luck 20 raises big/huge odds and lowers the loss rate
+  ok   buying a penny ticket costs $1 and counts the ticket
+  ok   settle adds exactly the payout
+  ok   cannot buy a ticket you cannot afford
+  ok   the penny ticket is always playable at $0 (never stranded)
+  ok   lifetime $500 unlocks fruit + bell, not vault
+  ok   upgrade cost grows per level
+  ok   Bot Servos is gated behind Scratch Bot
+  ok   buying Scratch Bot unlocks Bot Servos
+  ok   a one-level upgrade caps at 1
+  ok   prestige gain is sqrt(run / 20K) = 3
+  ok   prestige resets cash/upgrades and credits JP
+  ok   three JP = ×1.30 payouts
+  ok   perk purchase spends JP
+  ok   Bot Warranty restores Bot + Quick Reveal after prestige
+  ok   serialize → deserialize keeps state
+  ok   corrupt save returns null
+  ok   partial save is healed with defaults
+  ok   no offline income without the bot
+  ok   offline time caps at 4h and scratches tickets
+
+economy: 68 passed, 0 failed
+  ok   press+release inside one frame reports both edges
+  ok   edges are cleared on the next frame
+  ok   12 taps at dt=0.0163 → 12 registered (must be 12)
+  ok   A press: edge + held on the first frame
+  ok   A still down: no new edge, still held
+  ok   A release: release edge, no longer held
+  ok   stick at rest offset 0.12 → zero intent
+  ok   full tilt → 1.0
+  ok   diagonal is not faster than straight (0.987)
+  ok   held d-pad for 1s fires 7 edges (1 + repeats at ~0.105s after 0.38s)
+  ok   RT at 0.2 does not scratch
+  ok   RT at 0.9 scratches (edge + held)
+  ok   RT release reports the release edge
+  ok   gamepad press switches prompts to Xbox glyphs (A)
+  ok   key press switches prompts back to keyboard (Enter)
+  ok   releaseAll (window blur) releases held actions with a release edge
+  ok   no console errors
+
+input: 17 passed, 0 failed
+--- title → menu ---
+  ok   title screen focused on start  
+  ok   Enter → main menu, NEW GAME focused  
+--- menu screens ---
+  ok   OPTIONS opens  
+  ok   right arrow raises master volume to 0.9
+  ok   Esc → back to menu, OPTIONS still focused  
+  ok   STATS opens  
+  ok   HOW TO PLAY opens  
+  ok   CREDITS opens  
+  ok   back on menu  
+--- new game ---
+  ok   NEW GAME focused again  
+  ok   playing, between tickets  
+  ok   Enter buys the first ticket  
+--- scratch with the mouse ---
+  ok   mouse drag revealed 3 cells
+--- scratch with the keyboard ---
+  ok   keyboard sweep revealed 9/9 cells
+  ok   ticket settled after a full scratch (phase between)
+  ok   result recorded ({"payout":0,"lines":0})
+--- pause / shop / stats from play ---
+  ok   Esc → pause, RESUME focused  
+  ok   pause → OPTIONS  
+  ok   options → pause  
+  ok   Esc on pause resumes  
+  ok   B opens the shop (tickets tab)  
+  ok   R → upgrades tab  
+  ok   reached Quick Reveal  
+  ok   Enter buys Quick Reveal
+  ok   Enter buys Scratch Bot
+  ok   R → prestige tab  
+  ok   prestige below threshold stays on shop (error)  
+  ok   prestige confirm dialog, CANCEL focused  
+  ok   prestige granted 2 JP (expected 2 for $90K)
+  ok   Esc closes the shop back to play  
+  ok   Tab opens stats in play  
+  ok   Esc closes stats  
+--- quick reveal + ticket switching ---
+  ok   R between tickets switches to the next unlocked ticket (fruit)
+  ok   X reveals the whole ticket  
+--- save & continue ---
+  ok   reached SAVE & MAIN MENU  
+  ok   back on main menu with CONTINUE focused  
+  ok   save on disk carries JP and upgrades
+  ok   CONTINUE resumes play  
+  ok   cash restored (5012.16)
+  ok   no console errors
+  ok   no 4xx/5xx responses
+
+smoke: 41 passed, 0 failed
+--- Xbox shell layer ---
+  ok   Windows.Xbox host → body.tv
+  ok   cursor hidden on TV
+  ok   no Quit button on Xbox
+--- title → menu with A ---
+  ok   A on title → menu  
+  ok   prompts show Xbox glyphs (A)
+  ok   main menu: something is focused
+  ok   main menu: all 5 focusables reachable by d-pad
+--- every menu screen by pad ---
+  ok   A on OPTIONS → options  
+  ok   options: something is focused
+  ok   options: all 10 focusables reachable by d-pad
+  ok   d-pad right adjusts a slider
+  ok   left stick down moves focus  
+  ok   B closes options  
+  ok   A on STATS → stats  
+  ok   stats: something is focused
+  ok   stats: all 1 focusables reachable by d-pad
+  ok   B closes stats  
+  ok   A on HELP → help  
+  ok   help: something is focused
+  ok   help: all 1 focusables reachable by d-pad
+  ok   B closes help  
+  ok   A on CREDITS → credits  
+  ok   credits: something is focused
+  ok   credits: all 1 focusables reachable by d-pad
+  ok   B closes credits  
+--- play by pad ---
+  ok   NEW GAME → playing  
+  ok   A buys a ticket  
+  ok   stick + RT scratched the whole ticket ({"n":9,"phase":"between"})
+--- pause / shop by pad ---
+  ok   Menu button → pause  
+  ok   pause: something is focused
+  ok   pause: all 6 focusables reachable by d-pad
+  ok   B on pause → resume  
+  ok   Y → shop  
+  ok   shop / tickets: something is focused
+  ok   shop / tickets: all 11 focusables reachable by d-pad
+  ok   RB → upgrades  
+  ok   shop / upgrades: something is focused
+  ok   shop / upgrades: all 13 focusables reachable by d-pad
+  ok   A buys Scratch Bot
+  ok   A buys Season Pass (auto-buy)
+  ok   RB → prestige  
+  ok   shop / prestige: something is focused
+  ok   shop / prestige: all 9 focusables reachable by d-pad
+  ok   LB twice → tickets  
+  ok   B closes the shop  
+--- the bot plays on its own ---
+  ok   Scratch Bot + auto-buy finished 2 tickets hands-free
+--- View → stats, confirm dialogs ---
+  ok   View → stats  
+  ok   stats (in play): something is focused
+  ok   stats (in play): all 1 focusables reachable by d-pad
+  ok   SAVE & MAIN MENU → menu  
+  ok   NEW GAME with a save → confirm dialog  
+  ok   confirm: something is focused
+  ok   confirm: all 2 focusables reachable by d-pad
+  ok   B cancels the dialog  
+  ok   no console errors
+
+gamepad: 55 passed, 0 failed
+
+1920x1080
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+2560x1440
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+3840x2160
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+1920x1200
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+2560x1080
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+layout: 70 passed, 0 failed
