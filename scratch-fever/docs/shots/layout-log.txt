@@ -1,0 +1,82 @@
+
+1920x1080
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+2560x1440
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+3840x2160
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+1920x1200
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+2560x1080
+  ok   title          1 focusables
+  ok   menu           6 focusables
+  ok   options        10 focusables
+  ok   stats          1 focusables
+  ok   help           1 focusables
+  ok   credits        1 focusables
+  ok   confirm        2 focusables
+  ok   offline        1 focusables
+  ok   pause          6 focusables
+  ok   shop-tickets   11 focusables
+  ok   shop-upgrades  13 focusables
+  ok   shop-prestige  9 focusables
+  ok   HUD inside the safe area
+  ok   no console errors
+
+layout: 70 passed, 0 failed

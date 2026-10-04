@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>Scratch Fever</title>
+<link rel="stylesheet" href="./src/theme.css" />
+<link rel="stylesheet" href="./styles/main.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="viewport"></canvas>
+
+    <!-- ======================= HUD ======================= -->
+    <div id="hud" class="layer hidden">
+      <div class="hud-top">
+        <div class="hud-left">
+          <div class="hud-cash" id="hud-cash">$0</div>
+          <div class="hud-sub" id="hud-jp"></div>
+          <div class="hud-sub bot" id="hud-bot"></div>
+        </div>
+        <div class="hud-right">
+          <div class="hud-ticket" id="hud-ticket">Lucky Penny</div>
+          <div class="hud-sub" id="hud-price"></div>
+          <div class="hud-sub pool" id="hud-pool"></div>
+          <div class="hud-sub lastwin" id="hud-lastwin"></div>
+          <div class="hud-sub streak" id="hud-streak"></div>
+        </div>
+      </div>
+      <div id="win-banner" class="win-banner"></div>
+      <div class="hud-bottom">
+        <div class="hint-row" id="hud-prompts"></div>
+      </div>
+      <div id="toast-host" class="toast-host"></div>
+      <div id="win-flash" class="win-flash"></div>
+    </div>
+
+    <!-- ======================= SCREENS ======================= -->
+    <div id="screens" class="layer"></div>
+
+    <!-- ======================= LOADING ======================= -->
+    <div id="boot" class="layer boot">
+      <div class="boot-inner">
+        <div class="logo"><span class="logo-word">SCRATCH</span><span class="logo-word accent">FEVER</span></div>
+        <div class="boot-bar"><div id="boot-fill"></div></div>
+        <div class="boot-status" id="boot-status">Opening the kiosk…</div>
+      </div>
+    </div>
+
+    <div id="fatal" class="layer hidden fatal"></div>
+  </div>
+
+  <script type="module">
+    window.addEventListener('error', (e) => {
+      const el = document.getElementById('fatal');
+      if (!el || !el.classList.contains('hidden')) return;
+      el.classList.remove('hidden');
+      el.innerHTML = '<div class="fatal-box"><h2>Something went wrong</h2><pre>' +
+        String(e.message || e.error || 'Unknown error').replace(/[<>&]/g, '') +
+        '</pre><p>Press F5 to restart.</p></div>';
+    });
+  </script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

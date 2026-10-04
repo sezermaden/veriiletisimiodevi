@@ -1,0 +1,22 @@
+{
+  "name": "scratch-fever",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "icons": "node tools/make-icons.mjs --source ScratchFever/StoreArt/Covers/Cover-1080x1080.png",
+    "cover": "node tools/cover.mjs",
+    "shots": "node tools/shots.mjs",
+    "bundle": "node tools/build-single.mjs",
+    "test:economy": "node test/economy.mjs",
+    "test:input": "node test/input.mjs",
+    "test:smoke": "node test/smoke.mjs",
+    "test:gamepad": "node test/gamepad.mjs",
+    "test:layout": "node test/layout.mjs",
+    "test": "node test/economy.mjs && node test/input.mjs && node test/smoke.mjs && node test/gamepad.mjs && node test/layout.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "playwright": "^1.48.0"
+  }
+}
