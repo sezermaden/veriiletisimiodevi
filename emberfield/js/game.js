@@ -263,7 +263,9 @@
     G.rt.fade = 0.5;
   }
 
-  function checkWarp() {
+  // `from` is where the player stood before this step. A locked stair sends the player back there:
+  // a fixed push could land inside a wall and trap them.
+  function checkWarp(from) {
     var s = st();
     var cx = Math.floor(s.p.x), cy = Math.floor(s.p.y);
     var to = G.rt.tpl.warps[U.key(cx, cy)];
@@ -272,8 +274,8 @@
     if (lock) {
       UI.toast(lock);
       AU.sfx('error');
-      s.p.x -= s.p.fx * 1.05;
-      s.p.y -= s.p.fy * 1.05;
+      s.p.x = from.x;
+      s.p.y = from.y;
     }
   }
 
@@ -288,6 +290,7 @@
     if (Math.abs(dx) >= Math.abs(dy)) { s.p.fx = dx > 0 ? 1 : -1; s.p.fy = 0; }
     else { s.p.fx = 0; s.p.fy = dy > 0 ? 1 : -1; }
     var len = Math.hypot(dx, dy), sp = C.WALK_SPEED * dt / len;
+    var from = { x: s.p.x, y: s.p.y };
     var moved = moveBody(s.p.area, s.p, dx * sp, dy * sp, true);
     G.rt.moving = moved;
     if (moved) {
@@ -302,7 +305,7 @@
       } else if (fg) {
         UI.toast('Your pack is full.');
       }
-      checkWarp();
+      checkWarp(from);
     }
   }
 
@@ -833,6 +836,15 @@
     UI.toast(D.items[slot.id].name + ' is ready!');
   }
 
+  function smelt(r) {
+    var s = st();
+    G.removeItem(r.from, r.qty);
+    s.gold -= r.gold;
+    G.addItem(r.out, 1);
+    AU.sfx('craft');
+    UI.toast('Smelted a ' + D.items[r.out].name + '.');
+  }
+
   function openSmelting() {
     UI.list({
       title: 'Smelting', width: 340, footer: 'Z: smelt   B: back',
@@ -843,13 +855,7 @@
           return {
             label: r.qty + ' ' + D.items[r.from].name, sub: '-> ' + D.items[r.out].name + ' (' + r.gold + 'g)',
             disabled: !ok,
-            fn: function () {
-              G.removeItem(r.from, r.qty);
-              s.gold -= r.gold;
-              G.addItem(r.out, 1);
-              AU.sfx('craft');
-              UI.toast('Smelted a ' + D.items[r.out].name + '.');
-            }
+            fn: function () { smelt(r); }
           };
         });
       }
@@ -1229,6 +1235,17 @@
       s.p.fx = fx;
       s.p.fy = fy;
     }
+  };
+
+  // Entry points used by the browser playthrough test (tests/playthrough.js).
+  // They run the same code the keys and menus call.
+  G.api = {
+    use: function () { return useItem(); },
+    interact: function () { return interact(); },
+    smelt: smelt,
+    upgradeTool: upgradeTool,
+    donate: donate,
+    lockMessage: function (area) { return W.lockMessage(area, st().projects); }
   };
 
   // ---------- main update / draw ----------
