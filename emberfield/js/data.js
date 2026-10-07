@@ -105,9 +105,10 @@
     { out: 'gold_bar',   from: 'gold_ore',   qty: 5, gold: 25 }
   ];
   // Upgrading a tool from tier t to t+1 costs bars and gold.
+  // Costs are sized so every project is reachable from the ore on the floors that exist.
   D.upgradeCost = [
-    { bar: 'copper_bar', qty: 5, gold: 300 },  // basic -> copper
-    { bar: 'iron_bar',   qty: 5, gold: 800 }   // copper -> iron
+    { bar: 'copper_bar', qty: 3, gold: 300 },  // basic -> copper
+    { bar: 'iron_bar',   qty: 4, gold: 800 }   // copper -> iron
   ];
 
   // ---------- Shops ----------
@@ -289,7 +290,7 @@
       reqs: [{ item: 'wood', qty: 25 }, { item: 'copper_bar', qty: 3 }],
       done: 'The bridge stands again! The lake is open to everyone.' },
     { id: 'lift', title: 'Repair the Mine Lift', desc: 'The lift to the deeper mine floors is jammed. Iron and copper will free it.',
-      reqs: [{ item: 'iron_bar', qty: 4 }, { item: 'copper_bar', qty: 4 }],
+      reqs: [{ item: 'iron_bar', qty: 2 }, { item: 'copper_bar', qty: 3 }],
       done: 'The lift grinds back to life. Mine floors 4 to 6 are open.' },
     { id: 'oven', title: 'Fix the Bakery Oven', desc: 'Nell\'s oven cracked. Stone and copper will make it bake again.',
       reqs: [{ item: 'stone', qty: 20 }, { item: 'copper_bar', qty: 2 }],
@@ -298,10 +299,10 @@
       reqs: [{ item: 'gleam_shard', qty: 5 }],
       done: 'The lamps glow violet and gold. The town looks safe after dark again.' },
     { id: 'clock', title: 'Rebuild the Clocktower', desc: 'The clocktower lost its gears. Iron and gold will make them turn.',
-      reqs: [{ item: 'iron_bar', qty: 8 }, { item: 'gold_bar', qty: 2 }],
+      reqs: [{ item: 'iron_bar', qty: 4 }, { item: 'gold_bar', qty: 2 }],
       done: 'Tick, tock. The clocktower chimes for the first time in a year.' },
     { id: 'deep', title: 'Reinforce the Deep Shafts', desc: 'The lowest mine floors are unstable. Golem cores and iron will brace them.',
-      reqs: [{ item: 'golem_core', qty: 3 }, { item: 'iron_bar', qty: 6 }],
+      reqs: [{ item: 'golem_core', qty: 2 }, { item: 'iron_bar', qty: 3 }],
       done: 'The deep shafts are braced. Mine floors 7 and 8 are open to explorers.' },
     { id: 'festival', title: 'Hold the Lantern Festival', desc: 'Gather festival herbs and berries, and donate 1000 gold for the lanterns.',
       reqs: [{ item: 'herb', qty: 15 }, { item: 'berry', qty: 15 }, { gold: 1000 }],

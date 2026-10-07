@@ -7,7 +7,8 @@
 
   function ensure() {
     if (ctx) {
-      if (ctx.state === 'suspended') ctx.resume();
+      // 'suspended' and 'interrupted' (phone calls, app switches) both need a resume on user input.
+      if (ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume();
       return ctx;
     }
     try {

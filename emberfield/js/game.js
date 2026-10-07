@@ -7,7 +7,7 @@
   var MOB = {
     slime: { hp: 12, dmg: 5, speed: 1.1, r: 0.3, drop: 'slime_gel', chance: 0.6 },
     bat:   { hp: 8,  dmg: 4, speed: 2.1, r: 0.25, drop: 'bat_wing', chance: 0.4 },
-    golem: { hp: 40, dmg: 10, speed: 0.75, r: 0.4, drop: 'golem_core', chance: 0.6 }
+    golem: { hp: 40, dmg: 10, speed: 0.75, r: 0.4, drop: 'golem_core', chance: 1 }
   };
 
   function freshRT() {
@@ -70,12 +70,28 @@
   G.mobsOf = function (id) { ensureArea(id); return st().mobs[id]; };
   G.playerLook = function () { return PLAYER_LOOK; };
 
-  function tileAt(areaId, x, y) {
+  function inBounds(areaId, x, y) {
     var g = G.grid(areaId);
-    if (y < 0 || x < 0 || y >= g.length || x >= g[0].length) return 'T';
-    return g[y][x];
+    return y >= 0 && x >= 0 && y < g.length && x < g[0].length;
   }
-  function setTile(areaId, x, y, ch) { G.grid(areaId)[y][x] = ch; }
+  // Off-map cells read as solid trees so nothing can walk or chop past the edge.
+  function tileAt(areaId, x, y) {
+    return inBounds(areaId, x, y) ? G.grid(areaId)[y][x] : 'T';
+  }
+  function setTile(areaId, x, y, ch) {
+    if (inBounds(areaId, x, y)) G.grid(areaId)[y][x] = ch;
+  }
+  // True if `qty` of an item fits in the pack right now.
+  function canFit(id, qty) {
+    var s = st(), def = D.items[id];
+    if (def.type === 'tool') return qty === 1 && s.inv.some(function (slot) { return !slot; });
+    var room = 0;
+    s.inv.forEach(function (slot) {
+      if (!slot) room += C.MAX_STACK;
+      else if (slot.id === id) room += C.MAX_STACK - slot.qty;
+    });
+    return room >= qty;
+  }
   function inRect(r, x, y) { return x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h; }
 
   function enterRuntimeArea(id) {
@@ -204,10 +220,12 @@
 
   function blockedBox(areaId, x, y, r, isPlayer) {
     var pts = [[x - r, y - r], [x + r, y - r], [x - r, y + r], [x + r, y + r]];
+    // A villager whose schedule moves onto our tile must not trap us: only block other cells.
+    var here = isPlayer ? U.key(Math.floor(st().p.x), Math.floor(st().p.y)) : null;
     for (var i = 0; i < pts.length; i++) {
       var cx = Math.floor(pts[i][0]), cy = Math.floor(pts[i][1]);
       if (solidAt(areaId, cx, cy)) return true;
-      if (isPlayer && npcAt(areaId, cx, cy)) return true;
+      if (isPlayer && U.key(cx, cy) !== here && npcAt(areaId, cx, cy)) return true;
     }
     return false;
   }
@@ -228,6 +246,7 @@
     s.p.x = to.x + 0.5;
     s.p.y = to.y + 0.5;
     enterRuntimeArea(to.area);
+    G.rt.fish = null;
     G.rt.fade = 0.35;
     return null;
   }
@@ -240,6 +259,7 @@
     s.p.fx = 0;
     s.p.fy = -1;
     enterRuntimeArea('house');
+    G.rt.fish = null;
     G.rt.fade = 0.5;
   }
 
@@ -275,11 +295,12 @@
       G.rt.walkFrame = (Math.floor(G.rt.walkT * 7) % 2) + 1;
       var key = U.key(Math.floor(s.p.x), Math.floor(s.p.y));
       var fg = s.forage[s.p.area] && s.forage[s.p.area][key];
-      if (fg) {
+      if (fg && canFit(fg, 1)) {
         delete s.forage[s.p.area][key];
-        var left = G.addItem(fg, 1);
-        if (!left) floatText('+1 ' + D.items[fg].name, Math.floor(s.p.x), Math.floor(s.p.y), '#c8ffb0');
-        else UI.toast('Your pack is full.');
+        G.addItem(fg, 1);
+        floatText('+1 ' + D.items[fg].name, Math.floor(s.p.x), Math.floor(s.p.y), '#c8ffb0');
+      } else if (fg) {
+        UI.toast('Your pack is full.');
       }
       checkWarp();
     }
@@ -316,7 +337,8 @@
 
   function harvest(area, k, crop) {
     var s = st(), def = D.crops[crop.id];
-    var got = Math.random() < 0.2 ? 2 : 1;
+    var got = Math.random() < 0.2 && canFit(crop.id, 2) ? 2 : 1;
+    if (!canFit(crop.id, got)) return UI.toast('Your pack is full. Make room before harvesting.');
     G.addItem(crop.id, got);
     delete s.crops[area][k];
     s.stats.harvested++;
@@ -331,6 +353,9 @@
     var s = st(), slot = selItem();
     if (!slot) return UI.toast('Nothing selected.');
     var def = D.items[slot.id];
+    // Nothing off the map can be tilled, watered, chopped or mined; the sword may still swing.
+    var f = facingCell();
+    if (!inBounds(s.p.area, f.x, f.y) && def.kind !== 'sword') return;
     if (def.type === 'tool') return useTool(def);
     if (def.type === 'seed') return plant(def);
     if (def.type === 'food') return eatSlot(s.sel);
@@ -392,6 +417,8 @@
       s.hits[area][k] = hits;
       return floatText('*', f.x, f.y, '#ffffff');
     }
+    // Keep the rock or ore standing if the drop would be lost.
+    if (!canFit(spec.drop, 1)) return UI.toast('Your pack is full. Make room before breaking this.');
     delete s.hits[area][k];
     var mine = area.indexOf('mine') === 0;
     setTile(area, f.x, f.y, mine ? 'g' : '.');
@@ -650,6 +677,8 @@
   function giveGift(npc, i) {
     var s = st(), slot = s.inv[i];
     if (!slot) return;
+    // Tools cannot be replaced, so they are never given away.
+    if (D.items[slot.id].type === 'tool') return UI.toast('You will need that for your work. Keep it.');
     var f = friend(npc.id);
     if (f.gifted) return UI.say(['You already gave me something today. That is plenty.'], { speaker: npc.name });
     var kind = reaction(npc, slot.id);
@@ -886,6 +915,8 @@
     s.projects[p.id] = true;
     AU.sfx('fanfare');
     applyProject(p.id);
+    // The festival closes the board and everything else; the ending runs on a clean stack.
+    if (p.id === 'festival') UI.clear();
     UI.say(p.done, { speaker: 'Hollowmere', onDone: p.id === 'festival' ? showEnding : null });
   }
 
@@ -984,7 +1015,14 @@
         { label: 'Journal', fn: function () { UI.pop(); openJournal(); } },
         { label: 'Options', fn: function () { UI.pop(); openOptions(); } },
         { label: 'Save game', fn: function () { UI.toast(G.save() ? 'Game saved.' : 'Could not save.'); UI.pop(); } },
-        { label: 'Title screen', fn: function () { G.save(); UI.clear(); G.openTitle(); } }
+        { label: 'Title screen', fn: function () {
+          G.save();
+          UI.clear();
+          // Drop the live world so the title is drawn over its backdrop, not a frozen scene.
+          G.state = null;
+          G.rt.tpl = null;
+          G.openTitle();
+        } }
       ]
     });
   };
@@ -1023,6 +1061,7 @@
     var s = st();
     var lost = Math.floor(s.gold * 0.1);
     s.gold -= lost;
+    G.rt.fish = null;
     endDay(true);
     travelHome();
     UI.say([reason, lost ? 'You woke up in bed, but lost ' + lost + 'g on the way home.' : 'You woke up in bed.'], { speaker: '' });

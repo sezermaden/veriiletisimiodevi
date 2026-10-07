@@ -24,10 +24,13 @@
   var AXIS_DEAD = 0.45;
 
   var down = {};
-  var held = {}, prevHeld = {}, pressed = {}, repeatFire = {}, repeatT = {};
+  // Keys pressed and released between two frames. Without this a quick tap is never seen.
+  var tapped = {};
+  var held = {}, prevHeld = {}, pressed = {}, repeatFire = {}, repeatT = {}, suppressed = {};
 
   window.addEventListener('keydown', function (e) {
     if (PREVENT.indexOf(e.code) >= 0) e.preventDefault();
+    if (!e.repeat) tapped[e.code] = true;
     down[e.code] = true;
   });
   window.addEventListener('keyup', function (e) { delete down[e.code]; });
@@ -59,6 +62,14 @@
     return false;
   }
 
+  function tapHit(name) {
+    var keys = BIND[name].keys;
+    for (var i = 0; i < keys.length; i++) {
+      if (tapped[keys[i]]) return true;
+    }
+    return false;
+  }
+
   var EF_INPUT = EF.input = {
     update: function (dt) {
       var pad = readPad();
@@ -66,8 +77,9 @@
         var name = NAMES[n];
         var h = isHeld(name, pad);
         held[name] = h;
-        pressed[name] = h && !prevHeld[name];
-        if (h) {
+        if (!h) suppressed[name] = false;
+        pressed[name] = (h && !prevHeld[name]) || tapHit(name);
+        if (h && !suppressed[name]) {
           if (pressed[name]) {
             repeatT[name] = 0.38;
             repeatFire[name] = true;
@@ -84,6 +96,14 @@
           repeatFire[name] = false;
         }
         prevHeld[name] = h;
+      }
+      tapped = {};
+    },
+    // Call when a new panel opens: keys already held must be released and pressed again
+    // before they can drive that panel's cursor, so a held arrow does not scroll it by itself.
+    suppressRepeat: function () {
+      for (var n = 0; n < NAMES.length; n++) {
+        if (held[NAMES[n]]) suppressed[NAMES[n]] = true;
       }
     },
     held: function (name) { return !!held[name]; },

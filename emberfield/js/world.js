@@ -291,7 +291,7 @@
         var r = rnd();
         if (r < 0.05) g[y][x] = 'R';
         else if (r < 0.085) g[y][x] = 'O';
-        else if (n >= 3 && r < 0.11) g[y][x] = 'I';
+        else if (n >= 2 && r < 0.11) g[y][x] = 'I';
         else if (n >= 5 && r < 0.125) g[y][x] = 'Y';
         else if (n >= 6 && r < 0.14) g[y][x] = 'G';
         if (g[y][x] === 'g' && Math.abs(x - 5) + Math.abs(y - 5) > 8) spawnable.push([x, y]);

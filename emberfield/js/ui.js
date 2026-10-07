@@ -6,7 +6,11 @@
   var HINT = 'Z: select   X: use   B: back';
 
   UI.stack = stack;
-  UI.push = function (p) { stack.push(p); return p; };
+  UI.push = function (p) {
+    stack.push(p);
+    IN.suppressRepeat();
+    return p;
+  };
   UI.pop = function () { return stack.pop(); };
   UI.top = function () { return stack[stack.length - 1]; };
   UI.blocking = function () { return stack.length > 0; };
