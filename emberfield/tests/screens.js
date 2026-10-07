@@ -1,0 +1,56 @@
+// Captures a few screenshots of the game for visual review. Run: node tests/screens.js <outdir>
+'use strict';
+const path = require('node:path');
+const { chromium } = require('playwright');
+const URL = 'file://' + path.join(__dirname, '..', 'index.html');
+const out = process.argv[2] || path.join(__dirname, 'shots');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  const shot = async (name) => { await sleep(250); await page.locator('#screen').screenshot({ path: path.join(out, name + '.png') }); };
+  const press = async (k, ms = 90) => { await page.keyboard.down(k); await sleep(ms); await page.keyboard.up(k); await sleep(70); };
+
+  await page.goto(URL);
+  await page.waitForFunction(() => window.EF && EF.ui && EF.ui.blocking());
+  await sleep(400);
+  await shot('01-title');
+  await press('Enter');
+  await sleep(300);
+  await shot('02-intro-dialog');
+  for (let i = 0; i < 12; i++) await press('KeyZ', 60);
+  await page.evaluate(() => { EF.game.state.minutes = 540; EF.game.teleport('farm', 12.5, 13.5, 0, 1); });
+  for (const k of ['Digit1']) await press(k);
+  await press('KeyX'); await press('ArrowRight', 200); await press('KeyX');
+  await page.evaluate(() => { EF.game.teleport('farm', 10.5, 13.5, 0, 1); EF.game.state.inv[6] = { id: 'seed_potato', qty: 9 }; });
+  await press('Digit7'); await press('KeyX');
+  await press('Digit2'); await press('KeyX');
+  await page.evaluate(() => { EF.game.teleport('farm', 13.5, 14.5, 0, 1); });
+  await press('Digit1'); await press('KeyX'); await press('ArrowRight', 300); await press('KeyX');
+  await page.evaluate(() => { EF.game.teleport('farm', 16.5, 13.5, 0, 1); });
+  await press('Digit7'); await press('KeyX');
+  await page.evaluate(() => { EF.game.teleport('farm', 17.5, 16.5, 0, 1); });
+  await press('Digit2'); await press('KeyX');
+  await page.evaluate(() => { EF.game.teleport('farm', 12.5, 17.5, 0, 1); });
+  await press('Digit6'); await sleep(50);
+  await page.evaluate(() => { EF.game.state.stats.caught = 0; });
+  await shot('03-farm');
+  await page.evaluate(() => { EF.game.teleport('town', 22.5, 12.5, 0, -1); });
+  await sleep(300); await shot('04-town');
+  await page.evaluate(() => { EF.game.teleport('lake', 19.5, 12.5, 1, 0); });
+  await sleep(300); await shot('05-lake');
+  await page.evaluate(() => { EF.game.teleport('mine2', 5.5, 6.5, 0, 1); });
+  await sleep(300); await shot('06-mine');
+  await page.evaluate(() => { EF.game.teleport('town', 22.5, 12.5, 0, -1); EF.game.addItem('gleam_shard', 3); EF.game.addItem('bread', 2); EF.game.addItem('copper_bar', 4); });
+  await press('Escape'); await sleep(200); await shot('07-pause');
+  await press('ArrowDown'); await press('KeyZ'); await sleep(200); await shot('08-inventory');
+  await press('Escape'); await press('Escape'); await sleep(100);
+  await page.evaluate(() => { EF.game.teleport('town', 21.5, 13.5, 0, 1); });
+  await press('KeyZ'); await sleep(200); await shot('09-board');
+  console.log('errors:', errors.length ? errors : 'none');
+  await browser.close();
+})().catch((e) => { console.error('FAILED', e.message); process.exit(1); });

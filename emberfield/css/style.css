@@ -1,0 +1,63 @@
+:root {
+  --bg: #0c0a12;
+  --frame: #f2d19a;
+}
+
+:root[data-theme="light"] {
+  --bg: #0c0a12;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fbf3dc;
+  font-family: "Courier New", Courier, monospace;
+}
+
+#stage {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#screen {
+  display: block;
+  /* Fit the 16:9 logical canvas into the window, keeping pixels crisp. */
+  width: min(100vw, calc(100vh * 640 / 360));
+  height: auto;
+  aspect-ratio: 640 / 360;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 2px solid var(--frame);
+  outline: none;
+  background: #000;
+  touch-action: none;
+}
+
+noscript {
+  color: #fbf3dc;
+  padding: 16px;
+}
+
+/* Narrow phones: the canvas already scales to the full width without page scroll. */
+@media (max-width: 480px) {
+  #screen {
+    width: 100vw;
+    border-width: 0;
+  }
+}
